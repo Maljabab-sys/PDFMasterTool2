@@ -742,43 +742,33 @@ def upload_files():
         # Get visit description for follow-up visits
         visit_description = request.form.get('visit_description', '').strip() if visit_type != 'Registration' else None
         
-        # Handle individual image uploads in correct order
+        # Handle optional image uploads in correct order
         image_fields = ['eofv', 'eosv', 'eomv', 'iorv', 'iofv', 'iolv', 'iouv', 'iolowerv']
         uploaded_files = []
         
         for field_name in image_fields:
-            if field_name not in request.files:
-                flash(f'Missing image upload for {field_name.upper()}.', 'error')
-                return redirect(url_for('index'))
-            
-            file = request.files[field_name]
-            
-            if not file or file.filename == '':
-                flash(f'Please upload an image for {field_name.upper()}.', 'error')
-                return redirect(url_for('index'))
-            
-            if not allowed_file(file.filename):
-                flash(f'Invalid file type for {field_name.upper()}. Please use JPEG, PNG, or WebP.', 'error')
-                return redirect(url_for('index'))
-            
-            # Generate unique filename
-            filename = secure_filename(file.filename)
-            unique_filename = f"{uuid.uuid4()}_{field_name}_{filename}"
-            file_path = os.path.join(app.config['UPLOAD_FOLDER'], unique_filename)
-            
-            try:
-                file.save(file_path)
-                # Optimize image immediately after upload
-                optimize_image_for_pdf(file_path)
-                uploaded_files.append(file_path)
-            except Exception as e:
-                logging.error(f"Error saving file {filename}: {str(e)}")
-                flash(f'Error saving file {filename}.', 'error')
-                return redirect(url_for('index'))
-        
-        if len(uploaded_files) != 8:
-            flash('Please upload all 8 required images.', 'error')
-            return redirect(url_for('index'))
+            if field_name in request.files:
+                file = request.files[field_name]
+                
+                if file and file.filename != '':
+                    if not allowed_file(file.filename):
+                        flash(f'Invalid file type for {field_name.upper()}. Please use JPEG, PNG, or WebP.', 'error')
+                        return redirect(url_for('index'))
+                    
+                    # Generate unique filename
+                    filename = secure_filename(file.filename)
+                    unique_filename = f"{uuid.uuid4()}_{field_name}_{filename}"
+                    file_path = os.path.join(app.config['UPLOAD_FOLDER'], unique_filename)
+                    
+                    try:
+                        file.save(file_path)
+                        # Optimize image immediately after upload
+                        optimize_image_for_pdf(file_path)
+                        uploaded_files.append(file_path)
+                    except Exception as e:
+                        logging.error(f"Error saving file {filename}: {str(e)}")
+                        flash(f'Error saving file {filename}.', 'error')
+                        return redirect(url_for('index'))
         
         # Generate PDF
         pdf_filename = f"slides_{uuid.uuid4()}.pdf"
