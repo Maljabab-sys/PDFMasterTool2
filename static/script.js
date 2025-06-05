@@ -129,20 +129,35 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
         
-        // Validate all 8 images are uploaded
+        // Validate all 8 images are uploaded - STRICT VALIDATION
         const requiredImages = ['eofv', 'eosv', 'eomv', 'iorv', 'iofv', 'iolv', 'iouv', 'iolowerv'];
         const missingImages = [];
         
         requiredImages.forEach(imageId => {
             const input = document.getElementById(imageId);
-            if (!input.files || input.files.length === 0) {
+            if (!input || !input.files || input.files.length === 0 || !input.files[0]) {
                 missingImages.push(imageId.toUpperCase());
             }
         });
         
         if (missingImages.length > 0) {
             e.preventDefault();
-            showError(`Please upload images for: ${missingImages.join(', ')}`);
+            showError(`All 8 images are required. Missing: ${missingImages.join(', ')}`);
+            return;
+        }
+        
+        // Double check - ensure exactly 8 images
+        let uploadedCount = 0;
+        requiredImages.forEach(imageId => {
+            const input = document.getElementById(imageId);
+            if (input && input.files && input.files.length > 0 && input.files[0]) {
+                uploadedCount++;
+            }
+        });
+        
+        if (uploadedCount !== 8) {
+            e.preventDefault();
+            showError(`Please upload all 8 required images (${uploadedCount}/8 uploaded)`);
             return;
         }
         
