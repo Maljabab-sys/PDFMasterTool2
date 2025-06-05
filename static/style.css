@@ -284,9 +284,9 @@ body {
 }
 
 .timeline-marker {
-    width: 24px;
-    height: 24px;
-    border-radius: 6px;
+    width: 20px;
+    height: 20px;
+    border-radius: 4px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -334,13 +334,12 @@ body {
 /* Connection lines between stages */
 .timeline-connection {
     position: absolute;
-    top: 50%;
-    left: calc(50% + 12px);
-    width: calc(100% - 24px);
+    top: 10px;
+    left: calc(50% + 10px);
+    width: calc(100% - 20px);
     height: 2px;
     background: #495057;
-    transform: translateY(-50%);
-    z-index: 2;
+    z-index: 1;
     border-radius: 1px;
     transition: background-color 0.3s ease;
 }
