@@ -162,29 +162,34 @@
     <!-- Navigation -->
     <nav class="navbar navbar-expand-lg navbar-dark border-bottom">
         <div class="container">
-            <a class="navbar-brand fw-bold" href="{{ url_for('index') }}">
+            <a class="navbar-brand fw-bold" href="#">
                 <i class="bi bi-file-earmark-slides me-2"></i>Slide Generator
             </a>
             <div class="navbar-nav ms-auto">
-                <a class="nav-link active" href="{{ url_for('index') }}">
+                <a class="nav-link active" href="#" onclick="showSection('new-case')">
                     <i class="bi bi-plus-circle me-1"></i>New Case
                 </a>
-                <a class="nav-link" href="{{ url_for('cases') }}">
+                <a class="nav-link" href="#" onclick="showSection('case-history')">
                     <i class="bi bi-folder me-1"></i>Case History
+                </a>
+                <a class="nav-link" href="#" onclick="showSection('patient-list')">
+                    <i class="bi bi-people me-1"></i>Patient List
                 </a>
             </div>
         </div>
     </nav>
 
     <div class="container my-4">
-        <!-- Header -->
-        <div class="text-center mb-4">
-            <h1 class="display-5 fw-bold mb-2">
-                <i class="bi bi-file-earmark-pdf text-danger me-2"></i>
-                PDF Slide Deck Creator
-            </h1>
-            <p class="lead text-muted">Create professional slide decks from your images</p>
-        </div>
+        <!-- New Case Section -->
+        <div id="new-case-section" class="section">
+            <!-- Header -->
+            <div class="text-center mb-4">
+                <h1 class="display-5 fw-bold mb-2">
+                    <i class="bi bi-file-earmark-pdf text-danger me-2"></i>
+                    PDF Slide Deck Creator
+                </h1>
+                <p class="lead text-muted">Create professional slide decks from your images</p>
+            </div>
 
         <!-- Flash Messages -->
         {% with messages = get_flashed_messages(with_categories=true) %}
@@ -536,6 +541,35 @@
                         </form>
                     </div>
                 </div>
+            </div>
+        </div>
+        </div>
+        
+        <!-- Case History Section -->
+        <div id="case-history-section" class="section" style="display: none;">
+            <div class="text-center mb-4">
+                <h1 class="display-5 fw-bold mb-2">
+                    <i class="bi bi-folder text-primary me-2"></i>
+                    Case History
+                </h1>
+                <p class="lead text-muted">View and manage all submitted cases</p>
+            </div>
+            <div id="case-history-content">
+                <!-- Case history will be loaded here -->
+            </div>
+        </div>
+        
+        <!-- Patient List Section -->
+        <div id="patient-list-section" class="section" style="display: none;">
+            <div class="text-center mb-4">
+                <h1 class="display-5 fw-bold mb-2">
+                    <i class="bi bi-people text-success me-2"></i>
+                    Patient List
+                </h1>
+                <p class="lead text-muted">Browse patients and their medical records</p>
+            </div>
+            <div id="patient-list-content">
+                <!-- Patient list will be loaded here -->
             </div>
         </div>
     </div>
