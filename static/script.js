@@ -153,6 +153,11 @@ document.addEventListener('DOMContentLoaded', function() {
             const inputs = form.querySelectorAll('input, textarea, button');
             inputs.forEach(input => input.disabled = true);
         }, 100);
+        
+        // Redirect to success page after PDF download
+        setTimeout(() => {
+            window.location.href = '/success';
+        }, 3000);
     });
     
     // Show progress indicator

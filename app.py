@@ -275,6 +275,98 @@ def create_comparison_layout(images, heading_style, styles, pagesize):
     
     return story
 
+def create_medical_layout(images, heading_style, styles, pagesize):
+    """Medical case template - professional case presentation"""
+    story = []
+    from reportlab.platypus import PageBreak, Table, TableStyle
+    from reportlab.lib import colors
+    
+    # Split images into sections (first half = extra-oral, second half = intra-oral)
+    mid_point = len(images) // 2
+    extra_oral = images[:mid_point] if mid_point > 0 else []
+    intra_oral = images[mid_point:] if mid_point > 0 else images
+    
+    # Extra-oral section
+    if extra_oral:
+        story.append(Paragraph("Extra-oral", heading_style))
+        story.append(Spacer(1, 0.2*inch))
+        
+        # Create grid for extra-oral images (3 images per row)
+        for i in range(0, len(extra_oral), 3):
+            row_images = extra_oral[i:i+3]
+            table_data = []
+            img_row = []
+            
+            for img_path in row_images:
+                try:
+                    img_obj = RLImage(img_path, width=2*inch, height=1.8*inch)
+                    img_row.append(img_obj)
+                except Exception as e:
+                    logging.error(f"Error adding image {img_path}: {str(e)}")
+                    img_row.append("")
+            
+            # Fill empty cells if needed
+            while len(img_row) < 3:
+                img_row.append("")
+            
+            table_data.append(img_row)
+            
+            if table_data:
+                table = Table(table_data, colWidths=[2.2*inch, 2.2*inch, 2.2*inch])
+                table.setStyle(TableStyle([
+                    ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+                    ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+                    ('LEFTPADDING', (0, 0), (-1, -1), 5),
+                    ('RIGHTPADDING', (0, 0), (-1, -1), 5),
+                    ('TOPPADDING', (0, 0), (-1, -1), 5),
+                    ('BOTTOMPADDING', (0, 0), (-1, -1), 5),
+                ]))
+                story.append(table)
+                story.append(Spacer(1, 0.3*inch))
+    
+    # Intra-oral section
+    if intra_oral:
+        story.append(Paragraph("Intra oral:", heading_style))
+        story.append(Spacer(1, 0.2*inch))
+        
+        # Create grid for intra-oral images (3 images per row, then 2 on bottom)
+        for i in range(0, len(intra_oral), 3):
+            row_images = intra_oral[i:i+3]
+            table_data = []
+            img_row = []
+            
+            for img_path in row_images:
+                try:
+                    img_obj = RLImage(img_path, width=2*inch, height=1.5*inch)
+                    img_row.append(img_obj)
+                except Exception as e:
+                    logging.error(f"Error adding image {img_path}: {str(e)}")
+                    img_row.append("")
+            
+            # For the last row with 2 images, center them
+            if len(img_row) == 2 and i + 3 >= len(intra_oral):
+                table_data.append(["", img_row[0], img_row[1], ""])
+                table = Table(table_data, colWidths=[1*inch, 2.2*inch, 2.2*inch, 1*inch])
+            else:
+                # Fill empty cells if needed
+                while len(img_row) < 3:
+                    img_row.append("")
+                table_data.append(img_row)
+                table = Table(table_data, colWidths=[2.2*inch, 2.2*inch, 2.2*inch])
+            
+            table.setStyle(TableStyle([
+                ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+                ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+                ('LEFTPADDING', (0, 0), (-1, -1), 5),
+                ('RIGHTPADDING', (0, 0), (-1, -1), 5),
+                ('TOPPADDING', (0, 0), (-1, -1), 5),
+                ('BOTTOMPADDING', (0, 0), (-1, -1), 5),
+            ]))
+            story.append(table)
+            story.append(Spacer(1, 0.3*inch))
+    
+    return story
+
 def create_pdf(images, case_title, notes, output_path, template='classic', orientation='portrait', images_per_slide=1):
     """Create PDF slide deck from images and text"""
     try:
@@ -330,6 +422,8 @@ def create_pdf(images, case_title, notes, output_path, template='classic', orien
             story.extend(create_timeline_layout(images, heading_style, styles, pagesize))
         elif template == 'comparison':
             story.extend(create_comparison_layout(images, heading_style, styles, pagesize))
+        elif template == 'medical':
+            story.extend(create_medical_layout(images, heading_style, styles, pagesize))
         else:
             story.extend(create_classic_layout(images, heading_style, styles, pagesize))
         
@@ -344,6 +438,22 @@ def create_pdf(images, case_title, notes, output_path, template='classic', orien
 @app.route('/')
 def index():
     return render_template('index.html')
+
+@app.route('/success')
+def success():
+    from flask import session
+    success_info = session.get('success_info', {})
+    if not success_info:
+        return redirect(url_for('index'))
+    
+    # Clear the session data
+    session.pop('success_info', None)
+    
+    return render_template('success.html', 
+                         case_title=success_info.get('case_title', 'Unknown'),
+                         template=success_info.get('template', 'unknown'),
+                         image_count=success_info.get('image_count', 0),
+                         timestamp=success_info.get('timestamp', 'Unknown'))
 
 @app.route('/upload', methods=['POST'])
 def upload_files():
@@ -407,6 +517,15 @@ def upload_files():
                     os.unlink(file_path)
                 except:
                     pass
+            
+            # Store success info in session for success page
+            from flask import session
+            session['success_info'] = {
+                'case_title': case_title,
+                'template': template,
+                'image_count': len(uploaded_files),
+                'timestamp': datetime.now().strftime('%B %d, %Y at %I:%M %p')
+            }
             
             return send_file(pdf_path, as_attachment=True, 
                            download_name=f"{case_title}_slides.pdf",
