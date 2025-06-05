@@ -155,8 +155,15 @@ def index():
 @app.route('/upload', methods=['POST'])
 def upload_files():
     try:
+        # Debug logging
+        logging.debug(f"Form data received: {dict(request.form)}")
+        logging.debug(f"Files received: {list(request.files.keys())}")
+        
         case_title = request.form.get('case_title', '').strip()
         notes = request.form.get('notes', '').strip()
+        
+        logging.debug(f"Case title after processing: '{case_title}'")
+        logging.debug(f"Case title length: {len(case_title)}")
         
         if not case_title:
             flash('Please provide a case title.', 'error')
