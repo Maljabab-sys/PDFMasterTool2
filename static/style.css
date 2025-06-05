@@ -175,3 +175,58 @@ body {
     50% { transform: scaleX(0.7); }
     100% { transform: scaleX(1); }
 }
+
+/* Patient Search Highlighting */
+.patient-result {
+    transition: all 0.2s ease-in-out;
+}
+
+.patient-result:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+}
+
+.patient-result.selected {
+    background-color: var(--bs-success) !important;
+    border-color: var(--bs-success) !important;
+    color: white !important;
+}
+
+.patient-result.selected h6,
+.patient-result.selected p {
+    color: white !important;
+}
+
+.patient-result.selected small {
+    color: rgba(255,255,255,0.8) !important;
+}
+
+/* Image Upload Containers */
+.image-upload-container {
+    transition: all 0.3s ease;
+}
+
+.image-upload-container:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+}
+
+/* Form Card Animations */
+.card {
+    transition: all 0.3s ease;
+}
+
+.visit-fields {
+    animation: slideDown 0.3s ease-out;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}

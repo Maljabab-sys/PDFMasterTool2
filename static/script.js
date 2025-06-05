@@ -360,8 +360,18 @@ function displaySearchResults(patients) {
 }
 
 function selectPatient(id, mrn, firstName, lastName, clinic) {
-    // Hide search results
-    document.getElementById('patientResults').innerHTML = '';
+    // Remove previous selections
+    document.querySelectorAll('.patient-result').forEach(el => {
+        el.classList.remove('selected');
+        el.classList.remove('list-group-item-success');
+    });
+    
+    // Mark clicked patient as selected
+    const clickedElement = event.target.closest('.patient-result');
+    if (clickedElement) {
+        clickedElement.classList.add('selected');
+        clickedElement.classList.add('list-group-item-success');
+    }
     
     // Show selected patient info
     document.getElementById('selectedPatientInfo').style.display = 'block';
@@ -369,8 +379,8 @@ function selectPatient(id, mrn, firstName, lastName, clinic) {
         `MRN: ${mrn} - ${firstName} ${lastName} (${clinic})`;
     document.getElementById('selectedPatientId').value = id;
     
-    // Clear search field
-    document.getElementById('mrnSearch').value = mrn;
+    // Keep search results visible but update search field
+    document.getElementById('mrnSearch').value = `${firstName} ${lastName}`;
 }
 
 // Character count for visit description
