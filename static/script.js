@@ -106,9 +106,15 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Form submission handler
     form.addEventListener('submit', function(e) {
-        // Basic validation only
-        const caseTitle = document.getElementById('case_title').value.trim();
-        const files = fileInput.files;
+        // Basic validation
+        const visitType = document.getElementById('visitType').value;
+        const caseTitle = document.getElementById('title').value.trim();
+        
+        if (!visitType) {
+            e.preventDefault();
+            showError('Please select a visit type.');
+            return;
+        }
         
         if (!caseTitle) {
             e.preventDefault();
@@ -116,25 +122,42 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
         
-        if (files.length === 0) {
-            e.preventDefault();
-            showError('Please select at least one image.');
-            return;
-        }
-        
-        if (files.length !== 8) {
-            e.preventDefault();
-            showError('Please select exactly 8 images for the medical template.');
-            return;
-        }
-        
-        // Check file sizes
-        for (let file of files) {
-            if (file.size > 5 * 1024 * 1024) { // 5MB
+        // Validate visit-specific fields
+        if (visitType === 'Registration') {
+            const mrn = document.getElementById('mrn').value.trim();
+            const clinic = document.getElementById('clinic').value;
+            const firstName = document.getElementById('firstName').value.trim();
+            const lastName = document.getElementById('lastName').value.trim();
+            
+            if (!mrn || !clinic || !firstName || !lastName) {
                 e.preventDefault();
-                showError(`${file.name} is too large. Maximum file size is 5MB.`);
+                showError('Please fill in all required patient information.');
                 return;
             }
+        } else if (visitType === 'Orthodontic Visit' || visitType === 'Debond') {
+            const patientId = document.getElementById('selectedPatientId').value;
+            if (!patientId) {
+                e.preventDefault();
+                showError('Please search and select a patient.');
+                return;
+            }
+        }
+        
+        // Validate all 8 images are uploaded
+        const requiredImages = ['eofv', 'eosv', 'eomv', 'iorv', 'iofv', 'iolv', 'iouv', 'iolowerv'];
+        const missingImages = [];
+        
+        requiredImages.forEach(imageId => {
+            const input = document.getElementById(imageId);
+            if (!input.files || input.files.length === 0) {
+                missingImages.push(imageId.toUpperCase());
+            }
+        });
+        
+        if (missingImages.length > 0) {
+            e.preventDefault();
+            showError(`Please upload images for: ${missingImages.join(', ')}`);
+            return;
         }
         
         // Show loading state
@@ -147,7 +170,7 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Disable form inputs after a brief delay to ensure form submission
         setTimeout(() => {
-            const inputs = form.querySelectorAll('input, textarea, button');
+            const inputs = form.querySelectorAll('input, textarea, button, select');
             inputs.forEach(input => input.disabled = true);
         }, 100);
         
