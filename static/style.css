@@ -1,0 +1,177 @@
+/* Custom styles for PDF Slide Deck Creator */
+
+:root {
+    --bs-body-bg: hsl(210, 11%, 15%);
+    --preview-bg: hsl(210, 11%, 20%);
+    --border-color: hsl(210, 11%, 25%);
+}
+
+body {
+    min-height: 100vh;
+    background: var(--bs-body-bg);
+}
+
+/* File input styling */
+.form-control[type="file"] {
+    padding: 0.75rem;
+    border: 2px dashed var(--border-color);
+    background: var(--preview-bg);
+    transition: all 0.3s ease;
+}
+
+.form-control[type="file"]:hover,
+.form-control[type="file"]:focus {
+    border-color: var(--bs-primary);
+    background: var(--bs-dark);
+}
+
+/* Image preview styling */
+.preview-item {
+    position: relative;
+    overflow: hidden;
+    border-radius: 0.5rem;
+    background: var(--preview-bg);
+    border: 1px solid var(--border-color);
+    transition: transform 0.2s ease;
+}
+
+.preview-item:hover {
+    transform: translateY(-2px);
+}
+
+.preview-image {
+    width: 100%;
+    height: 120px;
+    object-fit: cover;
+    border-radius: 0.5rem;
+}
+
+.preview-filename {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: linear-gradient(transparent, rgba(0,0,0,0.8));
+    color: white;
+    padding: 0.5rem;
+    font-size: 0.75rem;
+    word-break: break-word;
+}
+
+.remove-image {
+    position: absolute;
+    top: 0.25rem;
+    right: 0.25rem;
+    background: rgba(220, 53, 69, 0.9);
+    border: none;
+    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 0.75rem;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+.preview-item:hover .remove-image {
+    opacity: 1;
+}
+
+/* Loading states */
+.btn.loading {
+    pointer-events: none;
+}
+
+.form-control:invalid {
+    border-color: var(--bs-danger);
+}
+
+.form-control:valid {
+    border-color: var(--bs-success);
+}
+
+/* Mobile optimizations */
+@media (max-width: 768px) {
+    .container {
+        padding: 0 1rem;
+    }
+    
+    .card-body {
+        padding: 1.5rem !important;
+    }
+    
+    .display-5 {
+        font-size: 2rem;
+    }
+    
+    .preview-image {
+        height: 100px;
+    }
+}
+
+@media (max-width: 576px) {
+    .preview-image {
+        height: 80px;
+    }
+    
+    .form-control-lg {
+        font-size: 1rem;
+        padding: 0.75rem;
+    }
+    
+    .btn-lg {
+        font-size: 1rem;
+        padding: 0.75rem 1rem;
+    }
+}
+
+/* Smooth animations */
+.fade-in {
+    animation: fadeIn 0.3s ease-in;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Alert customizations */
+.alert {
+    border: none;
+    border-left: 4px solid;
+}
+
+.alert-success {
+    border-left-color: var(--bs-success);
+}
+
+.alert-danger {
+    border-left-color: var(--bs-danger);
+}
+
+/* Progress indicator */
+.upload-progress {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: var(--bs-primary);
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 0.3s ease;
+    z-index: 9999;
+}
+
+.upload-progress.active {
+    animation: progress 2s ease-in-out infinite;
+}
+
+@keyframes progress {
+    0% { transform: scaleX(0); }
+    50% { transform: scaleX(0.7); }
+    100% { transform: scaleX(1); }
+}
