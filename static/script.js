@@ -385,7 +385,13 @@ function loadCaseHistory() {
         })
         .then(data => {
             console.log('Case history data:', data);
-            content.innerHTML = renderCaseHistory(data.cases);
+            try {
+                content.innerHTML = renderCaseHistory(data.cases);
+                console.log('Case history rendered successfully');
+            } catch (error) {
+                console.error('Error rendering case history:', error);
+                content.innerHTML = '<div class="alert alert-danger">Error rendering case history: ' + error.message + '</div>';
+            }
         })
         .catch(error => {
             console.error('Error loading case history:', error);
@@ -410,7 +416,13 @@ function loadPatientList() {
         })
         .then(data => {
             console.log('Patient list data:', data);
-            content.innerHTML = renderPatientList(data.patients);
+            try {
+                content.innerHTML = renderPatientList(data.patients);
+                console.log('Patient list rendered successfully');
+            } catch (error) {
+                console.error('Error rendering patient list:', error);
+                content.innerHTML = '<div class="alert alert-danger">Error rendering patient list: ' + error.message + '</div>';
+            }
         })
         .catch(error => {
             console.error('Error loading patient list:', error);
