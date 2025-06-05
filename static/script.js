@@ -18,8 +18,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
     
-    let uploadedImages = {};
-    
     // Handle individual image upload
     function handleImageUpload(input, file) {
         if (!file) return;
@@ -62,23 +60,17 @@ document.addEventListener('DOMContentLoaded', function() {
             preview.style.display = 'none';
             container.style.borderColor = '#dee2e6';
             container.style.backgroundColor = '';
-            delete uploadedImages[input.id];
         };
-        
-        // Store file reference
-        uploadedImages[input.id] = file;
     }
     
     // Truncate filename for display
     function truncateFilename(filename, maxLength) {
         if (filename.length <= maxLength) return filename;
-        const extension = filename.split('.').pop();
+        const ext = filename.substring(filename.lastIndexOf('.'));
         const name = filename.substring(0, filename.lastIndexOf('.'));
-        const truncatedName = name.substring(0, maxLength - extension.length - 4) + '...';
-        return truncatedName + '.' + extension;
+        const truncated = name.substring(0, maxLength - ext.length - 3) + '...';
+        return truncated + ext;
     }
-    
-
     
     // Show error message
     function showError(message) {
@@ -90,15 +82,13 @@ document.addEventListener('DOMContentLoaded', function() {
         const alertDiv = document.createElement('div');
         alertDiv.className = 'alert alert-danger alert-dismissible fade show';
         alertDiv.innerHTML = `
-            <i class="bi bi-exclamation-triangle me-2"></i>
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>
             ${message}
             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
         `;
         
-        // Insert at top of container
-        const container = document.querySelector('.container');
-        const firstChild = container.firstElementChild;
-        container.insertBefore(alertDiv, firstChild.nextElementSibling);
+        // Insert at top of form
+        form.insertBefore(alertDiv, form.firstChild);
         
         // Scroll to alert
         alertDiv.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -108,7 +98,6 @@ document.addEventListener('DOMContentLoaded', function() {
     form.addEventListener('submit', function(e) {
         // Basic validation
         const visitType = document.getElementById('visitType').value;
-        const caseTitle = document.getElementById('title').value.trim();
         
         if (!visitType) {
             e.preventDefault();
@@ -116,10 +105,8 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
         
-        // Case title is now automatically set to "Medical Case"
-        if (!caseTitle) {
-            document.getElementById('title').value = 'Medical Case';
-        }
+        // Set case title automatically
+        document.getElementById('title').value = 'Medical Case';
         
         // Validate visit-specific fields
         if (visitType === 'Registration') {
@@ -183,84 +170,23 @@ document.addEventListener('DOMContentLoaded', function() {
         document.body.appendChild(progressBar);
     }
     
-    // Auto-resize textarea
-    const notesTextarea = document.getElementById('notes');
-    notesTextarea.addEventListener('input', function() {
-        this.style.height = 'auto';
-        this.style.height = this.scrollHeight + 'px';
-    });
-    
-    // Character count for inputs
-    const caseTitle = document.getElementById('case_title');
-    const notes = document.getElementById('notes');
-    
+    // Character count functionality
     function updateCharacterCount(input, maxLength) {
-        const current = input.value.length;
-        const remaining = maxLength - current;
-        
-        let countElement = input.parentElement.querySelector('.char-count');
-        if (!countElement) {
-            countElement = document.createElement('div');
-            countElement.className = 'char-count form-text text-end';
-            input.parentElement.appendChild(countElement);
-        }
-        
-        countElement.textContent = `${current}/${maxLength}`;
-        countElement.style.color = remaining < 10 ? 'var(--bs-warning)' : '';
-    }
-    
-    caseTitle.addEventListener('input', () => updateCharacterCount(caseTitle, 100));
-    notes.addEventListener('input', () => updateCharacterCount(notes, 1000));
-    
-    // Touch-friendly file upload for mobile
-    if (window.innerWidth <= 768) {
-        fileInput.addEventListener('click', function() {
-            // Add visual feedback for mobile tap
-            this.style.transform = 'scale(0.98)';
-            setTimeout(() => {
-                this.style.transform = 'scale(1)';
-            }, 150);
-        });
-    }
-    
-    // Prevent form submission on Enter in text inputs
-    caseTitle.addEventListener('keypress', function(e) {
-        if (e.key === 'Enter') {
-            e.preventDefault();
-        }
-    });
-    
-    // Auto-save form data to localStorage
-    function saveFormData() {
-        const formData = {
-            caseTitle: caseTitle.value,
-            notes: notes.value
-        };
-        localStorage.setItem('slideFormData', JSON.stringify(formData));
-    }
-    
-    function loadFormData() {
-        const saved = localStorage.getItem('slideFormData');
-        if (saved) {
-            const data = JSON.parse(saved);
-            caseTitle.value = data.caseTitle || '';
-            notes.value = data.notes || '';
+        const countElement = document.getElementById(input.id + 'Count');
+        if (countElement) {
+            countElement.textContent = input.value.length;
+            
+            // Color coding
+            const percentage = (input.value.length / maxLength) * 100;
+            if (percentage > 90) {
+                countElement.style.color = 'var(--bs-danger)';
+            } else if (percentage > 75) {
+                countElement.style.color = 'var(--bs-warning)';
+            } else {
+                countElement.style.color = 'var(--bs-muted)';
+            }
         }
     }
-    
-    // Save on input
-    const caseTitle = document.getElementById('title');
-    const notes = document.getElementById('notes');
-    if (caseTitle) caseTitle.addEventListener('input', saveFormData);
-    if (notes) notes.addEventListener('input', saveFormData);
-    
-    // Load on page load
-    loadFormData();
-    
-    // Clear saved data on successful submission
-    form.addEventListener('submit', function() {
-        localStorage.removeItem('slideFormData');
-    });
 });
 
 // Handle visit type change
