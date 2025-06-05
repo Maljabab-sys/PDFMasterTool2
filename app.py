@@ -904,6 +904,81 @@ def api_patients():
     
     return jsonify({'patients': patients_data})
 
+@app.route('/api/user-settings', methods=['GET'])
+def api_user_settings():
+    """API endpoint for user settings"""
+    from models import UserSettings, UserClinic
+    
+    # For demo, use first user settings or create default
+    user_settings = UserSettings.query.first()
+    
+    if not user_settings:
+        return jsonify({
+            'settings': {
+                'full_name': '',
+                'email': '',
+                'position': '',
+                'clinics': ['KFMC', 'DC']
+            }
+        })
+    
+    clinics = [clinic.name for clinic in user_settings.clinics]
+    if not clinics:
+        clinics = ['KFMC', 'DC']  # Default clinics
+    
+    settings_data = {
+        'full_name': user_settings.full_name or '',
+        'email': user_settings.email or '',
+        'position': user_settings.position or '',
+        'clinics': clinics
+    }
+    
+    return jsonify({'settings': settings_data})
+
+@app.route('/save_settings', methods=['POST'])
+def save_settings():
+    """Save user settings"""
+    from models import UserSettings, UserClinic
+    
+    try:
+        full_name = request.form.get('full_name', '').strip()
+        email = request.form.get('email', '').strip()
+        position = request.form.get('position', '').strip()
+        clinics = request.form.getlist('clinics[]')
+        
+        # Clean up clinic names
+        clinics = [clinic.strip() for clinic in clinics if clinic.strip()]
+        
+        # Get or create user settings
+        user_settings = UserSettings.query.first()
+        if not user_settings:
+            user_settings = UserSettings()
+            db.session.add(user_settings)
+        
+        # Update user settings
+        user_settings.full_name = full_name
+        user_settings.email = email
+        user_settings.position = position
+        
+        # Clear existing clinics
+        UserClinic.query.filter_by(settings_id=user_settings.id).delete()
+        
+        # Add new clinics
+        for clinic_name in clinics:
+            if clinic_name:
+                clinic = UserClinic(name=clinic_name, user_settings=user_settings)
+                db.session.add(clinic)
+        
+        db.session.commit()
+        flash('Settings saved successfully!', 'success')
+        
+    except Exception as e:
+        db.session.rollback()
+        logging.error(f"Error saving settings: {str(e)}")
+        flash('Error saving settings. Please try again.', 'error')
+    
+    return redirect(url_for('index') + '#settings')
+
 @app.errorhandler(500)
 def server_error(e):
     logging.error(f"Server error: {str(e)}")

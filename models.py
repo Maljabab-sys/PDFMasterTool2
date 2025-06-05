@@ -33,3 +33,26 @@ class Case(db.Model):
     
     def __repr__(self):
         return f'<Case {self.title} - {self.visit_type}>'
+
+class UserSettings(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    full_name = db.Column(db.String(100))
+    email = db.Column(db.String(120))
+    position = db.Column(db.String(100))
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    # Relationship to clinics
+    clinics = db.relationship('UserClinic', backref='user_settings', lazy=True, cascade='all, delete-orphan')
+    
+    def __repr__(self):
+        return f'<UserSettings {self.full_name} - {self.email}>'
+
+class UserClinic(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), nullable=False)
+    settings_id = db.Column(db.Integer, db.ForeignKey('user_settings.id'), nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    def __repr__(self):
+        return f'<UserClinic {self.name}>'

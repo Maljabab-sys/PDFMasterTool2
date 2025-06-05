@@ -318,6 +318,10 @@ function showSection(sectionName) {
         document.getElementById('patient-list-section').style.display = 'block';
         document.querySelector('[onclick="showSection(\'patient-list\')"]').classList.add('active');
         loadPatientList();
+    } else if (sectionName === 'settings') {
+        document.getElementById('settings-section').style.display = 'block';
+        document.querySelector('[onclick="showSection(\'settings\')"]').classList.add('active');
+        loadUserSettings();
     }
 }
 
@@ -607,3 +611,122 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 });
+
+// Settings functionality
+function loadUserSettings() {
+    fetch('/api/user-settings')
+        .then(response => response.json())
+        .then(data => {
+            if (data.settings) {
+                document.getElementById('fullName').value = data.settings.full_name || '';
+                document.getElementById('email').value = data.settings.email || '';
+                document.getElementById('position').value = data.settings.position || '';
+                
+                // Load clinics
+                loadUserClinics(data.settings.clinics || []);
+            }
+            
+            // Update clinic dropdown in registration form
+            updateClinicDropdown(data.settings?.clinics || []);
+        })
+        .catch(error => {
+            console.error('Error loading settings:', error);
+        });
+}
+
+function loadUserClinics(clinics) {
+    const container = document.getElementById('clinicsContainer');
+    container.innerHTML = '';
+    
+    if (clinics.length === 0) {
+        addClinic();
+        return;
+    }
+    
+    clinics.forEach((clinic, index) => {
+        const clinicHtml = `
+            <div class="clinic-entry mb-3">
+                <div class="row">
+                    <div class="col-md-8">
+                        <label class="form-label">Clinic Name</label>
+                        <input type="text" class="form-control clinic-input" name="clinics[]" 
+                               value="${clinic}" placeholder="Enter clinic name...">
+                    </div>
+                    <div class="col-md-4 d-flex align-items-end">
+                        <button type="button" class="btn btn-outline-danger btn-sm remove-clinic" 
+                                onclick="removeClinic(this)" ${clinics.length === 1 ? 'style="display: none;"' : ''}>
+                            <i class="bi bi-trash"></i> Remove
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+        container.insertAdjacentHTML('beforeend', clinicHtml);
+    });
+}
+
+function addClinic() {
+    const container = document.getElementById('clinicsContainer');
+    const clinicCount = container.querySelectorAll('.clinic-entry').length;
+    
+    const clinicHtml = `
+        <div class="clinic-entry mb-3">
+            <div class="row">
+                <div class="col-md-8">
+                    <label class="form-label">Clinic Name</label>
+                    <input type="text" class="form-control clinic-input" name="clinics[]" 
+                           placeholder="Enter clinic name...">
+                </div>
+                <div class="col-md-4 d-flex align-items-end">
+                    <button type="button" class="btn btn-outline-danger btn-sm remove-clinic" 
+                            onclick="removeClinic(this)">
+                        <i class="bi bi-trash"></i> Remove
+                    </button>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    container.insertAdjacentHTML('beforeend', clinicHtml);
+    
+    // Show remove buttons if more than one clinic
+    if (clinicCount >= 0) {
+        container.querySelectorAll('.remove-clinic').forEach(btn => {
+            btn.style.display = 'block';
+        });
+    }
+}
+
+function removeClinic(button) {
+    const container = document.getElementById('clinicsContainer');
+    const clinicEntry = button.closest('.clinic-entry');
+    clinicEntry.remove();
+    
+    // Hide remove buttons if only one clinic left
+    const remainingClinics = container.querySelectorAll('.clinic-entry');
+    if (remainingClinics.length === 1) {
+        remainingClinics[0].querySelector('.remove-clinic').style.display = 'none';
+    }
+}
+
+function updateClinicDropdown(clinics) {
+    const clinicSelect = document.getElementById('clinic');
+    if (!clinicSelect) return;
+    
+    // Clear existing options except default ones
+    clinicSelect.innerHTML = `
+        <option value="">Select clinic...</option>
+        <option value="KFMC">KFMC</option>
+        <option value="DC">DC</option>
+    `;
+    
+    // Add user's custom clinics
+    clinics.forEach(clinic => {
+        if (clinic && clinic !== 'KFMC' && clinic !== 'DC') {
+            const option = document.createElement('option');
+            option.value = clinic;
+            option.textContent = clinic;
+            clinicSelect.appendChild(option);
+        }
+    });
+}

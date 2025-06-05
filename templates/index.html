@@ -275,8 +275,11 @@
                 <a class="nav-link me-3" href="#" onclick="showSection('patient-list')">
                     <i class="bi bi-people me-1"></i>Patient List
                 </a>
-                <a class="nav-link" href="#" onclick="showSection('case-history')">
+                <a class="nav-link me-3" href="#" onclick="showSection('case-history')">
                     <i class="bi bi-folder me-1"></i>Log
+                </a>
+                <a class="nav-link" href="#" onclick="showSection('settings')">
+                    <i class="bi bi-gear me-1"></i>Settings
                 </a>
             </div>
         </div>
@@ -689,6 +692,87 @@
             
             <div id="patient-list-content">
                 <!-- Patient list will be loaded here -->
+            </div>
+        </div>
+
+        <!-- Settings Section -->
+        <div id="settings-section" class="section" style="display: none;">
+            <div class="text-center mb-4">
+                <h2 class="display-6 fw-bold mb-2">
+                    <i class="bi bi-gear text-primary me-2"></i>Settings
+                </h2>
+                <p class="lead text-muted">Manage your profile and clinic preferences</p>
+            </div>
+
+            <div class="row justify-content-center">
+                <div class="col-lg-8">
+                    <div class="card shadow-sm">
+                        <div class="card-header bg-primary text-white">
+                            <h5 class="card-title mb-0">
+                                <i class="bi bi-person-circle me-2"></i>Personal Information
+                            </h5>
+                        </div>
+                        <div class="card-body p-4">
+                            <form id="settingsForm" method="POST" action="{{ url_for('save_settings') }}">
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label for="fullName" class="form-label">Full Name</label>
+                                        <input type="text" class="form-control" id="fullName" name="full_name" 
+                                               value="{{ user_settings.full_name if user_settings else '' }}" 
+                                               placeholder="Enter your full name...">
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label for="email" class="form-label">Email Address</label>
+                                        <input type="email" class="form-control" id="email" name="email" 
+                                               value="{{ user_settings.email if user_settings else '' }}" 
+                                               placeholder="Enter your email...">
+                                    </div>
+                                </div>
+                                
+                                <div class="mb-4">
+                                    <label for="position" class="form-label">Position/Title</label>
+                                    <input type="text" class="form-control" id="position" name="position" 
+                                           value="{{ user_settings.position if user_settings else '' }}" 
+                                           placeholder="e.g., Orthodontist, Dental Resident...">
+                                </div>
+
+                                <hr class="my-4">
+
+                                <h6 class="fw-bold mb-3">
+                                    <i class="bi bi-building me-2"></i>Clinic Management
+                                </h6>
+                                
+                                <div id="clinicsContainer">
+                                    <div class="clinic-entry mb-3">
+                                        <div class="row">
+                                            <div class="col-md-8">
+                                                <label class="form-label">Clinic Name</label>
+                                                <input type="text" class="form-control clinic-input" name="clinics[]" 
+                                                       placeholder="Enter clinic name...">
+                                            </div>
+                                            <div class="col-md-4 d-flex align-items-end">
+                                                <button type="button" class="btn btn-outline-danger btn-sm remove-clinic" 
+                                                        onclick="removeClinic(this)" style="display: none;">
+                                                    <i class="bi bi-trash"></i> Remove
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <button type="button" class="btn btn-outline-primary btn-sm mb-4" onclick="addClinic()">
+                                    <i class="bi bi-plus-circle me-1"></i>Add Another Clinic
+                                </button>
+
+                                <div class="d-grid">
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="bi bi-save me-2"></i>Save Settings
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
