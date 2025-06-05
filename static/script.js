@@ -640,10 +640,16 @@ function renderTreatmentTimeline(cases) {
         const case_ = stageData[stage.name];
         const stageKey = stage.name.toLowerCase().replace(' ', '_');
         
+        // Check if next stage is also completed for connection line
+        const nextStage = stages[index + 1];
+        const nextCompleted = nextStage ? completedStages.has(nextStage.name) : false;
+        const showConnection = index < stages.length - 1;
+        const connectionActive = isCompleted && nextCompleted;
+        
         html += `
             <div class="timeline-item ${isCompleted ? 'completed' : 'pending'}" data-stage="${stageKey}">
                 <div class="timeline-marker">
-                    <i class="${stage.icon}" style="color: white; font-size: 16px;"></i>
+                    <i class="${stage.icon}" style="color: white; font-size: 14px;"></i>
                 </div>
                 <div class="timeline-content">
                     <div class="timeline-title" style="color: ${isCompleted ? stage.color : '#adb5bd'}">
@@ -660,6 +666,7 @@ function renderTreatmentTimeline(cases) {
                         <div class="timeline-pending">Pending</div>
                     `}
                 </div>
+                ${showConnection ? `<div class="timeline-connection ${connectionActive ? 'active' : ''}"></div>` : ''}
             </div>
         `;
     });
