@@ -56,10 +56,245 @@ def optimize_image(image_path, max_width=800, max_height=600, quality=85):
         logging.error(f"Error optimizing image {image_path}: {str(e)}")
         return image_path
 
-def create_pdf(images, case_title, notes, output_path):
+def create_classic_layout(images, heading_style, styles, pagesize):
+    """Classic template - one image per slide"""
+    story = []
+    from reportlab.platypus import PageBreak
+    
+    page_width = pagesize[0] - 1*inch
+    page_height = pagesize[1] - 2*inch
+    
+    for i, image_path in enumerate(images, 1):
+        try:
+            story.append(Paragraph(f"Slide {i}", heading_style))
+            
+            with Image.open(image_path) as img:
+                img_width, img_height = img.size
+                aspect_ratio = img_width / img_height
+                
+                if aspect_ratio > 1:  # Landscape
+                    width = min(page_width * 0.8, 6 * inch)
+                    height = width / aspect_ratio
+                else:  # Portrait
+                    height = min(page_height * 0.7, 5 * inch)
+                    width = height * aspect_ratio
+            
+            img_obj = RLImage(image_path, width=width, height=height)
+            story.append(img_obj)
+            story.append(Spacer(1, 0.3*inch))
+            
+            if i < len(images):
+                story.append(PageBreak())
+                
+        except Exception as e:
+            logging.error(f"Error adding image {image_path}: {str(e)}")
+            story.append(Paragraph(f"Error loading image {i}", styles['Normal']))
+    
+    return story
+
+def create_modern_layout(images, heading_style, styles, pagesize, notes):
+    """Modern template - image with sidebar notes"""
+    story = []
+    from reportlab.platypus import PageBreak, Table, TableStyle
+    from reportlab.lib import colors
+    
+    for i, image_path in enumerate(images, 1):
+        try:
+            story.append(Paragraph(f"Slide {i}", heading_style))
+            
+            with Image.open(image_path) as img:
+                img_width, img_height = img.size
+                aspect_ratio = img_width / img_height
+                
+                width = 4.5 * inch
+                height = width / aspect_ratio
+                if height > 3.5 * inch:
+                    height = 3.5 * inch
+                    width = height * aspect_ratio
+            
+            img_obj = RLImage(image_path, width=width, height=height)
+            
+            # Create notes content
+            note_content = notes if notes else f"Image {i} description"
+            note_para = Paragraph(note_content, styles['Normal'])
+            
+            # Create table with image and notes
+            table_data = [[img_obj, note_para]]
+            table = Table(table_data, colWidths=[width + 0.5*inch, 2*inch])
+            table.setStyle(TableStyle([
+                ('VALIGN', (0, 0), (-1, -1), 'TOP'),
+                ('LEFTPADDING', (1, 0), (1, 0), 10),
+            ]))
+            
+            story.append(table)
+            story.append(Spacer(1, 0.3*inch))
+            
+            if i < len(images):
+                story.append(PageBreak())
+                
+        except Exception as e:
+            logging.error(f"Error adding image {image_path}: {str(e)}")
+            story.append(Paragraph(f"Error loading image {i}", styles['Normal']))
+    
+    return story
+
+def create_grid_layout(images, heading_style, styles, pagesize, images_per_slide):
+    """Grid template - multiple images per slide"""
+    story = []
+    from reportlab.platypus import PageBreak, Table, TableStyle
+    
+    page_width = pagesize[0] - 1*inch
+    
+    # Calculate grid dimensions
+    if images_per_slide == 2:
+        cols, rows = 2, 1
+    elif images_per_slide == 4:
+        cols, rows = 2, 2
+    elif images_per_slide == 6:
+        cols, rows = 3, 2
+    else:
+        cols, rows = 1, 1
+    
+    img_width = (page_width / cols) * 0.8
+    img_height = img_width * 0.75  # 4:3 aspect ratio
+    
+    slide_num = 1
+    for i in range(0, len(images), images_per_slide):
+        slide_images = images[i:i + images_per_slide]
+        
+        story.append(Paragraph(f"Slide {slide_num}", heading_style))
+        
+        # Create grid of images
+        table_data = []
+        for row in range(rows):
+            row_data = []
+            for col in range(cols):
+                idx = row * cols + col
+                if idx < len(slide_images):
+                    try:
+                        img_obj = RLImage(slide_images[idx], width=img_width, height=img_height)
+                        row_data.append(img_obj)
+                    except:
+                        row_data.append("")
+                else:
+                    row_data.append("")
+            table_data.append(row_data)
+        
+        if table_data:
+            table = Table(table_data)
+            table.setStyle(TableStyle([
+                ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+                ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+                ('LEFTPADDING', (0, 0), (-1, -1), 5),
+                ('RIGHTPADDING', (0, 0), (-1, -1), 5),
+                ('TOPPADDING', (0, 0), (-1, -1), 5),
+                ('BOTTOMPADDING', (0, 0), (-1, -1), 5),
+            ]))
+            story.append(table)
+        
+        story.append(Spacer(1, 0.3*inch))
+        slide_num += 1
+        
+        if i + images_per_slide < len(images):
+            story.append(PageBreak())
+    
+    return story
+
+def create_timeline_layout(images, heading_style, styles, pagesize):
+    """Timeline template - chronological layout"""
+    story = []
+    from reportlab.platypus import PageBreak
+    
+    for i, image_path in enumerate(images, 1):
+        try:
+            # Add timeline marker
+            timeline_style = ParagraphStyle(
+                'Timeline',
+                parent=styles['Normal'],
+                fontSize=12,
+                textColor='blue',
+                leftIndent=20
+            )
+            story.append(Paragraph(f"Step {i}", timeline_style))
+            
+            with Image.open(image_path) as img:
+                img_width, img_height = img.size
+                aspect_ratio = img_width / img_height
+                
+                width = 5 * inch
+                height = width / aspect_ratio
+                if height > 3 * inch:
+                    height = 3 * inch
+                    width = height * aspect_ratio
+            
+            img_obj = RLImage(image_path, width=width, height=height)
+            story.append(img_obj)
+            story.append(Spacer(1, 0.5*inch))
+            
+            # Add connector line (except for last image)
+            if i < len(images):
+                story.append(Paragraph("↓", styles['Normal']))
+                story.append(Spacer(1, 0.2*inch))
+                
+        except Exception as e:
+            logging.error(f"Error adding image {image_path}: {str(e)}")
+            story.append(Paragraph(f"Error loading image {i}", styles['Normal']))
+    
+    return story
+
+def create_comparison_layout(images, heading_style, styles, pagesize):
+    """Comparison template - side-by-side layout"""
+    story = []
+    from reportlab.platypus import PageBreak, Table, TableStyle
+    
+    # Process images in pairs
+    for i in range(0, len(images), 2):
+        slide_num = (i // 2) + 1
+        story.append(Paragraph(f"Comparison {slide_num}", heading_style))
+        
+        img1_path = images[i]
+        img2_path = images[i + 1] if i + 1 < len(images) else None
+        
+        try:
+            img_width = 3 * inch
+            img_height = 2.5 * inch
+            
+            img1_obj = RLImage(img1_path, width=img_width, height=img_height)
+            
+            if img2_path:
+                img2_obj = RLImage(img2_path, width=img_width, height=img_height)
+                table_data = [[img1_obj, img2_obj]]
+                table = Table(table_data, colWidths=[img_width + 0.5*inch, img_width + 0.5*inch])
+            else:
+                table_data = [[img1_obj, ""]]
+                table = Table(table_data, colWidths=[img_width + 0.5*inch, img_width + 0.5*inch])
+            
+            table.setStyle(TableStyle([
+                ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+                ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+                ('LEFTPADDING', (0, 0), (-1, -1), 10),
+                ('RIGHTPADDING', (0, 0), (-1, -1), 10),
+            ]))
+            
+            story.append(table)
+            story.append(Spacer(1, 0.3*inch))
+            
+            if i + 2 < len(images):
+                story.append(PageBreak())
+                
+        except Exception as e:
+            logging.error(f"Error creating comparison layout: {str(e)}")
+            story.append(Paragraph(f"Error loading comparison {slide_num}", styles['Normal']))
+    
+    return story
+
+def create_pdf(images, case_title, notes, output_path, template='classic', orientation='portrait', images_per_slide=1):
     """Create PDF slide deck from images and text"""
     try:
-        doc = SimpleDocTemplate(output_path, pagesize=A4, 
+        # Set page size based on orientation
+        pagesize = A4 if orientation == 'portrait' else (A4[1], A4[0])
+        
+        doc = SimpleDocTemplate(output_path, pagesize=pagesize, 
                               topMargin=0.5*inch, bottomMargin=0.5*inch,
                               leftMargin=0.5*inch, rightMargin=0.5*inch)
         
@@ -97,45 +332,19 @@ def create_pdf(images, case_title, notes, output_path):
         from reportlab.platypus import PageBreak
         story.append(PageBreak())
         
-        # Add images
-        for i, image_path in enumerate(images, 1):
-            try:
-                # Add image title
-                story.append(Paragraph(f"Slide {i}", heading_style))
-                
-                # Calculate image dimensions for PDF
-                with Image.open(image_path) as img:
-                    img_width, img_height = img.size
-                    # Scale to fit page width (max 6 inches)
-                    max_width = 6 * inch
-                    max_height = 4 * inch
-                    
-                    aspect_ratio = img_width / img_height
-                    if img_width > img_height:
-                        width = min(max_width, 6 * inch)
-                        height = width / aspect_ratio
-                        if height > max_height:
-                            height = max_height
-                            width = height * aspect_ratio
-                    else:
-                        height = min(max_height, 4 * inch)
-                        width = height * aspect_ratio
-                        if width > max_width:
-                            width = max_width
-                            height = width / aspect_ratio
-                
-                # Add image to PDF directly without optimization
-                img_obj = RLImage(image_path, width=width, height=height)
-                story.append(img_obj)
-                story.append(Spacer(1, 0.3*inch))
-                        
-                # Add page break between images (except for last image)
-                if i < len(images):
-                    story.append(PageBreak())
-                    
-            except Exception as e:
-                logging.error(f"Error adding image {image_path} to PDF: {str(e)}")
-                story.append(Paragraph(f"Error loading image {i}", styles['Normal']))
+        # Add images based on template
+        if template == 'classic':
+            story.extend(create_classic_layout(images, heading_style, styles, pagesize))
+        elif template == 'modern':
+            story.extend(create_modern_layout(images, heading_style, styles, pagesize, notes))
+        elif template == 'grid':
+            story.extend(create_grid_layout(images, heading_style, styles, pagesize, images_per_slide))
+        elif template == 'timeline':
+            story.extend(create_timeline_layout(images, heading_style, styles, pagesize))
+        elif template == 'comparison':
+            story.extend(create_comparison_layout(images, heading_style, styles, pagesize))
+        else:
+            story.extend(create_classic_layout(images, heading_style, styles, pagesize))
         
         # Build PDF
         doc.build(story)
@@ -145,6 +354,238 @@ def create_pdf(images, case_title, notes, output_path):
         logging.error(f"Error creating PDF: {str(e)}")
         return False
 
+def create_classic_layout(images, heading_style, styles, pagesize):
+    """Classic template - one image per slide"""
+    story = []
+    from reportlab.platypus import PageBreak
+    
+    page_width = pagesize[0] - 1*inch
+    page_height = pagesize[1] - 2*inch
+    
+    for i, image_path in enumerate(images, 1):
+        try:
+            story.append(Paragraph(f"Slide {i}", heading_style))
+            
+            with Image.open(image_path) as img:
+                img_width, img_height = img.size
+                aspect_ratio = img_width / img_height
+                
+                if aspect_ratio > 1:  # Landscape
+                    width = min(page_width * 0.8, 6 * inch)
+                    height = width / aspect_ratio
+                else:  # Portrait
+                    height = min(page_height * 0.7, 5 * inch)
+                    width = height * aspect_ratio
+            
+            img_obj = RLImage(image_path, width=width, height=height)
+            story.append(img_obj)
+            story.append(Spacer(1, 0.3*inch))
+            
+            if i < len(images):
+                story.append(PageBreak())
+                
+        except Exception as e:
+            logging.error(f"Error adding image {image_path}: {str(e)}")
+            story.append(Paragraph(f"Error loading image {i}", styles['Normal']))
+    
+    return story
+
+def create_modern_layout(images, heading_style, styles, pagesize, notes):
+    """Modern template - image with sidebar notes"""
+    story = []
+    from reportlab.platypus import PageBreak, Table, TableStyle
+    from reportlab.lib import colors
+    
+    for i, image_path in enumerate(images, 1):
+        try:
+            story.append(Paragraph(f"Slide {i}", heading_style))
+            
+            with Image.open(image_path) as img:
+                img_width, img_height = img.size
+                aspect_ratio = img_width / img_height
+                
+                width = 4.5 * inch
+                height = width / aspect_ratio
+                if height > 3.5 * inch:
+                    height = 3.5 * inch
+                    width = height * aspect_ratio
+            
+            img_obj = RLImage(image_path, width=width, height=height)
+            
+            # Create notes content
+            note_content = notes if notes else f"Image {i} description"
+            note_para = Paragraph(note_content, styles['Normal'])
+            
+            # Create table with image and notes
+            table_data = [[img_obj, note_para]]
+            table = Table(table_data, colWidths=[width + 0.5*inch, 2*inch])
+            table.setStyle(TableStyle([
+                ('VALIGN', (0, 0), (-1, -1), 'TOP'),
+                ('LEFTPADDING', (1, 0), (1, 0), 10),
+            ]))
+            
+            story.append(table)
+            story.append(Spacer(1, 0.3*inch))
+            
+            if i < len(images):
+                story.append(PageBreak())
+                
+        except Exception as e:
+            logging.error(f"Error adding image {image_path}: {str(e)}")
+            story.append(Paragraph(f"Error loading image {i}", styles['Normal']))
+    
+    return story
+
+def create_grid_layout(images, heading_style, styles, pagesize, images_per_slide):
+    """Grid template - multiple images per slide"""
+    story = []
+    from reportlab.platypus import PageBreak, Table, TableStyle
+    
+    page_width = pagesize[0] - 1*inch
+    
+    # Calculate grid dimensions
+    if images_per_slide == 2:
+        cols, rows = 2, 1
+    elif images_per_slide == 4:
+        cols, rows = 2, 2
+    elif images_per_slide == 6:
+        cols, rows = 3, 2
+    else:
+        cols, rows = 1, 1
+    
+    img_width = (page_width / cols) * 0.8
+    img_height = img_width * 0.75  # 4:3 aspect ratio
+    
+    slide_num = 1
+    for i in range(0, len(images), images_per_slide):
+        slide_images = images[i:i + images_per_slide]
+        
+        story.append(Paragraph(f"Slide {slide_num}", heading_style))
+        
+        # Create grid of images
+        table_data = []
+        for row in range(rows):
+            row_data = []
+            for col in range(cols):
+                idx = row * cols + col
+                if idx < len(slide_images):
+                    try:
+                        img_obj = RLImage(slide_images[idx], width=img_width, height=img_height)
+                        row_data.append(img_obj)
+                    except:
+                        row_data.append("")
+                else:
+                    row_data.append("")
+            table_data.append(row_data)
+        
+        if table_data:
+            table = Table(table_data)
+            table.setStyle(TableStyle([
+                ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+                ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+                ('LEFTPADDING', (0, 0), (-1, -1), 5),
+                ('RIGHTPADDING', (0, 0), (-1, -1), 5),
+                ('TOPPADDING', (0, 0), (-1, -1), 5),
+                ('BOTTOMPADDING', (0, 0), (-1, -1), 5),
+            ]))
+            story.append(table)
+        
+        story.append(Spacer(1, 0.3*inch))
+        slide_num += 1
+        
+        if i + images_per_slide < len(images):
+            story.append(PageBreak())
+    
+    return story
+
+def create_timeline_layout(images, heading_style, styles, pagesize):
+    """Timeline template - chronological layout"""
+    story = []
+    from reportlab.platypus import PageBreak
+    
+    for i, image_path in enumerate(images, 1):
+        try:
+            # Add timeline marker
+            timeline_style = ParagraphStyle(
+                'Timeline',
+                parent=styles['Normal'],
+                fontSize=12,
+                textColor='blue',
+                leftIndent=20
+            )
+            story.append(Paragraph(f"Step {i}", timeline_style))
+            
+            with Image.open(image_path) as img:
+                img_width, img_height = img.size
+                aspect_ratio = img_width / img_height
+                
+                width = 5 * inch
+                height = width / aspect_ratio
+                if height > 3 * inch:
+                    height = 3 * inch
+                    width = height * aspect_ratio
+            
+            img_obj = RLImage(image_path, width=width, height=height)
+            story.append(img_obj)
+            story.append(Spacer(1, 0.5*inch))
+            
+            # Add connector line (except for last image)
+            if i < len(images):
+                story.append(Paragraph("↓", styles['Normal']))
+                story.append(Spacer(1, 0.2*inch))
+                
+        except Exception as e:
+            logging.error(f"Error adding image {image_path}: {str(e)}")
+            story.append(Paragraph(f"Error loading image {i}", styles['Normal']))
+    
+    return story
+
+def create_comparison_layout(images, heading_style, styles, pagesize):
+    """Comparison template - side-by-side layout"""
+    story = []
+    from reportlab.platypus import PageBreak, Table, TableStyle
+    
+    # Process images in pairs
+    for i in range(0, len(images), 2):
+        slide_num = (i // 2) + 1
+        story.append(Paragraph(f"Comparison {slide_num}", heading_style))
+        
+        img1_path = images[i]
+        img2_path = images[i + 1] if i + 1 < len(images) else None
+        
+        try:
+            img_width = 3 * inch
+            img_height = 2.5 * inch
+            
+            img1_obj = RLImage(img1_path, width=img_width, height=img_height)
+            
+            if img2_path:
+                img2_obj = RLImage(img2_path, width=img_width, height=img_height)
+                table_data = [[img1_obj, img2_obj]]
+                table = Table(table_data, colWidths=[img_width + 0.5*inch, img_width + 0.5*inch])
+            else:
+                table_data = [[img1_obj, ""]]
+                table = Table(table_data, colWidths=[img_width + 0.5*inch, img_width + 0.5*inch])
+            
+            table.setStyle(TableStyle([
+                ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+                ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+                ('LEFTPADDING', (0, 0), (-1, -1), 10),
+                ('RIGHTPADDING', (0, 0), (-1, -1), 10),
+            ]))
+            
+            story.append(table)
+            story.append(Spacer(1, 0.3*inch))
+            
+            if i + 2 < len(images):
+                story.append(PageBreak())
+                
+        except Exception as e:
+            logging.error(f"Error creating comparison layout: {str(e)}")
+            story.append(Paragraph(f"Error loading comparison {slide_num}", styles['Normal']))
+    
+    return story
+
 @app.route('/')
 def index():
     return render_template('index.html')
@@ -152,15 +593,11 @@ def index():
 @app.route('/upload', methods=['POST'])
 def upload_files():
     try:
-        # Debug logging
-        logging.debug(f"Form data received: {dict(request.form)}")
-        logging.debug(f"Files received: {list(request.files.keys())}")
-        
         case_title = request.form.get('case_title', '').strip()
         notes = request.form.get('notes', '').strip()
-        
-        logging.debug(f"Case title after processing: '{case_title}'")
-        logging.debug(f"Case title length: {len(case_title)}")
+        template = request.form.get('template', 'classic')
+        orientation = request.form.get('orientation', 'portrait')
+        images_per_slide = int(request.form.get('images_per_slide', '1'))
         
         if not case_title:
             flash('Please provide a case title.', 'error')
@@ -201,7 +638,7 @@ def upload_files():
         pdf_filename = f"slides_{uuid.uuid4()}.pdf"
         pdf_path = os.path.join(app.config['UPLOAD_FOLDER'], pdf_filename)
         
-        if create_pdf(uploaded_files, case_title, notes, pdf_path):
+        if create_pdf(uploaded_files, case_title, notes, pdf_path, template, orientation, images_per_slide):
             # Clean up uploaded image files
             for file_path in uploaded_files:
                 try:

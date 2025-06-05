@@ -62,6 +62,46 @@
                                 <div class="form-text">Optional notes that will be included in your slide deck</div>
                             </div>
 
+                            <!-- Template Selection -->
+                            <div class="mb-4">
+                                <label for="template" class="form-label fw-semibold">
+                                    <i class="bi bi-layout-wtf me-2"></i>Slide Template
+                                </label>
+                                <select class="form-select form-select-lg" id="template" name="template">
+                                    <option value="classic">Classic - One image per slide</option>
+                                    <option value="modern">Modern - Image with sidebar notes</option>
+                                    <option value="grid">Grid - Multiple images per slide</option>
+                                    <option value="timeline">Timeline - Chronological layout</option>
+                                    <option value="comparison">Comparison - Side-by-side layout</option>
+                                </select>
+                                <div class="form-text">Choose how your images will be arranged in the PDF</div>
+                            </div>
+
+                            <!-- Layout Options -->
+                            <div class="mb-4">
+                                <label class="form-label fw-semibold">
+                                    <i class="bi bi-aspect-ratio me-2"></i>Layout Options
+                                </label>
+                                <div class="row g-3">
+                                    <div class="col-sm-6">
+                                        <label for="orientation" class="form-label">Page Orientation</label>
+                                        <select class="form-select" id="orientation" name="orientation">
+                                            <option value="portrait">Portrait</option>
+                                            <option value="landscape">Landscape</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-sm-6">
+                                        <label for="images_per_slide" class="form-label">Images per Slide</label>
+                                        <select class="form-select" id="images_per_slide" name="images_per_slide">
+                                            <option value="1">1 Image</option>
+                                            <option value="2">2 Images</option>
+                                            <option value="4">4 Images</option>
+                                            <option value="6">6 Images</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+
                             <!-- File Upload -->
                             <div class="mb-4">
                                 <label for="images" class="form-label fw-semibold">
