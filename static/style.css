@@ -11,6 +11,47 @@ body {
     background: var(--bs-body-bg);
 }
 
+/* Mobile responsiveness fixes */
+.section {
+    width: 100% !important;
+    max-width: 100% !important;
+    padding: 1rem !important;
+    margin: 0 !important;
+    overflow-x: hidden !important;
+}
+
+/* Ensure content areas are visible on mobile */
+#patient-list-content,
+#case-history-content {
+    width: 100% !important;
+    display: block !important;
+    min-height: 200px !important;
+}
+
+/* Mobile navigation fixes */
+@media (max-width: 768px) {
+    .container-fluid {
+        padding-left: 0.5rem !important;
+        padding-right: 0.5rem !important;
+    }
+    
+    .section {
+        padding: 0.5rem !important;
+    }
+    
+    /* Force accordion items to display on mobile */
+    .accordion-item {
+        width: 100% !important;
+        display: block !important;
+    }
+    
+    /* Ensure card layouts work on mobile */
+    .card {
+        width: 100% !important;
+        margin-bottom: 1rem !important;
+    }
+}
+
 /* File input styling */
 .form-control[type="file"] {
     padding: 0.75rem;
