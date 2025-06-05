@@ -491,7 +491,7 @@ def create_medical_layout(images, heading_style, styles, pagesize):
     
     return story
 
-def create_pdf(images, case_title, notes, output_path, template='classic', orientation='portrait', images_per_slide=1):
+def create_pdf(images, case_title, notes, output_path, template='classic', orientation='portrait', images_per_slide=1, patient_info=None):
     """Create PDF slide deck from images and text"""
     try:
         # Filter out empty, None, or invalid image paths
@@ -519,12 +519,32 @@ def create_pdf(images, case_title, notes, output_path, template='classic', orien
         title_style = ParagraphStyle(
             'CustomTitle',
             parent=styles['Title'],
-            fontSize=18,
-            spaceAfter=6,
+            fontSize=24,
+            spaceAfter=12,
             spaceBefore=12,
             alignment=1,  # Center alignment
             textColor=colors.Color(int(0.8*255), int(0.6*255), int(0.2*255)),
             fontName='Helvetica-Bold'
+        )
+        
+        patient_style = ParagraphStyle(
+            'PatientInfo',
+            parent=styles['Normal'],
+            fontSize=20,
+            spaceAfter=8,
+            alignment=1,  # Center alignment
+            textColor=colors.Color(int(0.4*255), int(0.4*255), int(0.4*255)),
+            fontName='Helvetica-Bold'
+        )
+        
+        visit_style = ParagraphStyle(
+            'VisitInfo',
+            parent=styles['Normal'],
+            fontSize=18,
+            spaceAfter=16,
+            alignment=1,  # Center alignment
+            textColor=colors.Color(int(0.6*255), int(0.6*255), int(0.6*255)),
+            fontName='Helvetica'
         )
         
         subtitle_style = ParagraphStyle(
@@ -551,10 +571,17 @@ def create_pdf(images, case_title, notes, output_path, template='classic', orien
         
         # Title page matching the medical design
         story.append(Paragraph(case_title, title_style))
+        
+        # Add patient information if available
+        if patient_info:
+            story.append(Paragraph(f"Patient: {patient_info['name']}", patient_style))
+            story.append(Paragraph(f"MRN: {patient_info['mrn']} | Clinic: {patient_info['clinic']}", visit_style))
+            story.append(Paragraph(f"Visit Type: {patient_info['visit_type']}", visit_style))
+        
         if notes:
             # Add patient/case identifier in gray below title
             story.append(Paragraph(notes[:50] + "..." if len(notes) > 50 else notes, subtitle_style))
-        story.append(Spacer(1, 0.8*inch))
+        story.append(Spacer(1, 0.5*inch))
         
         if notes:
             story.append(Paragraph("Case Notes:", heading_style))
@@ -792,7 +819,19 @@ def upload_files():
         pdf_filename = f"slides_{uuid.uuid4()}.pdf"
         pdf_path = os.path.join(app.config['UPLOAD_FOLDER'], pdf_filename)
         
-        if create_pdf(uploaded_files, case_title, notes, pdf_path, template, orientation, images_per_slide):
+        # Get patient info for PDF if available
+        patient_info = None
+        if patient_id:
+            patient = Patient.query.get(patient_id)
+            if patient:
+                patient_info = {
+                    'name': f"{patient.first_name} {patient.last_name}",
+                    'mrn': patient.mrn,
+                    'clinic': patient.clinic,
+                    'visit_type': visit_type
+                }
+        
+        if create_pdf(uploaded_files, case_title, notes, pdf_path, template, orientation, images_per_slide, patient_info):
             # Save case to database with visit information
             case = Case(
                 title=case_title,
