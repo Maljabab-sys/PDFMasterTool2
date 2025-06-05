@@ -11,6 +11,7 @@ from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Image as RL
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.units import inch
 from reportlab.lib.utils import ImageReader
+from reportlab.lib import colors
 import tempfile
 import uuid
 from datetime import datetime
@@ -319,10 +320,23 @@ def create_comparison_layout(images, heading_style, styles, pagesize):
     return story
 
 def create_medical_layout(images, heading_style, styles, pagesize):
-    """Medical case template - professional case presentation"""
+    """Medical case template - professional case presentation matching the design"""
     story = []
-    from reportlab.platypus import PageBreak, Table, TableStyle
+    from reportlab.platypus import PageBreak, Table, TableStyle, HRFlowable
     from reportlab.lib import colors
+    from reportlab.lib.styles import ParagraphStyle
+    from reportlab.lib.enums import TA_LEFT
+    
+    # Create custom styles matching the design
+    section_style = ParagraphStyle(
+        'SectionHeader',
+        parent=styles['Normal'],
+        fontSize=11,
+        textColor=colors.Color(0.4, 0.4, 0.4),  # Gray color like in the design
+        spaceAfter=6,
+        fontName='Helvetica',
+        alignment=TA_LEFT
+    )
     
     # Split images into sections (first half = extra-oral, second half = intra-oral)
     mid_point = len(images) // 2
@@ -331,8 +345,8 @@ def create_medical_layout(images, heading_style, styles, pagesize):
     
     # Extra-oral section
     if extra_oral:
-        story.append(Paragraph("Extra-oral", heading_style))
-        story.append(Spacer(1, 0.2*inch))
+        story.append(Paragraph("Extra-oral", section_style))
+        story.append(Spacer(1, 0.15*inch))
         
         # Create grid for extra-oral images (3 images per row)
         for i in range(0, len(extra_oral), 3):
@@ -342,7 +356,7 @@ def create_medical_layout(images, heading_style, styles, pagesize):
             
             for img_path in row_images:
                 try:
-                    img_obj = RLImage(img_path, width=2*inch, height=1.8*inch)
+                    img_obj = RLImage(img_path, width=1.8*inch, height=1.6*inch)
                     img_row.append(img_obj)
                 except Exception as e:
                     logging.error(f"Error adding image {img_path}: {str(e)}")
@@ -355,58 +369,89 @@ def create_medical_layout(images, heading_style, styles, pagesize):
             table_data.append(img_row)
             
             if table_data:
-                table = Table(table_data, colWidths=[2.2*inch, 2.2*inch, 2.2*inch])
+                table = Table(table_data, colWidths=[2*inch, 2*inch, 2*inch])
                 table.setStyle(TableStyle([
                     ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
                     ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-                    ('LEFTPADDING', (0, 0), (-1, -1), 5),
-                    ('RIGHTPADDING', (0, 0), (-1, -1), 5),
-                    ('TOPPADDING', (0, 0), (-1, -1), 5),
-                    ('BOTTOMPADDING', (0, 0), (-1, -1), 5),
+                    ('LEFTPADDING', (0, 0), (-1, -1), 3),
+                    ('RIGHTPADDING', (0, 0), (-1, -1), 3),
+                    ('TOPPADDING', (0, 0), (-1, -1), 3),
+                    ('BOTTOMPADDING', (0, 0), (-1, -1), 3),
+                    ('GRID', (0, 0), (-1, -1), 0.5, colors.Color(0.9, 0.9, 0.9)),  # Light gray borders
                 ]))
                 story.append(table)
-                story.append(Spacer(1, 0.3*inch))
+                story.append(Spacer(1, 0.25*inch))
+    
+    # Add extra-oral smile image if there's an odd number
+    if len(extra_oral) % 3 == 1:
+        story.append(Spacer(1, 0.1*inch))
+        try:
+            smile_img = RLImage(extra_oral[-1], width=2*inch, height=1.2*inch)
+            smile_table = Table([[smile_img]], colWidths=[6*inch])
+            smile_table.setStyle(TableStyle([
+                ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+                ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+                ('GRID', (0, 0), (-1, -1), 0.5, colors.Color(0.9, 0.9, 0.9)),
+            ]))
+            story.append(smile_table)
+            story.append(Spacer(1, 0.3*inch))
+        except:
+            pass
     
     # Intra-oral section
     if intra_oral:
-        story.append(Paragraph("Intra oral:", heading_style))
-        story.append(Spacer(1, 0.2*inch))
+        story.append(Paragraph("Intra oral:", section_style))
+        story.append(Spacer(1, 0.15*inch))
         
-        # Create grid for intra-oral images (3 images per row, then 2 on bottom)
-        for i in range(0, len(intra_oral), 3):
-            row_images = intra_oral[i:i+3]
-            table_data = []
+        # First row: 3 images (upper arch views)
+        if len(intra_oral) >= 3:
+            first_row = intra_oral[:3]
             img_row = []
-            
-            for img_path in row_images:
+            for img_path in first_row:
                 try:
-                    img_obj = RLImage(img_path, width=2*inch, height=1.5*inch)
+                    img_obj = RLImage(img_path, width=1.8*inch, height=1.2*inch)
                     img_row.append(img_obj)
                 except Exception as e:
                     logging.error(f"Error adding image {img_path}: {str(e)}")
                     img_row.append("")
             
-            # For the last row with 2 images, center them
-            if len(img_row) == 2 and i + 3 >= len(intra_oral):
-                table_data.append(["", img_row[0], img_row[1], ""])
-                table = Table(table_data, colWidths=[1*inch, 2.2*inch, 2.2*inch, 1*inch])
-            else:
-                # Fill empty cells if needed
-                while len(img_row) < 3:
-                    img_row.append("")
-                table_data.append(img_row)
-                table = Table(table_data, colWidths=[2.2*inch, 2.2*inch, 2.2*inch])
-            
+            table = Table([img_row], colWidths=[2*inch, 2*inch, 2*inch])
             table.setStyle(TableStyle([
                 ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
                 ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-                ('LEFTPADDING', (0, 0), (-1, -1), 5),
-                ('RIGHTPADDING', (0, 0), (-1, -1), 5),
-                ('TOPPADDING', (0, 0), (-1, -1), 5),
-                ('BOTTOMPADDING', (0, 0), (-1, -1), 5),
+                ('LEFTPADDING', (0, 0), (-1, -1), 3),
+                ('RIGHTPADDING', (0, 0), (-1, -1), 3),
+                ('TOPPADDING', (0, 0), (-1, -1), 3),
+                ('BOTTOMPADDING', (0, 0), (-1, -1), 3),
+                ('GRID', (0, 0), (-1, -1), 0.5, colors.Color(0.9, 0.9, 0.9)),
             ]))
             story.append(table)
-            story.append(Spacer(1, 0.3*inch))
+            story.append(Spacer(1, 0.15*inch))
+        
+        # Second row: 2 images centered (lower arch views)
+        if len(intra_oral) >= 5:
+            second_row = intra_oral[3:5]
+            img_row = [""]  # Empty cell for centering
+            for img_path in second_row:
+                try:
+                    img_obj = RLImage(img_path, width=1.8*inch, height=1.2*inch)
+                    img_row.append(img_obj)
+                except Exception as e:
+                    logging.error(f"Error adding image {img_path}: {str(e)}")
+                    img_row.append("")
+            img_row.append("")  # Empty cell for centering
+            
+            table = Table([img_row], colWidths=[1*inch, 2*inch, 2*inch, 1*inch])
+            table.setStyle(TableStyle([
+                ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+                ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+                ('LEFTPADDING', (0, 0), (-1, -1), 3),
+                ('RIGHTPADDING', (0, 0), (-1, -1), 3),
+                ('TOPPADDING', (0, 0), (-1, -1), 3),
+                ('BOTTOMPADDING', (0, 0), (-1, -1), 3),
+                ('GRID', (1, 0), (2, 0), 0.5, colors.Color(0.9, 0.9, 0.9)),  # Only grid the image cells
+            ]))
+            story.append(table)
     
     return story
 
@@ -424,24 +469,42 @@ def create_pdf(images, case_title, notes, output_path, template='classic', orien
         title_style = ParagraphStyle(
             'CustomTitle',
             parent=styles['Title'],
-            fontSize=24,
-            spaceAfter=30,
-            alignment=1  # Center alignment
+            fontSize=18,
+            spaceAfter=6,
+            spaceBefore=12,
+            alignment=1,  # Center alignment
+            textColor=colors.Color(0.8, 0.6, 0.2),  # Golden/amber color like in the design
+            fontName='Helvetica-Bold'
+        )
+        
+        subtitle_style = ParagraphStyle(
+            'Subtitle',
+            parent=styles['Normal'],
+            fontSize=12,
+            spaceAfter=24,
+            alignment=1,  # Center alignment
+            textColor=colors.Color(0.5, 0.5, 0.5),  # Gray color
+            fontName='Helvetica'
         )
         
         heading_style = ParagraphStyle(
             'CustomHeading',
             parent=styles['Heading2'],
-            fontSize=16,
-            spaceAfter=12,
-            spaceBefore=20
+            fontSize=14,
+            spaceAfter=8,
+            spaceBefore=16,
+            textColor=colors.Color(0.3, 0.3, 0.3),  # Dark gray
+            fontName='Helvetica-Bold'
         )
         
         story = []
         
-        # Title page
+        # Title page matching the medical design
         story.append(Paragraph(case_title, title_style))
-        story.append(Spacer(1, 0.5*inch))
+        if notes:
+            # Add patient/case identifier in gray below title
+            story.append(Paragraph(notes[:50] + "..." if len(notes) > 50 else notes, subtitle_style))
+        story.append(Spacer(1, 0.8*inch))
         
         if notes:
             story.append(Paragraph("Case Notes:", heading_style))
