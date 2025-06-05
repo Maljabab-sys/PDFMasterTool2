@@ -79,6 +79,114 @@
                                 <div class="form-text">Optional notes that will be included in your slide deck</div>
                             </div>
 
+                            <!-- Visit Type Selection -->
+                            <div class="mb-4">
+                                <label for="visitType" class="form-label fw-semibold">
+                                    <i class="bi bi-calendar-check me-2"></i>Visit Type *
+                                </label>
+                                <select class="form-select form-select-lg" id="visitType" name="visit_type" required onchange="handleVisitTypeChange()">
+                                    <option value="">Select visit type...</option>
+                                    <option value="Registration">Registration (First Visit)</option>
+                                    <option value="Orthodontic Visit">Orthodontic Visit</option>
+                                    <option value="Debond">Debond</option>
+                                </select>
+                            </div>
+
+                            <!-- Registration Fields -->
+                            <div id="registrationFields" class="visit-fields mb-4" style="display: none;">
+                                <div class="card border-0 bg-light">
+                                    <div class="card-body">
+                                        <h6 class="card-title mb-3">
+                                            <i class="bi bi-person-plus me-2"></i>Patient Registration
+                                        </h6>
+                                        <div class="row">
+                                            <div class="col-md-6 mb-3">
+                                                <label for="mrn" class="form-label">MRN (File Number) *</label>
+                                                <input type="text" class="form-control" id="mrn" name="mrn" placeholder="Enter MRN...">
+                                            </div>
+                                            <div class="col-md-6 mb-3">
+                                                <label for="clinic" class="form-label">Clinic *</label>
+                                                <select class="form-select" id="clinic" name="clinic">
+                                                    <option value="">Select clinic...</option>
+                                                    <option value="KFMC">KFMC</option>
+                                                    <option value="DC">DC</option>
+                                                </select>
+                                            </div>
+                                            <div class="col-md-6 mb-3">
+                                                <label for="firstName" class="form-label">First Name *</label>
+                                                <input type="text" class="form-control" id="firstName" name="first_name" placeholder="Enter first name...">
+                                            </div>
+                                            <div class="col-md-6 mb-3">
+                                                <label for="lastName" class="form-label">Last Name *</label>
+                                                <input type="text" class="form-control" id="lastName" name="last_name" placeholder="Enter last name...">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Follow-up Visit Fields -->
+                            <div id="followupFields" class="visit-fields mb-4" style="display: none;">
+                                <div class="card border-0 bg-light">
+                                    <div class="card-body">
+                                        <h6 class="card-title mb-3">
+                                            <i class="bi bi-search me-2"></i>Patient Search
+                                        </h6>
+                                        <div class="mb-3">
+                                            <label for="mrnSearch" class="form-label">Search MRN *</label>
+                                            <div class="input-group">
+                                                <input type="text" class="form-control" id="mrnSearch" name="mrn_search" placeholder="Enter MRN to search..." onkeyup="searchPatients()">
+                                                <button class="btn btn-outline-secondary" type="button" onclick="searchPatients()">
+                                                    <i class="bi bi-search"></i>
+                                                </button>
+                                            </div>
+                                            <div id="patientResults" class="mt-2"></div>
+                                        </div>
+                                        <div id="selectedPatientInfo" class="mb-3" style="display: none;">
+                                            <div class="alert alert-success">
+                                                <strong>Selected Patient:</strong>
+                                                <span id="selectedPatientDetails"></span>
+                                            </div>
+                                            <input type="hidden" id="selectedPatientId" name="patient_id">
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="visitDescription" class="form-label">Visit Description</label>
+                                            <textarea class="form-control" id="visitDescription" name="visit_description" rows="3" maxlength="500" placeholder="Describe what happened in this visit..."></textarea>
+                                            <div class="form-text">
+                                                <span id="visitDescCount">0</span>/500 characters
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Case Information -->
+                            <div class="mb-4">
+                                <div class="card border-0 bg-light">
+                                    <div class="card-body">
+                                        <h6 class="card-title mb-3">
+                                            <i class="bi bi-file-text me-2"></i>Case Information
+                                        </h6>
+                                        <div class="row">
+                                            <div class="col-md-6 mb-3">
+                                                <label for="title" class="form-label">Case Title *</label>
+                                                <input type="text" class="form-control" id="title" name="title" required maxlength="100" placeholder="Enter case title...">
+                                                <div class="form-text">
+                                                    <span id="titleCount">0</span>/100 characters
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6 mb-3">
+                                                <label for="notes" class="form-label">Additional Notes</label>
+                                                <textarea class="form-control" id="notes" name="notes" rows="3" maxlength="500" placeholder="Add any relevant notes..."></textarea>
+                                                <div class="form-text">
+                                                    <span id="notesCount">0</span>/500 characters
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
                             <!-- Template Info -->
                             <div class="mb-4">
                                 <div class="alert alert-info border-0">

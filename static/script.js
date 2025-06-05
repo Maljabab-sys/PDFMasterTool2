@@ -241,3 +241,124 @@ document.addEventListener('DOMContentLoaded', function() {
         localStorage.removeItem('slideFormData');
     });
 });
+
+// Handle visit type change
+function handleVisitTypeChange() {
+    const visitType = document.getElementById('visitType').value;
+    const registrationFields = document.getElementById('registrationFields');
+    const followupFields = document.getElementById('followupFields');
+    
+    // Hide all fields first
+    if (registrationFields) registrationFields.style.display = 'none';
+    if (followupFields) followupFields.style.display = 'none';
+    
+    // Clear required attributes
+    clearRequiredFields();
+    
+    if (visitType === 'Registration') {
+        if (registrationFields) registrationFields.style.display = 'block';
+        setRegistrationRequired();
+    } else if (visitType === 'Orthodontic Visit' || visitType === 'Debond') {
+        if (followupFields) followupFields.style.display = 'block';
+        setFollowupRequired();
+    }
+}
+
+function clearRequiredFields() {
+    const fields = ['mrn', 'clinic', 'firstName', 'lastName', 'mrnSearch'];
+    fields.forEach(field => {
+        const element = document.getElementById(field);
+        if (element) element.removeAttribute('required');
+    });
+}
+
+function setRegistrationRequired() {
+    const fields = ['mrn', 'clinic', 'firstName', 'lastName'];
+    fields.forEach(field => {
+        const element = document.getElementById(field);
+        if (element) element.setAttribute('required', 'required');
+    });
+}
+
+function setFollowupRequired() {
+    const mrnSearch = document.getElementById('mrnSearch');
+    if (mrnSearch) mrnSearch.setAttribute('required', 'required');
+}
+
+// Search patients function
+function searchPatients() {
+    const mrnSearch = document.getElementById('mrnSearch').value.trim();
+    const resultsDiv = document.getElementById('patientResults');
+    
+    if (mrnSearch.length < 2) {
+        resultsDiv.innerHTML = '';
+        return;
+    }
+    
+    // Make AJAX request to search patients
+    fetch('/search_patients', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ mrn: mrnSearch })
+    })
+    .then(response => response.json())
+    .then(data => {
+        displaySearchResults(data.patients);
+    })
+    .catch(error => {
+        console.error('Error searching patients:', error);
+        resultsDiv.innerHTML = '<div class="alert alert-danger">Error searching patients</div>';
+    });
+}
+
+function displaySearchResults(patients) {
+    const resultsDiv = document.getElementById('patientResults');
+    
+    if (patients.length === 0) {
+        resultsDiv.innerHTML = '<div class="alert alert-warning">No patients found with that MRN</div>';
+        return;
+    }
+    
+    let html = '<div class="list-group">';
+    patients.forEach(patient => {
+        html += `
+            <button type="button" class="list-group-item list-group-item-action" 
+                    onclick="selectPatient('${patient.id}', '${patient.mrn}', '${patient.first_name}', '${patient.last_name}', '${patient.clinic}')">
+                <strong>MRN: ${patient.mrn}</strong><br>
+                ${patient.first_name} ${patient.last_name} - ${patient.clinic}
+            </button>
+        `;
+    });
+    html += '</div>';
+    
+    resultsDiv.innerHTML = html;
+}
+
+function selectPatient(id, mrn, firstName, lastName, clinic) {
+    // Hide search results
+    document.getElementById('patientResults').innerHTML = '';
+    
+    // Show selected patient info
+    document.getElementById('selectedPatientInfo').style.display = 'block';
+    document.getElementById('selectedPatientDetails').textContent = 
+        `MRN: ${mrn} - ${firstName} ${lastName} (${clinic})`;
+    document.getElementById('selectedPatientId').value = id;
+    
+    // Clear search field
+    document.getElementById('mrnSearch').value = mrn;
+}
+
+// Character count for visit description
+document.addEventListener('DOMContentLoaded', function() {
+    const visitDescInput = document.getElementById('visitDescription');
+    if (visitDescInput) {
+        visitDescInput.addEventListener('input', function() {
+            const countElement = document.getElementById('visitDescCount');
+            if (countElement) {
+                countElement.textContent = this.value.length;
+            }
+        });
+    }
+});
