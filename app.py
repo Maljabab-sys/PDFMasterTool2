@@ -360,15 +360,14 @@ def create_medical_layout(images, heading_style, styles, pagesize):
         alignment=TA_LEFT
     )
     
-    # Ensure we have exactly 8 images - first 3 are extra-oral, last 5 are intra-oral
-    if len(images) < 8:
-        logging.warning(f"Expected 8 images, got {len(images)}")
-        # Pad with empty placeholders if needed
-        while len(images) < 8:
-            images.append("")
+    # Split images into extra-oral and intra-oral sections
+    # First 3 images go to extra-oral, remaining go to intra-oral
+    extra_oral = images[:3] if len(images) >= 3 else images
+    intra_oral = images[3:] if len(images) > 3 else []
     
-    extra_oral = images[:3]  # First 3 images
-    intra_oral = images[3:8]  # Last 5 images
+    # Remove empty strings that might cause ReportLab errors
+    extra_oral = [img for img in extra_oral if img and img.strip()]
+    intra_oral = [img for img in intra_oral if img and img.strip()]
     
     # Extra-oral section: 3 images next to each other (enlarged to fit page)
     if extra_oral:

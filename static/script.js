@@ -285,10 +285,15 @@ function selectPatient(id, mrn, firstName, lastName, clinic) {
     }
     
     // Show selected patient info
-    document.getElementById('selectedPatientInfo').style.display = 'block';
-    document.getElementById('selectedPatientDetails').textContent = 
-        `MRN: ${mrn} - ${firstName} ${lastName} (${clinic})`;
-    document.getElementById('selectedPatientId').value = id;
+    const selectedPatientInfo = document.getElementById('selectedPatientInfo');
+    const selectedPatientDetails = document.getElementById('selectedPatientDetails');
+    const selectedPatientId = document.getElementById('selectedPatientId');
+    
+    if (selectedPatientInfo) selectedPatientInfo.style.display = 'block';
+    if (selectedPatientDetails) {
+        selectedPatientDetails.textContent = `MRN: ${mrn} - ${firstName} ${lastName} (${clinic})`;
+    }
+    if (selectedPatientId) selectedPatientId.value = id;
     
     // Keep search results visible but update search field
     document.getElementById('mrnSearch').value = `${firstName} ${lastName}`;
