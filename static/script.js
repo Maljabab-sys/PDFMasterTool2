@@ -125,17 +125,17 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
         
-        if (files.length > 10) {
+        if (files.length !== 8) {
             e.preventDefault();
-            showError('Please select no more than 10 images to prevent processing delays.');
+            showError('Please select exactly 8 images for the medical template.');
             return;
         }
         
         // Check file sizes
         for (let file of files) {
-            if (file.size > 8 * 1024 * 1024) { // 8MB
+            if (file.size > 5 * 1024 * 1024) { // 5MB
                 e.preventDefault();
-                showError(`${file.name} is too large. Maximum file size is 8MB.`);
+                showError(`${file.name} is too large. Maximum file size is 5MB.`);
                 return;
             }
         }

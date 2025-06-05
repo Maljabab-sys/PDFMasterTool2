@@ -29,7 +29,7 @@ app.secret_key = os.environ.get("SESSION_SECRET", "dev-secret-key-change-in-prod
 app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
 
 # Configure the database
-app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get("DATABASE_URL", "sqlite:///cases.db")
+app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///cases.db"
 app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
     "pool_recycle": 300,
     "pool_pre_ping": True,
@@ -67,14 +67,14 @@ with app.app_context():
 # Configuration
 UPLOAD_FOLDER = 'uploads'
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'webp', 'gif'}
-MAX_FILE_SIZE = 8 * 1024 * 1024  # 8MB (reduced for faster processing)
-MAX_IMAGES = 10  # Limit number of images to prevent timeouts
+MAX_FILE_SIZE = 5 * 1024 * 1024  # 5MB per file
+MAX_IMAGES = 8  # Exactly 8 images for medical template
 
 # Ensure upload directory exists
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
-app.config['MAX_CONTENT_LENGTH'] = MAX_FILE_SIZE
+app.config['MAX_CONTENT_LENGTH'] = 50 * 1024 * 1024  # 50MB total
 
 def optimize_image_for_pdf(image_path, max_size=(800, 600), quality=70):
     """Quickly optimize image for PDF generation"""
@@ -591,9 +591,9 @@ def upload_files():
     try:
         case_title = request.form.get('case_title', '').strip()
         notes = request.form.get('notes', '').strip()
-        template = request.form.get('template', 'classic')
-        orientation = request.form.get('orientation', 'portrait')
-        images_per_slide = int(request.form.get('images_per_slide', '1'))
+        template = 'medical'  # Only medical template
+        orientation = 'portrait'  # Fixed to portrait
+        images_per_slide = 1  # Not used in medical template
         
         if not case_title:
             flash('Please provide a case title.', 'error')
@@ -610,9 +610,9 @@ def upload_files():
             flash('No files selected.', 'error')
             return redirect(url_for('index'))
         
-        # Limit number of images to prevent timeouts
-        if len(files) > MAX_IMAGES:
-            flash(f'Please select no more than {MAX_IMAGES} images to prevent processing delays.', 'error')
+        # Require exactly 8 images for medical template
+        if len(files) != MAX_IMAGES:
+            flash(f'Please upload exactly {MAX_IMAGES} images for the medical template.', 'error')
             return redirect(url_for('index'))
         
         # Validate and save uploaded files

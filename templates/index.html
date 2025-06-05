@@ -79,43 +79,30 @@
                                 <div class="form-text">Optional notes that will be included in your slide deck</div>
                             </div>
 
-                            <!-- Template Selection -->
+                            <!-- Template Info -->
                             <div class="mb-4">
-                                <label for="template" class="form-label fw-semibold">
-                                    <i class="bi bi-layout-wtf me-2"></i>Slide Template
-                                </label>
-                                <select class="form-select form-select-lg" id="template" name="template">
-                                    <option value="classic">Classic - One image per slide</option>
-                                    <option value="modern">Modern - Image with sidebar notes</option>
-                                    <option value="grid">Grid - Multiple images per slide</option>
-                                    <option value="timeline">Timeline - Chronological layout</option>
-                                    <option value="comparison">Comparison - Side-by-side layout</option>
-                                    <option value="medical">Medical Case - Professional case presentation</option>
-                                </select>
-                                <div class="form-text">Choose how your images will be arranged in the PDF</div>
+                                <div class="alert alert-info border-0">
+                                    <div class="d-flex align-items-center">
+                                        <i class="bi bi-info-circle me-2"></i>
+                                        <div>
+                                            <strong>Medical Case Template</strong><br>
+                                            Professional layout with Extra-oral and Intra oral sections
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
 
-                            <!-- Layout Options -->
+                            <!-- Upload Requirements -->
                             <div class="mb-4">
-                                <label class="form-label fw-semibold">
-                                    <i class="bi bi-aspect-ratio me-2"></i>Layout Options
-                                </label>
-                                <div class="row g-3">
-                                    <div class="col-sm-6">
-                                        <label for="orientation" class="form-label">Page Orientation</label>
-                                        <select class="form-select" id="orientation" name="orientation">
-                                            <option value="portrait">Portrait</option>
-                                            <option value="landscape">Landscape</option>
-                                        </select>
-                                    </div>
-                                    <div class="col-sm-6">
-                                        <label for="images_per_slide" class="form-label">Images per Slide</label>
-                                        <select class="form-select" id="images_per_slide" name="images_per_slide">
-                                            <option value="1">1 Image</option>
-                                            <option value="2">2 Images</option>
-                                            <option value="4">4 Images</option>
-                                            <option value="6">6 Images</option>
-                                        </select>
+                                <div class="alert alert-warning border-0">
+                                    <div class="d-flex align-items-center">
+                                        <i class="bi bi-exclamation-triangle me-2"></i>
+                                        <div>
+                                            <strong>Upload Exactly 8 Images</strong><br>
+                                            First 4 images: Extra-oral photos<br>
+                                            Last 4 images: Intra oral photos<br>
+                                            Maximum 5MB per image
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -128,7 +115,7 @@
                                 <input type="file" class="form-control form-control-lg" id="images" name="images" 
                                        multiple accept="image/*" required>
                                 <div class="form-text">
-                                    Select up to 10 images (JPEG, PNG, WebP). Max file size: 8MB per image.
+                                    Upload exactly 8 images (JPEG, PNG, WebP). Max file size: 5MB per image.
                                 </div>
                             </div>
 
