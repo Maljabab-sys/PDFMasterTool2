@@ -267,8 +267,9 @@ body {
     display: flex;
     align-items: center;
     position: relative;
-    padding: 10px;
-    margin: 10px 0;
+    padding: 8px;
+    margin: 10px auto;
+    max-width: 280px;
     background: rgba(255, 255, 255, 0.02);
     border-radius: 8px;
     border: 1px solid rgba(255, 255, 255, 0.05);
@@ -308,27 +309,30 @@ body {
 
 .timeline-content {
     text-align: center;
-    min-width: 60px;
+    min-width: 50px;
 }
 
 .timeline-title {
     font-weight: 500;
-    font-size: 9px;
-    margin-bottom: 2px;
-    letter-spacing: 0.2px;
+    font-size: 8px;
+    margin-bottom: 1px;
+    letter-spacing: 0.1px;
     text-transform: uppercase;
+    line-height: 1.1;
 }
 
 .timeline-date {
-    font-size: 7px;
+    font-size: 6px;
     color: #adb5bd;
     font-weight: 400;
+    line-height: 1;
 }
 
 .timeline-pending {
-    font-size: 7px;
+    font-size: 6px;
     color: #6c757d;
     font-style: italic;
+    line-height: 1;
 }
 
 /* Connection lines between stages */
@@ -364,30 +368,39 @@ body {
     border-color: #e0a800;
 }
 
-/* Responsive timeline */
+/* Responsive timeline - maintain horizontal layout on mobile */
 @media (max-width: 768px) {
     .treatment-timeline {
-        padding: 20px 15px;
-        margin: 20px 0;
+        max-width: 250px;
+        padding: 6px;
+        margin: 8px auto;
     }
     
     .timeline-marker {
-        width: 50px;
-        height: 50px;
-        border-radius: 16px;
-        margin-bottom: 10px;
+        width: 18px;
+        height: 18px;
+        border-radius: 3px;
+        margin-bottom: 4px;
     }
     
     .timeline-content {
-        padding: 10px 12px;
-        min-width: 100px;
+        min-width: 45px;
     }
     
     .timeline-title {
-        font-size: 12px;
+        font-size: 7px;
+        margin-bottom: 1px;
     }
     
-    .timeline-date {
-        font-size: 10px;
+    .timeline-date,
+    .timeline-pending {
+        font-size: 5px;
+    }
+    
+    .timeline-connection {
+        top: 9px;
+        left: calc(50% + 9px);
+        width: calc(100% - 18px);
+        height: 1px;
     }
 }
