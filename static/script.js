@@ -176,32 +176,36 @@ document.addEventListener('DOMContentLoaded', function() {
 // Handle visit type change
 function handleVisitTypeChange() {
     const visitType = document.getElementById('visitType').value;
+    const section1 = document.getElementById('section1');
     const registrationFields = document.getElementById('registrationFields');
     const followupFields = document.getElementById('followupFields');
     const extraOralSection = document.getElementById('extraOralSection');
     const intraOralSection = document.getElementById('intraOralSection');
     
-    // Hide all fields first
+    // Hide all sections first
+    if (section1) section1.style.display = 'none';
     if (registrationFields) registrationFields.style.display = 'none';
     if (followupFields) followupFields.style.display = 'none';
-    
-    // Hide image upload sections initially
     if (extraOralSection) extraOralSection.style.display = 'none';
     if (intraOralSection) intraOralSection.style.display = 'none';
     
     // Clear required attributes
     clearRequiredFields();
     
-    if (visitType === 'Registration') {
-        if (registrationFields) registrationFields.style.display = 'block';
-        setRegistrationRequired();
-        // Show image upload sections for Registration
-        if (extraOralSection) extraOralSection.style.display = 'block';
-        if (intraOralSection) intraOralSection.style.display = 'block';
-    } else if (visitType === 'Orthodontic Visit' || visitType === 'Debond') {
-        if (followupFields) followupFields.style.display = 'block';
-        setFollowupRequired();
-        // Show image upload sections for follow-up visits
+    if (visitType) {
+        // Show Section 1 (Patient Data)
+        if (section1) section1.style.display = 'block';
+        
+        // Show appropriate fields in Section 1
+        if (visitType === 'Registration') {
+            if (registrationFields) registrationFields.style.display = 'block';
+            setRegistrationRequired();
+        } else if (visitType === 'Orthodontic Visit' || visitType === 'Debond') {
+            if (followupFields) followupFields.style.display = 'block';
+            setFollowupRequired();
+        }
+        
+        // Show Section 2 and 3 (Image uploads)
         if (extraOralSection) extraOralSection.style.display = 'block';
         if (intraOralSection) intraOralSection.style.display = 'block';
     }
