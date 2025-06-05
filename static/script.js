@@ -125,6 +125,21 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
         
+        if (files.length > 10) {
+            e.preventDefault();
+            showError('Please select no more than 10 images to prevent processing delays.');
+            return;
+        }
+        
+        // Check file sizes
+        for (let file of files) {
+            if (file.size > 8 * 1024 * 1024) { // 8MB
+                e.preventDefault();
+                showError(`${file.name} is too large. Maximum file size is 8MB.`);
+                return;
+            }
+        }
+        
         // Show loading state
         submitBtn.classList.add('loading');
         submitText.classList.add('d-none');

@@ -23,13 +23,33 @@ app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
 # Configuration
 UPLOAD_FOLDER = 'uploads'
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'webp', 'gif'}
-MAX_FILE_SIZE = 16 * 1024 * 1024  # 16MB
+MAX_FILE_SIZE = 8 * 1024 * 1024  # 8MB (reduced for faster processing)
+MAX_IMAGES = 10  # Limit number of images to prevent timeouts
 
 # Ensure upload directory exists
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 app.config['MAX_CONTENT_LENGTH'] = MAX_FILE_SIZE
+
+def optimize_image_for_pdf(image_path, max_size=(800, 600), quality=70):
+    """Quickly optimize image for PDF generation"""
+    try:
+        with Image.open(image_path) as img:
+            # Convert to RGB if needed
+            if img.mode in ('RGBA', 'LA', 'P'):
+                img = img.convert('RGB')
+            
+            # Resize if too large
+            if img.size[0] > max_size[0] or img.size[1] > max_size[1]:
+                img.thumbnail(max_size, Image.Resampling.LANCZOS)
+            
+            # Save directly over the original file to save memory
+            img.save(image_path, 'JPEG', quality=quality, optimize=True)
+            return True
+    except Exception as e:
+        logging.error(f"Error optimizing image {image_path}: {str(e)}")
+        return False
 
 def allowed_file(filename):
     """Check if file extension is allowed"""
@@ -61,25 +81,16 @@ def create_classic_layout(images, heading_style, styles, pagesize):
     story = []
     from reportlab.platypus import PageBreak
     
-    page_width = pagesize[0] - 1*inch
-    page_height = pagesize[1] - 2*inch
+    # Standard dimensions for faster processing
+    max_width = 5 * inch
+    max_height = 4 * inch
     
     for i, image_path in enumerate(images, 1):
         try:
             story.append(Paragraph(f"Slide {i}", heading_style))
             
-            with Image.open(image_path) as img:
-                img_width, img_height = img.size
-                aspect_ratio = img_width / img_height
-                
-                if aspect_ratio > 1:  # Landscape
-                    width = min(page_width * 0.8, 6 * inch)
-                    height = width / aspect_ratio
-                else:  # Portrait
-                    height = min(page_height * 0.7, 5 * inch)
-                    width = height * aspect_ratio
-            
-            img_obj = RLImage(image_path, width=width, height=height)
+            # Use fixed dimensions for speed
+            img_obj = RLImage(image_path, width=max_width, height=max_height)
             story.append(img_obj)
             story.append(Spacer(1, 0.3*inch))
             
@@ -143,20 +154,15 @@ def create_grid_layout(images, heading_style, styles, pagesize, images_per_slide
     story = []
     from reportlab.platypus import PageBreak, Table, TableStyle
     
-    page_width = pagesize[0] - 1*inch
-    
-    # Calculate grid dimensions
+    # Fixed dimensions for speed
     if images_per_slide == 2:
-        cols, rows = 2, 1
+        img_width, img_height = 3*inch, 2*inch
     elif images_per_slide == 4:
-        cols, rows = 2, 2
+        img_width, img_height = 2.5*inch, 1.5*inch
     elif images_per_slide == 6:
-        cols, rows = 3, 2
+        img_width, img_height = 2*inch, 1.2*inch
     else:
-        cols, rows = 1, 1
-    
-    img_width = (page_width / cols) * 0.8
-    img_height = img_width * 0.75  # 4:3 aspect ratio
+        img_width, img_height = 5*inch, 3*inch
     
     slide_num = 1
     for i in range(0, len(images), images_per_slide):
@@ -164,33 +170,14 @@ def create_grid_layout(images, heading_style, styles, pagesize, images_per_slide
         
         story.append(Paragraph(f"Slide {slide_num}", heading_style))
         
-        # Create grid of images
-        table_data = []
-        for row in range(rows):
-            row_data = []
-            for col in range(cols):
-                idx = row * cols + col
-                if idx < len(slide_images):
-                    try:
-                        img_obj = RLImage(slide_images[idx], width=img_width, height=img_height)
-                        row_data.append(img_obj)
-                    except:
-                        row_data.append("")
-                else:
-                    row_data.append("")
-            table_data.append(row_data)
-        
-        if table_data:
-            table = Table(table_data)
-            table.setStyle(TableStyle([
-                ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-                ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-                ('LEFTPADDING', (0, 0), (-1, -1), 5),
-                ('RIGHTPADDING', (0, 0), (-1, -1), 5),
-                ('TOPPADDING', (0, 0), (-1, -1), 5),
-                ('BOTTOMPADDING', (0, 0), (-1, -1), 5),
-            ]))
-            story.append(table)
+        # Simple layout for speed
+        for img_path in slide_images:
+            try:
+                img_obj = RLImage(img_path, width=img_width, height=img_height)
+                story.append(img_obj)
+                story.append(Spacer(1, 0.2*inch))
+            except Exception as e:
+                logging.error(f"Error adding image {img_path}: {str(e)}")
         
         story.append(Spacer(1, 0.3*inch))
         slide_num += 1
@@ -382,6 +369,11 @@ def upload_files():
             flash('No files selected.', 'error')
             return redirect(url_for('index'))
         
+        # Limit number of images to prevent timeouts
+        if len(files) > MAX_IMAGES:
+            flash(f'Please select no more than {MAX_IMAGES} images to prevent processing delays.', 'error')
+            return redirect(url_for('index'))
+        
         # Validate and save uploaded files
         uploaded_files = []
         for file in files:
@@ -393,6 +385,8 @@ def upload_files():
                 
                 try:
                     file.save(file_path)
+                    # Optimize image immediately after upload
+                    optimize_image_for_pdf(file_path)
                     uploaded_files.append(file_path)
                 except Exception as e:
                     logging.error(f"Error saving file {filename}: {str(e)}")
