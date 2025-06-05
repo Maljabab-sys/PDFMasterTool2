@@ -553,7 +553,7 @@ function renderPatientCases(cases) {
     Object.keys(groupedCases).forEach(dateKey => {
         html += `
             <div class="mb-4">
-                <h6 class="text-light bg-secondary px-3 py-2 rounded mb-3">
+                <h6 class="text-white px-3 py-2 rounded mb-3" style="background-color: #6f42c1;">
                     <i class="bi bi-calendar2-week me-2"></i>${dateKey}
                 </h6>
                 <div class="list-group">
