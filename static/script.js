@@ -398,6 +398,9 @@ function loadCaseHistory() {
             try {
                 content.innerHTML = renderCaseHistory(data.cases);
                 console.log('Case history rendered successfully');
+                
+                // Add test content to verify visibility
+                content.innerHTML += '<div class="alert alert-success mt-3" style="background: blue !important; color: white !important; padding: 20px !important; font-size: 18px !important;">TEST: Case history loaded successfully with ' + data.cases.length + ' cases</div>';
             } catch (error) {
                 console.error('Error rendering case history:', error);
                 content.innerHTML = '<div class="alert alert-danger">Error rendering case history: ' + error.message + '</div>';
@@ -427,8 +430,15 @@ function loadPatientList() {
         .then(data => {
             console.log('Patient list data:', data);
             try {
-                content.innerHTML = renderPatientList(data.patients);
+                const renderedHtml = renderPatientList(data.patients);
+                content.innerHTML = renderedHtml;
                 console.log('Patient list rendered successfully');
+                console.log('Rendered HTML length:', renderedHtml.length);
+                console.log('Content area height:', content.offsetHeight);
+                console.log('Content area visible?', content.style.display !== 'none');
+                
+                // Add test content to verify visibility
+                content.innerHTML += '<div class="alert alert-info mt-3" style="background: red !important; color: white !important; padding: 20px !important; font-size: 18px !important;">TEST: Patient list loaded successfully with ' + data.patients.length + ' patients</div>';
             } catch (error) {
                 console.error('Error rendering patient list:', error);
                 content.innerHTML = '<div class="alert alert-danger">Error rendering patient list: ' + error.message + '</div>';
