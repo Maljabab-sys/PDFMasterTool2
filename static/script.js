@@ -154,10 +154,7 @@ document.addEventListener('DOMContentLoaded', function() {
             inputs.forEach(input => input.disabled = true);
         }, 100);
         
-        // Redirect to success page after PDF download
-        setTimeout(() => {
-            window.location.href = '/success';
-        }, 3000);
+        // Don't redirect automatically - let the server handle it
     });
     
     // Show progress indicator

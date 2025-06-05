@@ -1,8 +1,10 @@
 import os
 import logging
-from flask import Flask, render_template, request, redirect, url_for, flash, send_file, jsonify
+from flask import Flask, render_template, request, redirect, url_for, flash, send_file, jsonify, session
 from werkzeug.utils import secure_filename
 from werkzeug.middleware.proxy_fix import ProxyFix
+from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy.orm import DeclarativeBase
 from PIL import Image
 from reportlab.lib.pagesizes import letter, A4
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Image as RLImage
@@ -16,9 +18,41 @@ from datetime import datetime
 # Configure logging
 logging.basicConfig(level=logging.DEBUG)
 
+class Base(DeclarativeBase):
+    pass
+
+db = SQLAlchemy(model_class=Base)
+
 app = Flask(__name__)
 app.secret_key = os.environ.get("SESSION_SECRET", "dev-secret-key-change-in-production")
 app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
+
+# Configure the database
+app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get("DATABASE_URL", "sqlite:///cases.db")
+app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
+    "pool_recycle": 300,
+    "pool_pre_ping": True,
+}
+db.init_app(app)
+
+# Case model
+class Case(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(200), nullable=False)
+    notes = db.Column(db.Text)
+    template = db.Column(db.String(50), nullable=False)
+    orientation = db.Column(db.String(20), nullable=False)
+    images_per_slide = db.Column(db.Integer, default=1)
+    image_count = db.Column(db.Integer, default=0)
+    pdf_filename = db.Column(db.String(255))
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    def __repr__(self):
+        return f'<Case {self.title}>'
+
+# Initialize database
+with app.app_context():
+    db.create_all()
 
 # Configuration
 UPLOAD_FOLDER = 'uploads'
@@ -511,6 +545,19 @@ def upload_files():
         pdf_path = os.path.join(app.config['UPLOAD_FOLDER'], pdf_filename)
         
         if create_pdf(uploaded_files, case_title, notes, pdf_path, template, orientation, images_per_slide):
+            # Save case to database
+            case = Case(
+                title=case_title,
+                notes=notes,
+                template=template,
+                orientation=orientation,
+                images_per_slide=images_per_slide,
+                image_count=len(uploaded_files),
+                pdf_filename=pdf_filename
+            )
+            db.session.add(case)
+            db.session.commit()
+            
             # Clean up uploaded image files
             for file_path in uploaded_files:
                 try:
@@ -519,12 +566,12 @@ def upload_files():
                     pass
             
             # Store success info in session for success page
-            from flask import session
             session['success_info'] = {
                 'case_title': case_title,
                 'template': template,
                 'image_count': len(uploaded_files),
-                'timestamp': datetime.now().strftime('%B %d, %Y at %I:%M %p')
+                'timestamp': datetime.now().strftime('%B %d, %Y at %I:%M %p'),
+                'case_id': case.id
             }
             
             return send_file(pdf_path, as_attachment=True, 
