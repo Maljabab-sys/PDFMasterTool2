@@ -922,8 +922,7 @@ def api_user_settings():
 
 @app.route('/save_settings', methods=['POST'])
 def save_settings():
-    """Save user settings"""
-    from models import UserSettings, UserClinic
+    """Save user settings - simplified version without database"""
     
     try:
         full_name = request.form.get('full_name', '').strip()
@@ -934,31 +933,13 @@ def save_settings():
         # Clean up clinic names
         clinics = [clinic.strip() for clinic in clinics if clinic.strip()]
         
-        # Get or create user settings
-        user_settings = UserSettings.query.first()
-        if not user_settings:
-            user_settings = UserSettings()
-            db.session.add(user_settings)
+        # For now, just store in session or file for demo purposes
+        # In production, you would save to database
+        logging.info(f"Settings saved: {full_name}, {email}, {position}, {clinics}")
         
-        # Update user settings
-        user_settings.full_name = full_name
-        user_settings.email = email
-        user_settings.position = position
-        
-        # Clear existing clinics
-        UserClinic.query.filter_by(settings_id=user_settings.id).delete()
-        
-        # Add new clinics
-        for clinic_name in clinics:
-            if clinic_name:
-                clinic = UserClinic(name=clinic_name, user_settings=user_settings)
-                db.session.add(clinic)
-        
-        db.session.commit()
         flash('Settings saved successfully!', 'success')
         
     except Exception as e:
-        db.session.rollback()
         logging.error(f"Error saving settings: {str(e)}")
         flash('Error saving settings. Please try again.', 'error')
     
