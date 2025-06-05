@@ -74,8 +74,29 @@
                                 <div class="card-body">
                                     <div class="d-flex justify-content-between align-items-start mb-3">
                                         <h5 class="card-title fw-bold mb-0">{{ case.title }}</h5>
-                                        <span class="badge bg-secondary">{{ case.template|title }}</span>
+                                        {% if case.visit_type == 'Registration' %}
+                                            <span class="badge bg-success">{{ case.visit_type }}</span>
+                                        {% elif case.visit_type == 'Orthodontic Visit' %}
+                                            <span class="badge bg-primary">{{ case.visit_type }}</span>
+                                        {% elif case.visit_type == 'Debond' %}
+                                            <span class="badge bg-warning">{{ case.visit_type }}</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">Medical Case</span>
+                                        {% endif %}
                                     </div>
+                                    
+                                    {% if case.patient %}
+                                    <div class="mb-2">
+                                        <strong>Patient:</strong> {{ case.patient.first_name }} {{ case.patient.last_name }}<br>
+                                        <small class="text-muted">MRN: {{ case.patient.mrn }} | {{ case.patient.clinic }}</small>
+                                    </div>
+                                    {% endif %}
+                                    
+                                    {% if case.visit_description %}
+                                    <div class="mb-2">
+                                        <small><strong>Visit Notes:</strong> {{ case.visit_description[:100] }}{% if case.visit_description|length > 100 %}...{% endif %}</small>
+                                    </div>
+                                    {% endif %}
                                     
                                     <div class="mb-3">
                                         <small class="text-muted">
