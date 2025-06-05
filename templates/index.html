@@ -163,13 +163,13 @@
     <nav class="navbar navbar-expand-lg navbar-dark border-bottom">
         <div class="container">
             <a class="navbar-brand fw-bold" href="#">
-                <i class="bi bi-file-earmark-slides me-2"></i>Slide Generator
+                <i class="bi bi-file-earmark-slides me-2"></i>PatientProjectZ
             </a>
-            <div class="navbar-nav ms-auto">
-                <a class="nav-link active" href="#" onclick="showSection('new-case')">
+            <div class="navbar-nav ms-auto d-flex flex-row">
+                <a class="nav-link active me-3" href="#" onclick="showSection('new-case')">
                     <i class="bi bi-plus-circle me-1"></i>New Case
                 </a>
-                <a class="nav-link" href="#" onclick="showSection('case-history')">
+                <a class="nav-link me-3" href="#" onclick="showSection('case-history')">
                     <i class="bi bi-folder me-1"></i>Case History
                 </a>
                 <a class="nav-link" href="#" onclick="showSection('patient-list')">
@@ -568,6 +568,22 @@
                 </h1>
                 <p class="lead text-muted">Browse patients and their medical records</p>
             </div>
+            
+            <!-- Search Bar for Patient List -->
+            <div class="row justify-content-center mb-4">
+                <div class="col-lg-6">
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="bi bi-search"></i></span>
+                        <input type="text" class="form-control" id="patientSearchInput" 
+                               placeholder="Search patients by name, MRN, or clinic..." 
+                               onkeyup="filterPatients()">
+                        <button class="btn btn-outline-secondary" type="button" onclick="clearPatientSearch()">
+                            <i class="bi bi-x"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
             <div id="patient-list-content">
                 <!-- Patient list will be loaded here -->
             </div>

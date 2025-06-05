@@ -399,8 +399,14 @@ function renderCaseHistory(cases) {
     return html;
 }
 
+// Store patients data globally for search
+let allPatients = [];
+
 // Render patient list HTML
 function renderPatientList(patients) {
+    // Store patients for search functionality
+    allPatients = patients;
+    
     if (!patients.length) {
         return '<div class="text-center text-muted py-5"><i class="bi bi-people display-1 mb-3"></i><h4>No patients found</h4></div>';
     }
@@ -408,7 +414,8 @@ function renderPatientList(patients) {
     let html = '<div class="accordion" id="patientAccordion">';
     patients.forEach((patient, index) => {
         html += `
-            <div class="accordion-item">
+            <div class="accordion-item patient-item" data-patient-name="${patient.first_name.toLowerCase()} ${patient.last_name.toLowerCase()}" 
+                 data-patient-mrn="${patient.mrn.toLowerCase()}" data-patient-clinic="${patient.clinic.toLowerCase()}">
                 <h2 class="accordion-header">
                     <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" 
                             data-bs-target="#patient-${patient.id}" aria-expanded="false">
@@ -445,6 +452,49 @@ function renderPatientList(patients) {
     });
     html += '</div>';
     return html;
+}
+
+// Filter patients based on search input
+function filterPatients() {
+    const searchTerm = document.getElementById('patientSearchInput').value.toLowerCase();
+    const patientItems = document.querySelectorAll('.patient-item');
+    let visibleCount = 0;
+    
+    patientItems.forEach(item => {
+        const name = item.getAttribute('data-patient-name');
+        const mrn = item.getAttribute('data-patient-mrn');
+        const clinic = item.getAttribute('data-patient-clinic');
+        
+        if (name.includes(searchTerm) || mrn.includes(searchTerm) || clinic.includes(searchTerm)) {
+            item.style.display = 'block';
+            visibleCount++;
+        } else {
+            item.style.display = 'none';
+        }
+    });
+    
+    // Show/hide no results message
+    const accordion = document.getElementById('patientAccordion');
+    let noResultsMsg = document.getElementById('no-search-results');
+    
+    if (visibleCount === 0 && searchTerm.length > 0) {
+        if (!noResultsMsg) {
+            noResultsMsg = document.createElement('div');
+            noResultsMsg.id = 'no-search-results';
+            noResultsMsg.className = 'text-center text-muted py-4';
+            noResultsMsg.innerHTML = '<i class="bi bi-search display-4 mb-3"></i><h5>No patients found</h5><p>Try adjusting your search terms</p>';
+            accordion.parentNode.appendChild(noResultsMsg);
+        }
+        noResultsMsg.style.display = 'block';
+    } else if (noResultsMsg) {
+        noResultsMsg.style.display = 'none';
+    }
+}
+
+// Clear patient search
+function clearPatientSearch() {
+    document.getElementById('patientSearchInput').value = '';
+    filterPatients();
 }
 
 // Render patient cases
