@@ -595,7 +595,8 @@ def success():
                          case_title=success_info.get('case_title', 'Unknown'),
                          template=success_info.get('template', 'unknown'),
                          image_count=success_info.get('image_count', 0),
-                         timestamp=success_info.get('timestamp', 'Unknown'))
+                         timestamp=success_info.get('timestamp', 'Unknown'),
+                         case_id=success_info.get('case_id', 0))
 
 @app.route('/search_patients', methods=['POST'])
 def search_patients():
@@ -814,9 +815,7 @@ def upload_files():
                 'case_id': case.id
             }
             
-            return send_file(pdf_path, as_attachment=True, 
-                           download_name=f"{case_title}_slides.pdf",
-                           mimetype='application/pdf')
+            return redirect(url_for('success'))
         else:
             flash('Error generating PDF. Please try again.', 'error')
             return redirect(url_for('index'))
