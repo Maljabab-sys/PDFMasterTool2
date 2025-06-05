@@ -730,3 +730,7 @@ function updateClinicDropdown(clinics) {
         }
     });
 }
+
+function showAbout() {
+    alert('Patient Data Organizer v1.0\n\nA professional medical case presentation tool for healthcare professionals.\n\nDeveloped for organizing patient data and creating professional slide presentations.');
+}

@@ -907,31 +907,16 @@ def api_patients():
 @app.route('/api/user-settings', methods=['GET'])
 def api_user_settings():
     """API endpoint for user settings"""
-    from models import UserSettings, UserClinic
     
-    # For demo, use first user settings or create default
-    user_settings = UserSettings.query.first()
-    
-    if not user_settings:
-        return jsonify({
-            'settings': {
-                'full_name': '',
-                'email': '',
-                'position': '',
-                'clinics': ['KFMC', 'DC']
-            }
-        })
-    
-    clinics = [clinic.name for clinic in user_settings.clinics]
-    if not clinics:
-        clinics = ['KFMC', 'DC']  # Default clinics
-    
-    settings_data = {
-        'full_name': user_settings.full_name or '',
-        'email': user_settings.email or '',
-        'position': user_settings.position or '',
-        'clinics': clinics
-    }
+    # Return default settings for demo
+    return jsonify({
+        'settings': {
+            'full_name': '',
+            'email': '',
+            'position': '',
+            'clinics': ['KFMC', 'DC']
+        }
+    })
     
     return jsonify({'settings': settings_data})
 
