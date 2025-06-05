@@ -341,153 +341,134 @@ def create_comparison_layout(images, heading_style, styles, pagesize):
     
     return story
 
-def create_medical_layout(images, heading_style, styles, pagesize):
+def create_medical_layout(images, heading_style, styles, pagesize, patient_info=None):
     """Medical case template - professional case presentation matching the design"""
     story = []
     from reportlab.platypus import PageBreak, Table, TableStyle, HRFlowable
     from reportlab.lib import colors
     from reportlab.lib.styles import ParagraphStyle
-    from reportlab.lib.enums import TA_LEFT
+    from reportlab.lib.enums import TA_LEFT, TA_CENTER
+    from reportlab.lib.units import inch
+    from reportlab.platypus import Spacer, Paragraph, Image as RLImage
+    import logging
     
-    # Create custom styles matching the design
+    # Create styles matching the provided PDF format
+    procedure_title_style = ParagraphStyle(
+        'ProcedureTitle',
+        parent=styles['Normal'],
+        fontSize=16,
+        textColor=colors.black,
+        spaceAfter=12,
+        fontName='Helvetica-Bold',
+        alignment=TA_CENTER
+    )
+    
+    patient_info_style = ParagraphStyle(
+        'PatientInfo',
+        parent=styles['Normal'],
+        fontSize=12,
+        textColor=colors.black,
+        spaceAfter=20,
+        fontName='Helvetica',
+        alignment=TA_CENTER
+    )
+    
     section_style = ParagraphStyle(
         'SectionHeader',
         parent=styles['Normal'],
-        fontSize=11,
-        textColor=colors.gray,  # Gray color like in the design
+        fontSize=12,
+        textColor=colors.black,
+        spaceAfter=8,
+        fontName='Helvetica-Bold',
+        alignment=TA_LEFT
+    )
+    
+    footer_style = ParagraphStyle(
+        'Footer',
+        parent=styles['Normal'],
+        fontSize=8,
+        textColor=colors.gray,
         spaceAfter=6,
         fontName='Helvetica',
         alignment=TA_LEFT
     )
     
-    # Split images into extra-oral and intra-oral sections
-    # First 3 images go to extra-oral, remaining go to intra-oral
-    extra_oral = images[:3] if len(images) >= 3 else images
-    intra_oral = images[3:] if len(images) > 3 else []
+    # Determine procedure title based on visit type
+    procedure_title = "Orthodontic Case Presentation"
+    if patient_info and patient_info.get('visit_type'):
+        visit_type = patient_info['visit_type']
+        if visit_type == 'Registration':
+            procedure_title = "Orthodontic Registration"
+        elif visit_type == 'Orthodontic Visit':
+            procedure_title = "Orthodontic Treatment Progress"
+        elif visit_type == 'Debond':
+            procedure_title = "Orthodontic Debonding"
     
-    # Remove empty strings that might cause ReportLab errors
-    extra_oral = [img for img in extra_oral if img and img.strip()]
-    intra_oral = [img for img in intra_oral if img and img.strip()]
+    # Add procedure title
+    story.append(Paragraph(procedure_title, procedure_title_style))
     
-    # Extra-oral section: 3 images next to each other (enlarged to fit page)
-    if extra_oral:
-        story.append(Paragraph("Extra-oral", section_style))
-        story.append(Spacer(1, 0.15*inch))
+    # Add patient information if available
+    if patient_info:
+        patient_text = f"{patient_info.get('name', '')}, {patient_info.get('mrn', '')}"
+        story.append(Paragraph(patient_text, patient_info_style))
+    
+    story.append(Spacer(1, 0.3*inch))
+    
+    # Split images for different sections
+    all_images = [img for img in images if img and img.strip()]
+    
+    # Process images in groups for each page
+    images_per_page = 1  # One image per page like in the PDF
+    page_number = 1
+    
+    for i, image_path in enumerate(all_images):
+        if i > 0:
+            story.append(PageBreak())
         
-        # Single row: 3 images next to each other, larger size
-        img_row = []
-        for img_path in extra_oral:
-            if img_path:
-                try:
-                    img_obj = RLImage(img_path, width=2.2*inch, height=1.8*inch)
-                    img_row.append(img_obj)
-                except Exception as e:
-                    logging.error(f"Error adding image {img_path}: {str(e)}")
-                    img_row.append("")
-            else:
-                img_row.append("")
+        # Add page number
+        story.append(Paragraph(f"{page_number}", footer_style))
+        story.append(Spacer(1, 0.2*inch))
         
-        # Fill to 3 columns if needed
-        while len(img_row) < 3:
-            img_row.append("")
-        
-        table = Table([img_row], colWidths=[2.3*inch, 2.3*inch, 2.3*inch])
-        table.setStyle(TableStyle([
-            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-            ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-            ('LEFTPADDING', (0, 0), (-1, -1), 2),
-            ('RIGHTPADDING', (0, 0), (-1, -1), 2),
-            ('TOPPADDING', (0, 0), (-1, -1), 2),
-            ('BOTTOMPADDING', (0, 0), (-1, -1), 2),
-            ('GRID', (0, 0), (-1, -1), 0.5, colors.lightgrey),
-        ]))
-        story.append(table)
+        # Add footer with creator info
+        story.append(Paragraph("Created by: Mhanna A. Aljabab", footer_style))
         story.append(Spacer(1, 0.3*inch))
-    
-    # Intra-oral section: 5 images total - 3 on top row, 2 centered below
-    if intra_oral:
-        story.append(Paragraph("Intra oral:", section_style))
-        story.append(Spacer(1, 0.15*inch))
         
-        # First row: 3 images next to each other
-        first_row = intra_oral[:3]
-        img_row = []
-        for img_path in first_row:
-            if img_path:
-                try:
-                    img_obj = RLImage(img_path, width=2.2*inch, height=1.6*inch)
-                    img_row.append(img_obj)
-                except Exception as e:
-                    logging.error(f"Error adding image {img_path}: {str(e)}")
-                    img_row.append("")
+        # Determine section title based on image position
+        if i == 0:
+            section_title = "Extra-oral Examination"
+        elif i == 1:
+            section_title = "Intra-oral Examination"
+        else:
+            # For additional images, add procedure description
+            if patient_info and patient_info.get('visit_type') == 'Debond':
+                section_title = "Procedure:<br/>Debonded upper and lower"
+            elif patient_info and patient_info.get('visit_type') == 'Orthodontic Visit':
+                section_title = "Treatment Progress"
             else:
-                img_row.append("")
+                section_title = f"Clinical Image {i-1}"
         
-        # Fill to 3 columns if needed
-        while len(img_row) < 3:
-            img_row.append("")
+        story.append(Paragraph(section_title, section_style))
+        story.append(Spacer(1, 0.3*inch))
         
-        table = Table([img_row], colWidths=[2.3*inch, 2.3*inch, 2.3*inch])
-        table.setStyle(TableStyle([
-            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-            ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-            ('LEFTPADDING', (0, 0), (-1, -1), 2),
-            ('RIGHTPADDING', (0, 0), (-1, -1), 2),
-            ('TOPPADDING', (0, 0), (-1, -1), 2),
-            ('BOTTOMPADDING', (0, 0), (-1, -1), 2),
-            ('GRID', (0, 0), (-1, -1), 0.5, colors.lightgrey),
-        ]))
-        story.append(table)
-        story.append(Spacer(1, 0.15*inch))
+        # Add single centered image
+        try:
+            img_obj = RLImage(image_path, width=5*inch, height=4*inch)
+            # Center the image using a table
+            img_table = Table([[img_obj]], colWidths=[7*inch])
+            img_table.setStyle(TableStyle([
+                ('ALIGN', (0, 0), (0, 0), 'CENTER'),
+                ('VALIGN', (0, 0), (0, 0), 'MIDDLE'),
+            ]))
+            story.append(img_table)
+        except Exception as e:
+            logging.error(f"Error adding image {image_path}: {str(e)}")
+            story.append(Paragraph(f"Error loading image", styles['Normal']))
         
-        # Second row: 2 images centered below (4th and 5th images)
-        if len(intra_oral) > 3:
-            second_row = intra_oral[3:5]  # Take 4th and 5th images
-            if len(second_row) >= 1:
-                img_row = []
-                
-                # Add spacing columns to center the images
-                if len(second_row) == 1:
-                    # Single image centered
-                    img_row = [""]
-                    try:
-                        img_obj = RLImage(second_row[0], width=2.2*inch, height=1.6*inch)
-                        img_row.append(img_obj)
-                    except Exception as e:
-                        logging.error(f"Error adding centered image: {str(e)}")
-                        img_row.append("")
-                    img_row.append("")
-                    
-                elif len(second_row) == 2:
-                    # Two images centered
-                    img_row = [""]
-                    for img_path in second_row:
-                        try:
-                            img_obj = RLImage(img_path, width=2.2*inch, height=1.6*inch)
-                            img_row.append(img_obj)
-                        except Exception as e:
-                            logging.error(f"Error adding image: {str(e)}")
-                            img_row.append("")
-                    img_row.append("")
-                
-                # Create table with proper centering
-                if len(second_row) == 1:
-                    centered_table = Table([img_row], colWidths=[2.3*inch, 2.3*inch, 2.3*inch])
-                    centered_table.setStyle(TableStyle([
-                        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-                        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-                        ('GRID', (1, 0), (1, 0), 0.5, colors.lightgrey),
-                    ]))
-                else:
-                    # For 2 images, use 4-column layout for better centering
-                    centered_table = Table([img_row], colWidths=[1.15*inch, 2.3*inch, 2.3*inch, 1.15*inch])
-                    centered_table.setStyle(TableStyle([
-                        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-                        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-                        ('GRID', (1, 0), (2, 0), 0.5, colors.lightgrey),
-                    ]))
-                
-                story.append(centered_table)
+        page_number += 1
+    
+    # If no images, add placeholder content
+    if not all_images:
+        story.append(Paragraph("No images available", section_style))
     
     return story
 
@@ -607,7 +588,7 @@ def create_pdf(images, case_title, notes, output_path, template='classic', orien
             elif template == 'comparison':
                 story.extend(create_comparison_layout(images, heading_style, styles, pagesize))
             elif template == 'medical':
-                story.extend(create_medical_layout(images, heading_style, styles, pagesize))
+                story.extend(create_medical_layout(images, heading_style, styles, pagesize, patient_info))
             else:
                 story.extend(create_classic_layout(images, heading_style, styles, pagesize))
         else:
