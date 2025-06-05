@@ -1,6 +1,6 @@
 import os
 import logging
-from flask import Flask, render_template, request, redirect, url_for, flash, send_file, jsonify, session
+from flask import Flask, render_template, request, redirect, url_for, flash, send_file, jsonify, session, send_from_directory
 from werkzeug.utils import secure_filename
 from werkzeug.middleware.proxy_fix import ProxyFix
 from flask_sqlalchemy import SQLAlchemy
@@ -913,10 +913,20 @@ def api_user_settings():
         'full_name': '',
         'email': '',
         'position': '',
+        'gender': '',
         'clinics': ['KFMC', 'DC']
     })
     
+    # Convert profile image path to URL if exists
+    if settings.get('profile_image') and isinstance(settings['profile_image'], str):
+        settings['profile_image'] = url_for('serve_profile_image', filename=os.path.basename(settings['profile_image']))
+    
     return jsonify({'settings': settings})
+
+@app.route('/uploads/profiles/<filename>')
+def serve_profile_image(filename):
+    """Serve profile images"""
+    return send_from_directory(os.path.join('uploads', 'profiles'), filename)
 
 @app.route('/save_settings', methods=['POST'])
 def save_settings():
