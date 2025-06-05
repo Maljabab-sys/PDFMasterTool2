@@ -317,6 +317,8 @@ function selectPatient(id, mrn, firstName, lastName, clinic) {
 
 // Section navigation for single-page app
 function showSection(sectionName) {
+    console.log('Showing section:', sectionName);
+    
     // Hide all sections
     document.querySelectorAll('.section').forEach(section => {
         section.style.display = 'none';
@@ -329,18 +331,26 @@ function showSection(sectionName) {
     
     // Show selected section
     if (sectionName === 'new-case') {
-        document.getElementById('new-case-section').style.display = 'block';
+        const section = document.getElementById('new-case-section');
+        section.style.display = 'block';
+        console.log('New case section display:', section.style.display);
         document.querySelector('[onclick="showSection(\'new-case\')"]').classList.add('active');
     } else if (sectionName === 'case-history') {
-        document.getElementById('case-history-section').style.display = 'block';
+        const section = document.getElementById('case-history-section');
+        section.style.display = 'block';
+        console.log('Case history section display:', section.style.display);
         document.querySelector('[onclick="showSection(\'case-history\')"]').classList.add('active');
         loadCaseHistory();
     } else if (sectionName === 'patient-list') {
-        document.getElementById('patient-list-section').style.display = 'block';
+        const section = document.getElementById('patient-list-section');
+        section.style.display = 'block';
+        console.log('Patient list section display:', section.style.display);
         document.querySelector('[onclick="showSection(\'patient-list\')"]').classList.add('active');
         loadPatientList();
     } else if (sectionName === 'settings') {
-        document.getElementById('settings-section').style.display = 'block';
+        const section = document.getElementById('settings-section');
+        section.style.display = 'block';
+        console.log('Settings section display:', section.style.display);
         document.querySelector('[onclick="showSection(\'settings\')"]').classList.add('active');
         loadUserSettings();
     }
