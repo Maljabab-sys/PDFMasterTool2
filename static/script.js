@@ -96,11 +96,13 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Form submission handler
     form.addEventListener('submit', function(e) {
+        // FIRST: Prevent submission immediately for validation
+        e.preventDefault();
+        
         // Basic validation
         const visitType = document.getElementById('visitType').value;
         
         if (!visitType) {
-            e.preventDefault();
             showError('Please select a visit type.');
             return;
         }
@@ -156,11 +158,11 @@ document.addEventListener('DOMContentLoaded', function() {
         });
         
         if (uploadedCount !== 8) {
-            e.preventDefault();
             showError(`Please upload all 8 required images (${uploadedCount}/8 uploaded)`);
             return;
         }
         
+        // ALL VALIDATION PASSED - Allow form submission
         // Show loading state
         submitBtn.classList.add('loading');
         submitText.classList.add('d-none');
@@ -168,6 +170,10 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Show progress indicator
         showProgressIndicator();
+        
+        // Re-enable form submission by removing event listener and submitting
+        form.removeEventListener('submit', arguments.callee);
+        form.submit();
         
         // Disable form inputs after a brief delay to ensure form submission
         setTimeout(() => {

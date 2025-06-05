@@ -687,6 +687,18 @@ def upload_files():
         if not case_title:
             flash('Please provide a case title.', 'error')
             return redirect(url_for('index'))
+        
+        # STRICT VALIDATION: Ensure all 8 required images are uploaded
+        required_images = ['eofv', 'eosv', 'eomv', 'iorv', 'iofv', 'iolv', 'iouv', 'iolowerv']
+        missing_images = []
+        
+        for image_key in required_images:
+            if image_key not in request.files or not request.files[image_key].filename:
+                missing_images.append(image_key.upper())
+        
+        if missing_images:
+            flash(f'All 8 images are required. Missing: {", ".join(missing_images)}', 'error')
+            return redirect(url_for('index'))
             
         if not visit_type:
             flash('Please select a visit type.', 'error')
