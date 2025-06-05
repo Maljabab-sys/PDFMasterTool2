@@ -634,6 +634,19 @@ function loadUserSettings() {
         });
 }
 
+// Add form submission handler for settings
+document.addEventListener('DOMContentLoaded', function() {
+    const settingsForm = document.getElementById('settingsForm');
+    if (settingsForm) {
+        settingsForm.addEventListener('submit', function(e) {
+            // Allow form to submit normally, but reload settings after redirect
+            setTimeout(() => {
+                loadUserSettings();
+            }, 100);
+        });
+    }
+});
+
 function loadUserClinics(clinics) {
     const container = document.getElementById('clinicsContainer');
     container.innerHTML = '';
@@ -713,16 +726,12 @@ function updateClinicDropdown(clinics) {
     const clinicSelect = document.getElementById('clinic');
     if (!clinicSelect) return;
     
-    // Clear existing options except default ones
-    clinicSelect.innerHTML = `
-        <option value="">Select clinic...</option>
-        <option value="KFMC">KFMC</option>
-        <option value="DC">DC</option>
-    `;
+    // Start with empty select
+    clinicSelect.innerHTML = '<option value="">Select clinic...</option>';
     
-    // Add user's custom clinics
+    // Add all user's clinics (including any custom ones)
     clinics.forEach(clinic => {
-        if (clinic && clinic !== 'KFMC' && clinic !== 'DC') {
+        if (clinic) {
             const option = document.createElement('option');
             option.value = clinic;
             option.textContent = clinic;

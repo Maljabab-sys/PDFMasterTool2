@@ -908,21 +908,19 @@ def api_patients():
 def api_user_settings():
     """API endpoint for user settings"""
     
-    # Return default settings for demo
-    return jsonify({
-        'settings': {
-            'full_name': '',
-            'email': '',
-            'position': '',
-            'clinics': ['KFMC', 'DC']
-        }
+    # For demo, use session to store settings
+    settings = session.get('user_settings', {
+        'full_name': '',
+        'email': '',
+        'position': '',
+        'clinics': ['KFMC', 'DC']
     })
     
-    return jsonify({'settings': settings_data})
+    return jsonify({'settings': settings})
 
 @app.route('/save_settings', methods=['POST'])
 def save_settings():
-    """Save user settings - simplified version without database"""
+    """Save user settings using session storage"""
     
     try:
         full_name = request.form.get('full_name', '').strip()
@@ -930,13 +928,20 @@ def save_settings():
         position = request.form.get('position', '').strip()
         clinics = request.form.getlist('clinics[]')
         
-        # Clean up clinic names
+        # Clean up clinic names and ensure we have at least default clinics
         clinics = [clinic.strip() for clinic in clinics if clinic.strip()]
+        if not clinics:
+            clinics = ['KFMC', 'DC']
         
-        # For now, just store in session or file for demo purposes
-        # In production, you would save to database
+        # Store in session
+        session['user_settings'] = {
+            'full_name': full_name,
+            'email': email,
+            'position': position,
+            'clinics': clinics
+        }
+        
         logging.info(f"Settings saved: {full_name}, {email}, {position}, {clinics}")
-        
         flash('Settings saved successfully!', 'success')
         
     except Exception as e:
