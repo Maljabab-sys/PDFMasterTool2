@@ -370,31 +370,51 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // Load case history via AJAX
 function loadCaseHistory() {
+    console.log('Loading case history...');
     const content = document.getElementById('case-history-content');
+    if (!content) {
+        console.error('case-history-content element not found');
+        return;
+    }
     content.innerHTML = '<div class="text-center"><div class="spinner-border" role="status"></div></div>';
     
     fetch('/api/cases')
-        .then(response => response.json())
+        .then(response => {
+            console.log('Case history response:', response);
+            return response.json();
+        })
         .then(data => {
+            console.log('Case history data:', data);
             content.innerHTML = renderCaseHistory(data.cases);
         })
         .catch(error => {
-            content.innerHTML = '<div class="alert alert-danger">Error loading case history</div>';
+            console.error('Error loading case history:', error);
+            content.innerHTML = '<div class="alert alert-danger">Error loading case history: ' + error.message + '</div>';
         });
 }
 
 // Load patient list via AJAX
 function loadPatientList() {
+    console.log('Loading patient list...');
     const content = document.getElementById('patient-list-content');
+    if (!content) {
+        console.error('patient-list-content element not found');
+        return;
+    }
     content.innerHTML = '<div class="text-center"><div class="spinner-border" role="status"></div></div>';
     
     fetch('/api/patients')
-        .then(response => response.json())
+        .then(response => {
+            console.log('Patient list response:', response);
+            return response.json();
+        })
         .then(data => {
+            console.log('Patient list data:', data);
             content.innerHTML = renderPatientList(data.patients);
         })
         .catch(error => {
-            content.innerHTML = '<div class="alert alert-danger">Error loading patient list</div>';
+            console.error('Error loading patient list:', error);
+            content.innerHTML = '<div class="alert alert-danger">Error loading patient list: ' + error.message + '</div>';
         });
 }
 
