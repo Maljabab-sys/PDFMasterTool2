@@ -276,194 +276,398 @@
             {% endif %}
         {% endwith %}
 
-        <!-- Visit Type Selection -->
-        <div class="row justify-content-center mb-4">
-            <div class="col-lg-6">
+        <!-- Main Form -->
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
                 <div class="card shadow-sm">
-                    <div class="card-body p-4 text-center">
-                        <h4 class="mb-3">
-                            <i class="bi bi-calendar-check me-2"></i>Select Visit Type
-                        </h4>
-                        <select class="form-select form-select-lg" id="visitType" name="visit_type" required onchange="initializeSlidePresentation()">
-                            <option value="">Choose visit type to start presentation...</option>
-                            <option value="Registration">Registration (First Visit)</option>
-                            <option value="Orthodontic Visit">Orthodontic Visit</option>
-                            <option value="Debond">Debond</option>
-                        </select>
-                    </div>
-                </div>
-            </div>
-        </div>
+                    <div class="card-body p-4">
+                        <form id="slideForm" method="POST" action="{{ url_for('upload_files') }}" enctype="multipart/form-data">
+                            <!-- Visit Type Selection -->
+                            <div class="mb-4">
+                                <label for="visitType" class="form-label fw-semibold">
+                                    <i class="bi bi-calendar-check me-2"></i>Visit Type *
+                                </label>
+                                <select class="form-select form-select-lg animated-select" id="visitType" name="visit_type" required onchange="handleVisitTypeChange()">
+                                    <option value="">Select visit type...</option>
+                                    <option value="Registration">Registration (First Visit)</option>
+                                    <option value="Orthodontic Visit">Orthodontic Visit</option>
+                                    <option value="Debond">Debond</option>
+                                </select>
+                            </div>
 
-        <!-- Slide Presentation -->
-        <div id="slidePresentation" style="display: none;">
-            <!-- Slide Indicator -->
-            <div class="slide-indicator">
-                Slide <span id="currentSlide">1</span> of 3
-            </div>
-
-            <!-- Slide Navigation -->
-            <div class="slide-navigation">
-                <button type="button" class="slide-nav-btn btn btn-secondary" id="prevSlide" onclick="previousSlide()" disabled>
-                    <i class="bi bi-arrow-left me-2"></i>Previous
-                </button>
-                <button type="button" class="slide-nav-btn btn btn-primary" id="nextSlide" onclick="nextSlide()">
-                    Next<i class="bi bi-arrow-right ms-2"></i>
-                </button>
-                <button type="button" class="slide-nav-btn btn btn-success" id="submitSlides" onclick="submitPresentation()" style="display: none;">
-                    <i class="bi bi-check-circle me-2"></i>Submit Presentation
-                </button>
-            </div>
-
-            <!-- Form for data submission -->
-            <form id="slideForm" method="POST" action="{{ url_for('upload_files') }}" enctype="multipart/form-data" style="display: none;">
-                <input type="hidden" id="hiddenVisitType" name="visit_type">
-                <input type="hidden" id="hiddenPatientId" name="patient_id">
-                <input type="hidden" id="hiddenMrn" name="mrn">
-                <input type="hidden" id="hiddenFirstName" name="first_name">
-                <input type="hidden" id="hiddenLastName" name="last_name">
-                <input type="hidden" id="hiddenClinic" name="clinic">
-                <input type="hidden" id="hiddenVisitDescription" name="visit_description">
-                <input type="hidden" name="case_title" value="Medical Case">
-                <input type="hidden" name="notes" value="">
-                <input type="hidden" name="template" value="medical">
-                <input type="hidden" name="orientation" value="landscape">
-                <input type="hidden" name="images_per_slide" value="1">
-            </form>
-
-            <!-- Slide 1: Visit Type and Patient Information -->
-            <div class="slide-container active" id="slide1">
-                <div class="slide-header">
-                    <h1 class="slide-title" id="slideTitle">Orthodontic Case Presentation</h1>
-                </div>
-                <div class="slide-content">
-                    <div class="patient-search-section">
-                        <div id="registrationSection" style="display: none;">
-                            <h2 class="mb-4">Patient Registration</h2>
-                            <div class="row g-3 mb-4">
-                                <div class="col-md-6">
-                                    <input type="text" class="form-control form-control-lg" id="slideFirstName" placeholder="First Name" required>
-                                </div>
-                                <div class="col-md-6">
-                                    <input type="text" class="form-control form-control-lg" id="slideLastName" placeholder="Last Name" required>
-                                </div>
-                                <div class="col-md-6">
-                                    <input type="text" class="form-control form-control-lg" id="slideMrn" placeholder="MRN (File Number)" required>
-                                </div>
-                                <div class="col-md-6">
-                                    <select class="form-select form-select-lg" id="slideClinic" required>
-                                        <option value="">Select Clinic</option>
-                                        <option value="KFMC">KFMC</option>
-                                        <option value="DC">DC</option>
-                                    </select>
+                            <!-- Registration Fields -->
+                            <div id="registrationFields" class="visit-fields mb-4" style="display: none;">
+                                <div class="card border-0 bg-dark">
+                                    <div class="card-body">
+                                        <h6 class="card-title mb-3 text-light">
+                                            <i class="bi bi-person-plus me-2"></i>Patient Registration
+                                        </h6>
+                                        <div class="row">
+                                            <div class="col-md-6 mb-3">
+                                                <label for="mrn" class="form-label">MRN (File Number) *</label>
+                                                <input type="text" class="form-control" id="mrn" name="mrn" placeholder="Enter MRN...">
+                                            </div>
+                                            <div class="col-md-6 mb-3">
+                                                <label for="clinic" class="form-label">Clinic *</label>
+                                                <select class="form-select" id="clinic" name="clinic">
+                                                    <option value="">Select clinic...</option>
+                                                    <option value="KFMC">KFMC</option>
+                                                    <option value="DC">DC</option>
+                                                </select>
+                                            </div>
+                                            <div class="col-md-6 mb-3">
+                                                <label for="firstName" class="form-label">First Name *</label>
+                                                <input type="text" class="form-control" id="firstName" name="first_name" placeholder="Enter first name...">
+                                            </div>
+                                            <div class="col-md-6 mb-3">
+                                                <label for="lastName" class="form-label">Last Name *</label>
+                                                <input type="text" class="form-control" id="lastName" name="last_name" placeholder="Enter last name...">
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
-                        
-                        <div id="searchSection" style="display: none;">
-                            <h2 class="mb-4">Search Patient</h2>
-                            <input type="text" class="patient-search-input" id="slidePatientSearch" placeholder="Enter MRN or patient name..." onkeyup="slideSearchPatients()">
-                            <div id="slidePatientResults" class="mt-3"></div>
-                            
-                            <div class="selected-patient-info" id="slideSelectedPatientInfo">
-                                <h3>Selected Patient</h3>
-                                <div id="slideSelectedPatientDetails"></div>
-                                <p class="h4 mt-3" id="slidePatientMrn"></p>
+
+                            <!-- Follow-up Visit Fields -->
+                            <div id="followupFields" class="visit-fields mb-4" style="display: none;">
+                                <div class="card border-0 bg-dark">
+                                    <div class="card-body">
+                                        <h6 class="card-title mb-3 text-light">
+                                            <i class="bi bi-search me-2"></i>Patient Search
+                                        </h6>
+                                        <div class="mb-3">
+                                            <label for="mrnSearch" class="form-label">Search Patient *</label>
+                                            <div class="input-group">
+                                                <input type="text" class="form-control" id="mrnSearch" name="mrn_search" placeholder="Enter MRN or patient name..." onkeyup="searchPatients()">
+                                                <button class="btn btn-outline-secondary" type="button" onclick="searchPatients()">
+                                                    <i class="bi bi-search"></i>
+                                                </button>
+                                            </div>
+                                            <div class="form-text text-muted">Search by MRN, first name, last name, or full name</div>
+                                            <div id="patientResults" class="mt-2"></div>
+                                        </div>
+                                        <div id="selectedPatientInfo" class="mb-3" style="display: none;">
+                                            <div class="alert alert-success">
+                                                <strong>Selected Patient:</strong>
+                                                <span id="selectedPatientDetails"></span>
+                                            </div>
+                                            <input type="hidden" id="selectedPatientId" name="patient_id">
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="visitDescription" class="form-label">Visit Description</label>
+                                            <textarea class="form-control" id="visitDescription" name="visit_description" rows="3" maxlength="500" placeholder="Describe what happened in this visit..."></textarea>
+                                            <div class="form-text">
+                                                <span id="visitDescCount">0</span>/500 characters
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
 
-            <!-- Slide 2: Extra-oral Images -->
-            <div class="slide-container" id="slide2">
-                <div class="slide-header">
-                    <h1 class="slide-title">Extra-oral Images</h1>
-                </div>
-                <div class="slide-content">
-                    <div class="image-upload-grid">
-                        <div class="slide-upload-box" onclick="triggerFileInput('extraOral1')">
-                            <i class="bi bi-camera" style="font-size: 3rem; color: #6c757d; margin-bottom: 1rem;"></i>
-                            <p class="h5 text-muted">Upload Image 1</p>
-                            <input type="file" id="extraOral1" accept="image/*" style="display: none;" onchange="handleSlideImageUpload(this, 'extraOral1Preview')">
-                            <div id="extraOral1Preview" class="image-preview"></div>
-                        </div>
-                        
-                        <div class="slide-upload-box" onclick="triggerFileInput('extraOral2')">
-                            <i class="bi bi-camera" style="font-size: 3rem; color: #6c757d; margin-bottom: 1rem;"></i>
-                            <p class="h5 text-muted">Upload Image 2</p>
-                            <input type="file" id="extraOral2" accept="image/*" style="display: none;" onchange="handleSlideImageUpload(this, 'extraOral2Preview')">
-                            <div id="extraOral2Preview" class="image-preview"></div>
-                        </div>
-                        
-                        <div class="slide-upload-box" onclick="triggerFileInput('extraOral3')">
-                            <i class="bi bi-camera" style="font-size: 3rem; color: #6c757d; margin-bottom: 1rem;"></i>
-                            <p class="h5 text-muted">Upload Image 3</p>
-                            <input type="file" id="extraOral3" accept="image/*" style="display: none;" onchange="handleSlideImageUpload(this, 'extraOral3Preview')">
-                            <div id="extraOral3Preview" class="image-preview"></div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Slide 3: Intra-oral Images -->
-            <div class="slide-container" id="slide3">
-                <div class="slide-header">
-                    <h1 class="slide-title">Intra-oral Images</h1>
-                </div>
-                <div class="slide-content">
-                    <div class="image-upload-grid">
-                        <div class="slide-upload-box" onclick="triggerFileInput('intraOral1')">
-                            <i class="bi bi-camera" style="font-size: 3rem; color: #6c757d; margin-bottom: 1rem;"></i>
-                            <p class="h5 text-muted">Upload Image 1</p>
-                            <input type="file" id="intraOral1" accept="image/*" style="display: none;" onchange="handleSlideImageUpload(this, 'intraOral1Preview')">
-                            <div id="intraOral1Preview" class="image-preview"></div>
-                        </div>
-                        
-                        <div class="slide-upload-box" onclick="triggerFileInput('intraOral2')">
-                            <i class="bi bi-camera" style="font-size: 3rem; color: #6c757d; margin-bottom: 1rem;"></i>
-                            <p class="h5 text-muted">Upload Image 2</p>
-                            <input type="file" id="intraOral2" accept="image/*" style="display: none;" onchange="handleSlideImageUpload(this, 'intraOral2Preview')">
-                            <div id="intraOral2Preview" class="image-preview"></div>
-                        </div>
-                        
-                        <div class="slide-upload-box" onclick="triggerFileInput('intraOral3')">
-                            <i class="bi bi-camera" style="font-size: 3rem; color: #6c757d; margin-bottom: 1rem;"></i>
-                            <p class="h5 text-muted">Upload Image 3</p>
-                            <input type="file" id="intraOral3" accept="image/*" style="display: none;" onchange="handleSlideImageUpload(this, 'intraOral3Preview')">
-                            <div id="intraOral3Preview" class="image-preview"></div>
-                        </div>
-                        
-                        <div class="slide-upload-box" onclick="triggerFileInput('intraOral4')">
-                            <i class="bi bi-camera" style="font-size: 3rem; color: #6c757d; margin-bottom: 1rem;"></i>
-                            <p class="h5 text-muted">Upload Image 4</p>
-                            <input type="file" id="intraOral4" accept="image/*" style="display: none;" onchange="handleSlideImageUpload(this, 'intraOral4Preview')">
-                            <div id="intraOral4Preview" class="image-preview"></div>
-                        </div>
-                        
-                        <div class="slide-upload-box" onclick="triggerFileInput('intraOral5')">
-                            <i class="bi bi-camera" style="font-size: 3rem; color: #6c757d; margin-bottom: 1rem;"></i>
-                            <p class="h5 text-muted">Upload Image 5</p>
-                            <input type="file" id="intraOral5" accept="image/*" style="display: none;" onchange="handleSlideImageUpload(this, 'intraOral5Preview')">
-                            <div id="intraOral5Preview" class="image-preview"></div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Default Message (shown when no visit type selected) -->
-        <div id="defaultMessage">
-            <div class="row justify-content-center">
-                <div class="col-lg-8">
-                    <div class="card shadow-sm">
-                        <div class="card-body p-4">
-                            <div class="text-center py-5">
-                                <i class="bi bi-arrow-up text-muted" style="font-size: 3rem;"></i>
-                                <h4 class="text-muted mt-3">Select a visit type above to start the presentation</h4>
-                                <p class="text-muted">Choose from Registration, Orthodontic Visit, or Debond to begin creating your case presentation.</p>
+                            <!-- Case Information -->
+                            <div class="mb-4">
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label for="caseTitle" class="form-label fw-semibold">
+                                            <i class="bi bi-tag me-2"></i>Case Title *
+                                        </label>
+                                        <input type="text" class="form-control animated-input" id="caseTitle" name="case_title" 
+                                               placeholder="Enter case title..." required maxlength="200">
+                                        <div class="form-text">
+                                            <span id="titleCount">0</span>/200 characters
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label for="template" class="form-label fw-semibold">
+                                            <i class="bi bi-layout-text-window me-2"></i>Template *
+                                        </label>
+                                        <select class="form-select animated-select" id="template" name="template" required>
+                                            <option value="">Choose template...</option>
+                                            <option value="classic">Classic</option>
+                                            <option value="modern">Modern</option>
+                                            <option value="grid">Grid</option>
+                                            <option value="timeline">Timeline</option>
+                                            <option value="comparison">Comparison</option>
+                                            <option value="medical">Medical</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label for="orientation" class="form-label fw-semibold">
+                                            <i class="bi bi-phone-landscape me-2"></i>Orientation
+                                        </label>
+                                        <select class="form-select animated-select" id="orientation" name="orientation">
+                                            <option value="portrait">Portrait</option>
+                                            <option value="landscape">Landscape</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label for="imagesPerSlide" class="form-label fw-semibold">
+                                            <i class="bi bi-grid me-2"></i>Images per Slide
+                                        </label>
+                                        <select class="form-select animated-select" id="imagesPerSlide" name="images_per_slide">
+                                            <option value="1">1 image</option>
+                                            <option value="2">2 images</option>
+                                            <option value="3">3 images</option>
+                                            <option value="4">4 images</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="notes" class="form-label fw-semibold">
+                                        <i class="bi bi-journal-text me-2"></i>Notes (Optional)
+                                    </label>
+                                    <textarea class="form-control animated-input" id="notes" name="notes" rows="4" 
+                                              placeholder="Add any additional notes or comments..." maxlength="1000"></textarea>
+                                    <div class="form-text">
+                                        <span id="notesCount">0</span>/1000 characters
+                                    </div>
+                                </div>
                             </div>
-                        </div>
+
+                            <!-- Extra-oral Images Section -->
+                            <div class="mb-5">
+                                <h5 class="fw-bold mb-3 text-primary">
+                                    <i class="bi bi-person-square me-2"></i>Extra-oral Images
+                                </h5>
+                                <div class="row g-3 justify-content-center">
+                                    <div class="col-lg-4 col-md-4 col-sm-4">
+                                        <div class="upload-box">
+                                            <label for="eofv" class="form-label fw-semibold d-flex align-items-center">
+                                                EOFV 
+                                                <i class="bi bi-info-circle ms-2 text-muted" 
+                                                   data-bs-toggle="tooltip" 
+                                                   data-bs-placement="top" 
+                                                   title="Extra-oral Frontal View"></i>
+                                            </label>
+                                            <div class="image-upload-container">
+                                                <input type="file" class="form-control image-input" id="eofv" name="eofv" 
+                                                       accept="image/*">
+                                                <div class="upload-placeholder">
+                                                    <i class="bi bi-camera display-6 text-muted mb-2"></i>
+                                                    <p class="text-muted mb-0">Frontal View</p>
+                                                </div>
+                                                <div class="image-preview" style="display: none;">
+                                                    <img src="" alt="Preview" class="preview-img">
+                                                    <button type="button" class="btn-remove-image">
+                                                        <i class="bi bi-x"></i>
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-lg-4 col-md-4 col-sm-4">
+                                        <div class="upload-box">
+                                            <label for="eosv" class="form-label fw-semibold d-flex align-items-center">
+                                                EOSV 
+                                                <i class="bi bi-info-circle ms-2 text-muted" 
+                                                   data-bs-toggle="tooltip" 
+                                                   data-bs-placement="top" 
+                                                   title="Extra-oral Side View"></i>
+                                            </label>
+                                            <div class="image-upload-container">
+                                                <input type="file" class="form-control image-input" id="eosv" name="eosv" 
+                                                       accept="image/*">
+                                                <div class="upload-placeholder">
+                                                    <i class="bi bi-camera display-6 text-muted mb-2"></i>
+                                                    <p class="text-muted mb-0">Side View</p>
+                                                </div>
+                                                <div class="image-preview" style="display: none;">
+                                                    <img src="" alt="Preview" class="preview-img">
+                                                    <button type="button" class="btn-remove-image">
+                                                        <i class="bi bi-x"></i>
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-lg-4 col-md-4 col-sm-4">
+                                        <div class="upload-box">
+                                            <label for="eomv" class="form-label fw-semibold d-flex align-items-center">
+                                                EOMV 
+                                                <i class="bi bi-info-circle ms-2 text-muted" 
+                                                   data-bs-toggle="tooltip" 
+                                                   data-bs-placement="top" 
+                                                   title="Extra-oral Smile View"></i>
+                                            </label>
+                                            <div class="image-upload-container">
+                                                <input type="file" class="form-control image-input" id="eomv" name="eomv" 
+                                                       accept="image/*">
+                                                <div class="upload-placeholder">
+                                                    <i class="bi bi-camera display-6 text-muted mb-2"></i>
+                                                    <p class="text-muted mb-0">Smile View</p>
+                                                </div>
+                                                <div class="image-preview" style="display: none;">
+                                                    <img src="" alt="Preview" class="preview-img">
+                                                    <button type="button" class="btn-remove-image">
+                                                        <i class="bi bi-x"></i>
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Intra-oral Images Section -->
+                            <div class="mb-5">
+                                <h5 class="fw-bold mb-3 text-success">
+                                    <i class="bi bi-person-square me-2"></i>Intra-oral Images
+                                </h5>
+                                
+                                <!-- Top row: 3 images -->
+                                <div class="row g-3 mb-3 justify-content-center">
+                                    <div class="col-lg-4 col-md-4 col-sm-4">
+                                        <div class="upload-box">
+                                            <label for="iorv" class="form-label fw-semibold d-flex align-items-center">
+                                                IORV 
+                                                <i class="bi bi-info-circle ms-2 text-muted" 
+                                                   data-bs-toggle="tooltip" 
+                                                   data-bs-placement="top" 
+                                                   title="Intra-oral Right View"></i>
+                                            </label>
+                                            <div class="image-upload-container">
+                                                <input type="file" class="form-control image-input" id="iorv" name="iorv" 
+                                                       accept="image/*">
+                                                <div class="upload-placeholder">
+                                                    <i class="bi bi-camera display-6 text-muted mb-2"></i>
+                                                    <p class="text-muted mb-0">Right View</p>
+                                                </div>
+                                                <div class="image-preview" style="display: none;">
+                                                    <img src="" alt="Preview" class="preview-img">
+                                                    <button type="button" class="btn-remove-image">
+                                                        <i class="bi bi-x"></i>
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-lg-4 col-md-4 col-sm-4">
+                                        <div class="upload-box">
+                                            <label for="iofv" class="form-label fw-semibold d-flex align-items-center">
+                                                IOFV 
+                                                <i class="bi bi-info-circle ms-2 text-muted" 
+                                                   data-bs-toggle="tooltip" 
+                                                   data-bs-placement="top" 
+                                                   title="Intra-oral Frontal View"></i>
+                                            </label>
+                                            <div class="image-upload-container">
+                                                <input type="file" class="form-control image-input" id="iofv" name="iofv" 
+                                                       accept="image/*">
+                                                <div class="upload-placeholder">
+                                                    <i class="bi bi-camera display-6 text-muted mb-2"></i>
+                                                    <p class="text-muted mb-0">Frontal View</p>
+                                                </div>
+                                                <div class="image-preview" style="display: none;">
+                                                    <img src="" alt="Preview" class="preview-img">
+                                                    <button type="button" class="btn-remove-image">
+                                                        <i class="bi bi-x"></i>
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-lg-4 col-md-4 col-sm-4">
+                                        <div class="upload-box">
+                                            <label for="iolv" class="form-label fw-semibold d-flex align-items-center">
+                                                IOLV 
+                                                <i class="bi bi-info-circle ms-2 text-muted" 
+                                                   data-bs-toggle="tooltip" 
+                                                   data-bs-placement="top" 
+                                                   title="Intra-oral Left View"></i>
+                                            </label>
+                                            <div class="image-upload-container">
+                                                <input type="file" class="form-control image-input" id="iolv" name="iolv" 
+                                                       accept="image/*">
+                                                <div class="upload-placeholder">
+                                                    <i class="bi bi-camera display-6 text-muted mb-2"></i>
+                                                    <p class="text-muted mb-0">Left View</p>
+                                                </div>
+                                                <div class="image-preview" style="display: none;">
+                                                    <img src="" alt="Preview" class="preview-img">
+                                                    <button type="button" class="btn-remove-image">
+                                                        <i class="bi bi-x"></i>
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Bottom row: 2 images centered -->
+                                <div class="row g-3 justify-content-center">
+                                    <div class="col-lg-3 col-md-4 col-sm-6">
+                                        <div class="upload-box">
+                                            <label for="iouv" class="form-label fw-semibold d-flex align-items-center">
+                                                IOUV 
+                                                <i class="bi bi-info-circle ms-2 text-muted" 
+                                                   data-bs-toggle="tooltip" 
+                                                   data-bs-placement="top" 
+                                                   title="Intra-oral Upper View"></i>
+                                            </label>
+                                            <div class="image-upload-container">
+                                                <input type="file" class="form-control image-input" id="iouv" name="iouv" 
+                                                       accept="image/*">
+                                                <div class="upload-placeholder">
+                                                    <i class="bi bi-camera display-6 text-muted mb-2"></i>
+                                                    <p class="text-muted mb-0">Upper View</p>
+                                                </div>
+                                                <div class="image-preview" style="display: none;">
+                                                    <img src="" alt="Preview" class="preview-img">
+                                                    <button type="button" class="btn-remove-image">
+                                                        <i class="bi bi-x"></i>
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-lg-3 col-md-4 col-sm-6">
+                                        <div class="upload-box">
+                                            <label for="iolowerv" class="form-label fw-semibold d-flex align-items-center">
+                                                IOLOWERV 
+                                                <i class="bi bi-info-circle ms-2 text-muted" 
+                                                   data-bs-toggle="tooltip" 
+                                                   data-bs-placement="top" 
+                                                   title="Intra-oral Lower View"></i>
+                                            </label>
+                                            <div class="image-upload-container">
+                                                <input type="file" class="form-control image-input" id="iolowerv" name="iolowerv" 
+                                                       accept="image/*">
+                                                <div class="upload-placeholder">
+                                                    <i class="bi bi-camera display-6 text-muted mb-2"></i>
+                                                    <p class="text-muted mb-0">Lower View</p>
+                                                </div>
+                                                <div class="image-preview" style="display: none;">
+                                                    <img src="" alt="Preview" class="preview-img">
+                                                    <button type="button" class="btn-remove-image">
+                                                        <i class="bi bi-x"></i>
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Submit Button -->
+                            <div class="text-center">
+                                <button type="submit" class="btn btn-primary btn-lg px-5 py-3 animated-btn" id="submitBtn">
+                                    <span id="submitText">
+                                        <i class="bi bi-cloud-upload me-2"></i>Generate PDF Presentation
+                                    </span>
+                                    <span id="loadingText" style="display: none;">
+                                        <i class="bi bi-hourglass-split me-2"></i>Processing...
+                                    </span>
+                                </button>
+                                <p class="text-muted mt-2 small">
+                                    <i class="bi bi-info-circle me-1"></i>
+                                    Maximum file size: 5MB per image
+                                </p>
+                            </div>
+                        </form>
                     </div>
                 </div>
             </div>
