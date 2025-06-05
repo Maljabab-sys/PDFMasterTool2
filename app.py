@@ -495,9 +495,19 @@ def create_medical_layout(images, heading_style, styles, pagesize):
 def create_pdf(images, case_title, notes, output_path, template='classic', orientation='portrait', images_per_slide=1):
     """Create PDF slide deck from images and text"""
     try:
-        # Handle case with no images - log warning but continue
+        # Filter out empty, None, or invalid image paths
+        valid_images = []
+        for img in images:
+            if img and isinstance(img, str) and img.strip() and os.path.exists(img):
+                valid_images.append(img)
+            elif img:
+                logging.warning(f"Invalid image path skipped: {img}")
+        
+        images = valid_images
+        
+        # Handle case with no valid images - log warning but continue
         if not images:
-            logging.warning(f"Creating PDF with no images for case: {case_title}")
+            logging.warning(f"Creating PDF with no valid images for case: {case_title}")
         
         # Set page size based on orientation
         pagesize = A4 if orientation == 'portrait' else (A4[1], A4[0])
