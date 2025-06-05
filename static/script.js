@@ -96,8 +96,6 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Form submission handler
     form.addEventListener('submit', function(e) {
-        // FIRST: Prevent submission immediately for validation
-        e.preventDefault();
         
         // Basic validation
         const visitType = document.getElementById('visitType').value;
@@ -131,38 +129,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
         
-        // Validate all 8 images are uploaded - STRICT VALIDATION
-        const requiredImages = ['eofv', 'eosv', 'eomv', 'iorv', 'iofv', 'iolv', 'iouv', 'iolowerv'];
-        const missingImages = [];
-        
-        requiredImages.forEach(imageId => {
-            const input = document.getElementById(imageId);
-            if (!input || !input.files || input.files.length === 0 || !input.files[0]) {
-                missingImages.push(imageId.toUpperCase());
-            }
-        });
-        
-        if (missingImages.length > 0) {
-            e.preventDefault();
-            showError(`All 8 images are required. Missing: ${missingImages.join(', ')}`);
-            return;
-        }
-        
-        // Double check - ensure exactly 8 images
-        let uploadedCount = 0;
-        requiredImages.forEach(imageId => {
-            const input = document.getElementById(imageId);
-            if (input && input.files && input.files.length > 0 && input.files[0]) {
-                uploadedCount++;
-            }
-        });
-        
-        if (uploadedCount !== 8) {
-            showError(`Please upload all 8 required images (${uploadedCount}/8 uploaded)`);
-            return;
-        }
-        
-        // ALL VALIDATION PASSED - Allow form submission
+        // Images are optional - no validation required
         // Show loading state
         submitBtn.classList.add('loading');
         submitText.classList.add('d-none');
@@ -170,10 +137,6 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Show progress indicator
         showProgressIndicator();
-        
-        // Re-enable form submission by removing event listener and submitting
-        form.removeEventListener('submit', arguments.callee);
-        form.submit();
         
         // Disable form inputs after a brief delay to ensure form submission
         setTimeout(() => {
