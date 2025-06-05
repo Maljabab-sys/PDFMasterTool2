@@ -300,6 +300,76 @@
             font-size: 15px;
         }
         
+        /* Profile dropdown animations */
+        .dropdown-menu {
+            border: none;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            border-radius: 12px;
+            overflow: hidden;
+            transform: translateY(-10px);
+            opacity: 0;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            pointer-events: none;
+        }
+        
+        .dropdown-menu.show {
+            transform: translateY(0);
+            opacity: 1;
+            pointer-events: auto;
+        }
+        
+        .dropdown-item {
+            padding: 12px 20px;
+            transition: all 0.2s ease;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+        }
+        
+        .dropdown-item:hover {
+            background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+            transform: translateX(5px);
+        }
+        
+        .dropdown-header {
+            background: linear-gradient(135deg, #6c757d, #495057);
+            color: white;
+            border-bottom: none;
+            padding: 15px 20px;
+            margin: 0;
+        }
+        
+        /* Profile image styling */
+        .profile-image {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+        }
+        
+        .profile-upload-area {
+            border: 2px dashed #dee2e6;
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            margin-bottom: 20px;
+        }
+        
+        .profile-upload-area:hover {
+            border-color: #007bff;
+            background: rgba(0, 123, 255, 0.05);
+        }
+        
+        .profile-preview {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            object-fit: cover;
+            margin: 0 auto 10px;
+            border: 3px solid #dee2e6;
+        }
+        
         /* Tooltip styling */
         .tooltip {
             font-size: 0.875rem;
@@ -317,9 +387,10 @@
             
             <!-- Profile Dropdown -->
             <div class="dropdown">
-                <button class="btn btn-outline-light rounded-circle" type="button" 
+                <button class="btn btn-outline-light rounded-circle p-1" type="button" 
                         id="profileDropdown" data-bs-toggle="dropdown" aria-expanded="false">
-                    <i class="bi bi-person-circle" style="font-size: 1.2rem;"></i>
+                    <img id="navProfileImage" src="" alt="Profile" class="profile-image" style="display: none;">
+                    <i id="navProfileIcon" class="bi bi-person-circle" style="font-size: 1.2rem;"></i>
                 </button>
                 <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="profileDropdown">
                     <li>
@@ -788,7 +859,22 @@
                             </h5>
                         </div>
                         <div class="card-body p-4">
-                            <form id="settingsForm" method="POST" action="{{ url_for('save_settings') }}">
+                            <form id="settingsForm" method="POST" action="{{ url_for('save_settings') }}" enctype="multipart/form-data">
+                                <!-- Profile Image Upload -->
+                                <div class="mb-4">
+                                    <label class="form-label fw-bold">Profile Picture</label>
+                                    <div class="profile-upload-area" onclick="document.getElementById('profileImageInput').click()">
+                                        <img id="profilePreview" class="profile-preview" style="display: none;">
+                                        <div id="uploadPlaceholder">
+                                            <i class="bi bi-camera display-6 text-muted mb-2"></i>
+                                            <p class="text-muted mb-0">Click to upload profile picture</p>
+                                            <small class="text-muted">JPG, PNG up to 2MB</small>
+                                        </div>
+                                    </div>
+                                    <input type="file" id="profileImageInput" name="profile_image" 
+                                           accept="image/*" style="display: none;" onchange="handleProfileImageUpload(this)">
+                                </div>
+                                
                                 <div class="row">
                                     <div class="col-md-6 mb-3">
                                         <label for="fullName" class="form-label">Full Name</label>

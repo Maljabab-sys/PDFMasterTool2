@@ -624,6 +624,21 @@ function loadUserSettings() {
                 
                 // Load clinics
                 loadUserClinics(data.settings.clinics || []);
+                
+                // Load profile image if exists
+                if (data.settings.profile_image) {
+                    const preview = document.getElementById('profilePreview');
+                    const placeholder = document.getElementById('uploadPlaceholder');
+                    
+                    if (preview && placeholder) {
+                        preview.src = data.settings.profile_image;
+                        preview.style.display = 'block';
+                        placeholder.style.display = 'none';
+                    }
+                    
+                    // Update navigation profile image
+                    updateNavProfileImage(data.settings.profile_image);
+                }
             }
             
             // Update clinic dropdown in registration form
@@ -795,4 +810,52 @@ function showSuccessPopup(message = 'Settings saved successfully!') {
         popup.classList.add('hide');
         setTimeout(() => popup.remove(), 400);
     }, 3000);
+}
+
+function handleProfileImageUpload(input) {
+    const file = input.files[0];
+    if (!file) return;
+    
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+        alert('Please select an image file.');
+        input.value = '';
+        return;
+    }
+    
+    // Validate file size (2MB)
+    if (file.size > 2 * 1024 * 1024) {
+        alert('Image size must be less than 2MB.');
+        input.value = '';
+        return;
+    }
+    
+    // Show preview
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        const preview = document.getElementById('profilePreview');
+        const placeholder = document.getElementById('uploadPlaceholder');
+        
+        preview.src = e.target.result;
+        preview.style.display = 'block';
+        placeholder.style.display = 'none';
+        
+        // Update navigation profile image
+        updateNavProfileImage(e.target.result);
+    };
+    reader.readAsDataURL(file);
+}
+
+function updateNavProfileImage(imageSrc) {
+    const navImage = document.getElementById('navProfileImage');
+    const navIcon = document.getElementById('navProfileIcon');
+    
+    if (imageSrc) {
+        navImage.src = imageSrc;
+        navImage.style.display = 'block';
+        navIcon.style.display = 'none';
+    } else {
+        navImage.style.display = 'none';
+        navIcon.style.display = 'block';
+    }
 }
