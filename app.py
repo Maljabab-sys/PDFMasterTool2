@@ -48,7 +48,8 @@ def optimize_image(image_path, max_width=800, max_height=600, quality=85):
             img.thumbnail((max_width, max_height), Image.Resampling.LANCZOS)
             
             # Save optimized image to temporary file
-            temp_file = tempfile.NamedTemporaryFile(delete=False, suffix='.jpg')
+            temp_file = tempfile.NamedTemporaryFile(delete=False, suffix='.jpg', dir=UPLOAD_FOLDER)
+            temp_file.close()  # Close the file handle so other processes can access it
             img.save(temp_file.name, 'JPEG', quality=quality, optimize=True)
             return temp_file.name
     except Exception as e:
