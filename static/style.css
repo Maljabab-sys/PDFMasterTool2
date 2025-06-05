@@ -230,3 +230,34 @@ body {
         transform: translateY(0);
     }
 }
+
+/* Patient Accordion Styling */
+.accordion-item {
+    background-color: var(--bs-dark) !important;
+    border: 1px solid var(--border-color) !important;
+}
+
+.accordion-button {
+    background-color: var(--preview-bg) !important;
+    color: var(--bs-light) !important;
+    border: none !important;
+}
+
+.accordion-button:not(.collapsed) {
+    background-color: #6f42c1 !important;
+    color: white !important;
+}
+
+.accordion-body {
+    background-color: var(--bs-dark) !important;
+    color: var(--bs-light) !important;
+    border-top: 1px solid var(--border-color);
+}
+
+.accordion-body strong {
+    color: var(--bs-light) !important;
+}
+
+.accordion-body .text-muted {
+    color: #adb5bd !important;
+}
