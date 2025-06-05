@@ -178,10 +178,16 @@ function handleVisitTypeChange() {
     const visitType = document.getElementById('visitType').value;
     const registrationFields = document.getElementById('registrationFields');
     const followupFields = document.getElementById('followupFields');
+    const extraOralSection = document.getElementById('extraOralSection');
+    const intraOralSection = document.getElementById('intraOralSection');
     
     // Hide all fields first
     if (registrationFields) registrationFields.style.display = 'none';
     if (followupFields) followupFields.style.display = 'none';
+    
+    // Hide image upload sections initially
+    if (extraOralSection) extraOralSection.style.display = 'none';
+    if (intraOralSection) intraOralSection.style.display = 'none';
     
     // Clear required attributes
     clearRequiredFields();
@@ -189,9 +195,15 @@ function handleVisitTypeChange() {
     if (visitType === 'Registration') {
         if (registrationFields) registrationFields.style.display = 'block';
         setRegistrationRequired();
+        // Show image upload sections for Registration
+        if (extraOralSection) extraOralSection.style.display = 'block';
+        if (intraOralSection) intraOralSection.style.display = 'block';
     } else if (visitType === 'Orthodontic Visit' || visitType === 'Debond') {
         if (followupFields) followupFields.style.display = 'block';
         setFollowupRequired();
+        // Show image upload sections for follow-up visits
+        if (extraOralSection) extraOralSection.style.display = 'block';
+        if (intraOralSection) intraOralSection.style.display = 'block';
     }
 }
 
