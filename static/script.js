@@ -621,6 +621,7 @@ function loadUserSettings() {
                 document.getElementById('fullName').value = data.settings.full_name || '';
                 document.getElementById('email').value = data.settings.email || '';
                 document.getElementById('position').value = data.settings.position || '';
+                document.getElementById('gender').value = data.settings.gender || '';
                 
                 // Load clinics
                 loadUserClinics(data.settings.clinics || []);
@@ -637,7 +638,10 @@ function loadUserSettings() {
                     }
                     
                     // Update navigation profile image
-                    updateNavProfileImage(data.settings.profile_image);
+                    updateNavProfileImage(data.settings.profile_image, data.settings.gender);
+                } else {
+                    // No image, use gender-based icon
+                    updateNavProfileImage(null, data.settings.gender || '');
                 }
             }
             
@@ -846,7 +850,7 @@ function handleProfileImageUpload(input) {
     reader.readAsDataURL(file);
 }
 
-function updateNavProfileImage(imageSrc) {
+function updateNavProfileImage(imageSrc, gender = '') {
     const navImage = document.getElementById('navProfileImage');
     const navIcon = document.getElementById('navProfileIcon');
     
@@ -857,5 +861,24 @@ function updateNavProfileImage(imageSrc) {
     } else {
         navImage.style.display = 'none';
         navIcon.style.display = 'block';
+        
+        // Update icon based on gender
+        if (gender === 'male') {
+            navIcon.className = 'bi bi-person-fill-check';
+        } else if (gender === 'female') {
+            navIcon.className = 'bi bi-person-heart';
+        } else {
+            navIcon.className = 'bi bi-person-circle';
+        }
+    }
+}
+
+function updateDefaultProfileIcon() {
+    const gender = document.getElementById('gender').value;
+    const preview = document.getElementById('profilePreview');
+    
+    // Only update icon if no image is uploaded
+    if (!preview || preview.style.display === 'none') {
+        updateNavProfileImage(null, gender);
     }
 }

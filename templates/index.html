@@ -318,6 +318,24 @@
             pointer-events: auto;
         }
         
+        /* Mobile responsive dropdown */
+        @media (max-width: 768px) {
+            .dropdown-menu {
+                transform: translateY(-5px);
+                min-width: 200px;
+            }
+            
+            .dropdown-item {
+                padding: 10px 16px;
+                font-size: 14px;
+            }
+            
+            .dropdown-header {
+                padding: 12px 16px;
+                font-size: 14px;
+            }
+        }
+        
         .dropdown-item {
             padding: 12px 20px;
             transition: all 0.2s ease;
@@ -890,11 +908,21 @@
                                     </div>
                                 </div>
                                 
-                                <div class="mb-4">
-                                    <label for="position" class="form-label">Position/Title</label>
-                                    <input type="text" class="form-control" id="position" name="position" 
-                                           value="{{ user_settings.position if user_settings else '' }}" 
-                                           placeholder="e.g., Orthodontist, Dental Resident...">
+                                <div class="row">
+                                    <div class="col-md-6 mb-4">
+                                        <label for="position" class="form-label">Position/Title</label>
+                                        <input type="text" class="form-control" id="position" name="position" 
+                                               value="{{ user_settings.position if user_settings else '' }}" 
+                                               placeholder="e.g., Orthodontist, Dental Resident...">
+                                    </div>
+                                    <div class="col-md-6 mb-4">
+                                        <label for="gender" class="form-label">Gender</label>
+                                        <select class="form-select" id="gender" name="gender" onchange="updateDefaultProfileIcon()">
+                                            <option value="">Select gender...</option>
+                                            <option value="male">Male</option>
+                                            <option value="female">Female</option>
+                                        </select>
+                                    </div>
                                 </div>
 
                                 <hr class="my-4">

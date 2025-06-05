@@ -39,6 +39,8 @@ class UserSettings(db.Model):
     full_name = db.Column(db.String(100))
     email = db.Column(db.String(120))
     position = db.Column(db.String(100))
+    gender = db.Column(db.String(10))  # 'male' or 'female'
+    profile_image = db.Column(db.String(255))  # Path to uploaded profile image
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     

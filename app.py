@@ -926,35 +926,61 @@ def save_settings():
         full_name = request.form.get('full_name', '').strip()
         email = request.form.get('email', '').strip()
         position = request.form.get('position', '').strip()
+        gender = request.form.get('gender', '').strip()
         clinics = request.form.getlist('clinics[]')
+        
+        # Handle profile image upload
+        profile_image_path = None
+        if 'profile_image' in request.files:
+            file = request.files['profile_image']
+            if file and file.filename and allowed_file(file.filename):
+                # Create profiles directory if it doesn't exist
+                profiles_dir = os.path.join('uploads', 'profiles')
+                os.makedirs(profiles_dir, exist_ok=True)
+                
+                # Generate unique filename
+                filename = secure_filename(file.filename)
+                timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+                filename = f"profile_{timestamp}_{filename}"
+                filepath = os.path.join(profiles_dir, filename)
+                
+                # Save and optimize the image
+                file.save(filepath)
+                optimize_image_for_pdf(filepath, max_size=(300, 300), quality=80)
+                profile_image_path = filepath
         
         # Clean up clinic names and ensure we have at least default clinics
         clinics = [clinic.strip() for clinic in clinics if clinic.strip()]
         if not clinics:
             clinics = ['KFMC', 'DC']
         
+        # Get existing profile image if no new one uploaded
+        existing_settings = session.get('user_settings', {})
+        if not profile_image_path and existing_settings.get('profile_image'):
+            profile_image_path = existing_settings.get('profile_image')
+        
         # Store in session
-        session['user_settings'] = {
+        settings_data = {
             'full_name': full_name,
             'email': email,
             'position': position,
+            'gender': gender,
             'clinics': clinics
         }
         
-        logging.info(f"Settings saved: {full_name}, {email}, {position}, {clinics}")
+        if profile_image_path:
+            settings_data['profile_image'] = profile_image_path
+        
+        session['user_settings'] = settings_data
+        
+        logging.info(f"Settings saved: {full_name}, {email}, {position}, {gender}, {clinics}")
         
         # Return JSON response for AJAX
-        if request.headers.get('Content-Type') != 'application/x-www-form-urlencoded':
-            return jsonify({'success': True, 'message': 'Settings saved successfully!'})
+        return jsonify({'success': True, 'message': 'Settings saved successfully!'})
         
     except Exception as e:
         logging.error(f"Error saving settings: {str(e)}")
-        if request.headers.get('Content-Type') != 'application/x-www-form-urlencoded':
-            return jsonify({'success': False, 'message': 'Error saving settings. Please try again.'}), 500
-        flash('Error saving settings. Please try again.', 'error')
-    
-    # Always return JSON for AJAX requests
-    return jsonify({'success': True, 'message': 'Settings saved successfully!'})
+        return jsonify({'success': False, 'message': 'Error saving settings. Please try again.'}), 500
 
 @app.errorhandler(500)
 def server_error(e):
