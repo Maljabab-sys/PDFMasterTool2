@@ -116,10 +116,9 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
         
+        // Case title is now automatically set to "Medical Case"
         if (!caseTitle) {
-            e.preventDefault();
-            showError('Please enter a case title.');
-            return;
+            document.getElementById('title').value = 'Medical Case';
         }
         
         // Validate visit-specific fields
@@ -250,8 +249,10 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     // Save on input
-    caseTitle.addEventListener('input', saveFormData);
-    notes.addEventListener('input', saveFormData);
+    const caseTitle = document.getElementById('title');
+    const notes = document.getElementById('notes');
+    if (caseTitle) caseTitle.addEventListener('input', saveFormData);
+    if (notes) notes.addEventListener('input', saveFormData);
     
     // Load on page load
     loadFormData();

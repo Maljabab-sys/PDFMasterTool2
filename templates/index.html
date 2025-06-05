@@ -542,32 +542,9 @@
                                 </div>
                             </div>
 
-                            <!-- Case Information (moved to bottom) -->
-                            <div class="mb-4">
-                                <div class="card border-0 bg-dark">
-                                    <div class="card-body">
-                                        <h6 class="card-title mb-3 text-light">
-                                            <i class="bi bi-file-text me-2"></i>Case Information
-                                        </h6>
-                                        <div class="row">
-                                            <div class="col-md-6 mb-3">
-                                                <label for="title" class="form-label">Case Title *</label>
-                                                <input type="text" class="form-control" id="title" name="title" required maxlength="100" placeholder="Enter case title...">
-                                                <div class="form-text">
-                                                    <span id="titleCount">0</span>/100 characters
-                                                </div>
-                                            </div>
-                                            <div class="col-md-6 mb-3">
-                                                <label for="notes" class="form-label">Additional Notes</label>
-                                                <textarea class="form-control" id="notes" name="notes" rows="3" maxlength="500" placeholder="Add any relevant notes..."></textarea>
-                                                <div class="form-text">
-                                                    <span id="notesCount">0</span>/500 characters
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
+                            <!-- Hidden Case Title Field -->
+                            <input type="hidden" id="title" name="title" value="Medical Case">
+                            <input type="hidden" id="notes" name="notes" value="">
 
                             <!-- Submit Button -->
                             <div class="d-grid gap-2">
