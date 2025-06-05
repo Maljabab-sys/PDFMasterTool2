@@ -816,7 +816,7 @@ def upload_files():
                 'case_id': case.id
             }
             
-            return redirect(url_for('success'))
+            return redirect(url_for('index') + '#case-history')
         else:
             flash('Error generating PDF. Please try again.', 'error')
             return redirect(url_for('index'))

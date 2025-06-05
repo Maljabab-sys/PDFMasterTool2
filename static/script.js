@@ -321,6 +321,23 @@ function showSection(sectionName) {
     }
 }
 
+// Check URL fragment on page load to handle post-submission redirects
+function checkUrlFragment() {
+    const fragment = window.location.hash.substring(1);
+    if (fragment === 'case-history') {
+        showSection('case-history');
+    } else if (fragment === 'patient-list') {
+        showSection('patient-list');
+    } else {
+        showSection('new-case');
+    }
+}
+
+// Initialize on page load
+document.addEventListener('DOMContentLoaded', function() {
+    checkUrlFragment();
+});
+
 // Load case history via AJAX
 function loadCaseHistory() {
     const content = document.getElementById('case-history-content');
@@ -351,46 +368,43 @@ function loadPatientList() {
         });
 }
 
-// Render case history HTML
+// Render case history HTML in single column layout
 function renderCaseHistory(cases) {
     if (!cases.length) {
         return '<div class="text-center text-muted py-5"><i class="bi bi-folder2-open display-1 mb-3"></i><h4>No cases found</h4></div>';
     }
     
-    let html = '<div class="row g-4">';
+    let html = '<div class="list-group">';
     cases.forEach(case_ => {
         const badgeClass = case_.visit_type === 'Registration' ? 'bg-success' : 
                           case_.visit_type === 'Orthodontic Visit' ? 'bg-primary' : 'bg-warning';
         
         html += `
-            <div class="col-lg-6 col-xl-4">
-                <div class="card h-100 shadow-sm">
-                    <div class="card-body">
-                        <div class="d-flex justify-content-between align-items-start mb-3">
-                            <h5 class="card-title fw-bold mb-0">${case_.title}</h5>
-                            <span class="badge ${badgeClass}">${case_.visit_type}</span>
+            <div class="list-group-item border rounded shadow-sm mb-3 p-4">
+                <div class="d-flex w-100 justify-content-between align-items-start mb-3">
+                    <div class="flex-grow-1">
+                        <h5 class="mb-1 fw-bold">${case_.title}</h5>
+                        <div class="text-muted small mb-2">
+                            <i class="bi bi-calendar me-1"></i>
+                            ${new Date(case_.created_at).toLocaleDateString('en-US', {
+                                year: 'numeric', month: 'long', day: 'numeric',
+                                hour: 'numeric', minute: '2-digit', hour12: true
+                            })}
                         </div>
                         ${case_.patient ? `
                         <div class="mb-2">
+                            <i class="bi bi-person me-1"></i>
                             <strong>Patient:</strong> ${case_.patient.first_name} ${case_.patient.last_name}<br>
-                            <small class="text-muted">MRN: ${case_.patient.mrn} | ${case_.patient.clinic}</small>
+                            <small class="text-muted ms-3">MRN: ${case_.patient.mrn} | ${case_.patient.clinic}</small>
                         </div>
                         ` : ''}
-                        <div class="mb-3">
-                            <small class="text-muted">
-                                <i class="bi bi-calendar me-1"></i>
-                                ${new Date(case_.created_at).toLocaleDateString('en-US', {
-                                    year: 'numeric', month: 'long', day: 'numeric',
-                                    hour: 'numeric', minute: '2-digit', hour12: true
-                                })}
-                            </small>
-                        </div>
-                        <div class="d-grid">
-                            <a href="/download/${case_.id}" class="btn btn-outline-primary">
-                                <i class="bi bi-download me-1"></i>Download PDF
-                            </a>
-                        </div>
                     </div>
+                    <span class="badge ${badgeClass} ms-3">${case_.visit_type}</span>
+                </div>
+                <div class="d-flex gap-2">
+                    <a href="/download/${case_.id}" class="btn btn-primary btn-sm">
+                        <i class="bi bi-download me-1"></i>Download PDF
+                    </a>
                 </div>
             </div>
         `;
