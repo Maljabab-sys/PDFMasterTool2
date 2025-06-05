@@ -337,17 +337,20 @@ function displaySearchResults(patients) {
     const resultsDiv = document.getElementById('patientResults');
     
     if (patients.length === 0) {
-        resultsDiv.innerHTML = '<div class="alert alert-warning">No patients found with that MRN</div>';
+        resultsDiv.innerHTML = '<div class="alert alert-warning">No patients found</div>';
         return;
     }
     
     let html = '<div class="list-group">';
     patients.forEach(patient => {
         html += `
-            <button type="button" class="list-group-item list-group-item-action" 
+            <button type="button" class="list-group-item list-group-item-action list-group-item-dark border-secondary patient-result" 
                     onclick="selectPatient('${patient.id}', '${patient.mrn}', '${patient.first_name}', '${patient.last_name}', '${patient.clinic}')">
-                <strong>MRN: ${patient.mrn}</strong><br>
-                ${patient.first_name} ${patient.last_name} - ${patient.clinic}
+                <div class="d-flex w-100 justify-content-between">
+                    <h6 class="mb-1 text-light"><strong>MRN: ${patient.mrn}</strong></h6>
+                    <small class="text-muted">${patient.clinic}</small>
+                </div>
+                <p class="mb-1 text-light">${patient.first_name} ${patient.last_name}</p>
             </button>
         `;
     });

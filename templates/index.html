@@ -224,9 +224,9 @@
 
                             <!-- Registration Fields -->
                             <div id="registrationFields" class="visit-fields mb-4" style="display: none;">
-                                <div class="card border-0 bg-light">
+                                <div class="card border-0 bg-dark">
                                     <div class="card-body">
-                                        <h6 class="card-title mb-3">
+                                        <h6 class="card-title mb-3 text-light">
                                             <i class="bi bi-person-plus me-2"></i>Patient Registration
                                         </h6>
                                         <div class="row">
@@ -257,19 +257,20 @@
 
                             <!-- Follow-up Visit Fields -->
                             <div id="followupFields" class="visit-fields mb-4" style="display: none;">
-                                <div class="card border-0 bg-light">
+                                <div class="card border-0 bg-dark">
                                     <div class="card-body">
-                                        <h6 class="card-title mb-3">
+                                        <h6 class="card-title mb-3 text-light">
                                             <i class="bi bi-search me-2"></i>Patient Search
                                         </h6>
                                         <div class="mb-3">
-                                            <label for="mrnSearch" class="form-label">Search MRN *</label>
+                                            <label for="mrnSearch" class="form-label">Search Patient *</label>
                                             <div class="input-group">
-                                                <input type="text" class="form-control" id="mrnSearch" name="mrn_search" placeholder="Enter MRN to search..." onkeyup="searchPatients()">
+                                                <input type="text" class="form-control" id="mrnSearch" name="mrn_search" placeholder="Enter MRN or patient name..." onkeyup="searchPatients()">
                                                 <button class="btn btn-outline-secondary" type="button" onclick="searchPatients()">
                                                     <i class="bi bi-search"></i>
                                                 </button>
                                             </div>
+                                            <div class="form-text text-muted">Search by MRN, first name, last name, or full name</div>
                                             <div id="patientResults" class="mt-2"></div>
                                         </div>
                                         <div id="selectedPatientInfo" class="mb-3" style="display: none;">
@@ -543,9 +544,9 @@
 
                             <!-- Case Information (moved to bottom) -->
                             <div class="mb-4">
-                                <div class="card border-0 bg-light">
+                                <div class="card border-0 bg-dark">
                                     <div class="card-body">
-                                        <h6 class="card-title mb-3">
+                                        <h6 class="card-title mb-3 text-light">
                                             <i class="bi bi-file-text me-2"></i>Case Information
                                         </h6>
                                         <div class="row">
@@ -581,31 +582,6 @@
                                 </button>
                             </div>
                         </form>
-                    </div>
-                </div>
-
-                <!-- Features Info -->
-                <div class="row mt-4 g-3">
-                    <div class="col-md-4">
-                        <div class="text-center">
-                            <i class="bi bi-phone text-primary display-6 mb-2"></i>
-                            <h6 class="fw-semibold">Mobile Optimized</h6>
-                            <small class="text-muted">Designed for mobile devices with touch-friendly interface</small>
-                        </div>
-                    </div>
-                    <div class="col-md-4">
-                        <div class="text-center">
-                            <i class="bi bi-lightning text-warning display-6 mb-2"></i>
-                            <h6 class="fw-semibold">Fast Processing</h6>
-                            <small class="text-muted">Quick image optimization and PDF generation</small>
-                        </div>
-                    </div>
-                    <div class="col-md-4">
-                        <div class="text-center">
-                            <i class="bi bi-download text-success display-6 mb-2"></i>
-                            <h6 class="fw-semibold">Instant Download</h6>
-                            <small class="text-muted">Download your PDF slide deck immediately after creation</small>
-                        </div>
                     </div>
                 </div>
             </div>

@@ -606,8 +606,15 @@ def search_patients():
     if len(mrn_search) < 2:
         return jsonify({'patients': []})
     
-    # Search patients by MRN (partial match)
-    patients = Patient.query.filter(Patient.mrn.ilike(f'%{mrn_search}%')).all()
+    # Search patients by MRN or name (partial match)
+    patients = Patient.query.filter(
+        db.or_(
+            Patient.mrn.ilike(f'%{mrn_search}%'),
+            Patient.first_name.ilike(f'%{mrn_search}%'),
+            Patient.last_name.ilike(f'%{mrn_search}%'),
+            db.func.concat(Patient.first_name, ' ', Patient.last_name).ilike(f'%{mrn_search}%')
+        )
+    ).all()
     
     patients_data = []
     for patient in patients:
