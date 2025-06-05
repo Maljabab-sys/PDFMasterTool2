@@ -963,6 +963,26 @@ function updateDefaultProfileIcon() {
     }
 }
 
+function showError(message) {
+    // Create error notification
+    const errorDiv = document.createElement('div');
+    errorDiv.className = 'alert alert-danger alert-dismissible fade show position-fixed';
+    errorDiv.style.cssText = 'top: 20px; right: 20px; z-index: 9999; max-width: 300px;';
+    errorDiv.innerHTML = `
+        <i class="bi bi-exclamation-triangle me-2"></i>
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    document.body.appendChild(errorDiv);
+    
+    // Auto-remove after 5 seconds
+    setTimeout(() => {
+        if (errorDiv.parentNode) {
+            errorDiv.remove();
+        }
+    }, 5000);
+}
+
 // New Slide Presentation Functions
 function initializeSlidePresentation() {
     const visitType = document.getElementById('visitType').value;
