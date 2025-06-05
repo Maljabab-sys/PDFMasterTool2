@@ -261,3 +261,124 @@ body {
 .accordion-body .text-muted {
     color: #adb5bd !important;
 }
+
+/* Treatment Timeline Styling */
+.treatment-timeline {
+    display: flex;
+    align-items: flex-start;
+    position: relative;
+    padding: 20px 0;
+    margin: 20px 0;
+}
+
+.timeline-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex: 1;
+    position: relative;
+    z-index: 2;
+}
+
+.timeline-marker {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 10px;
+    border: 3px solid var(--bs-dark);
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+}
+
+.timeline-item.completed .timeline-marker {
+    transform: scale(1.1);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+}
+
+.timeline-content {
+    text-align: center;
+    min-height: 60px;
+}
+
+.timeline-title {
+    font-weight: bold;
+    font-size: 14px;
+    margin-bottom: 4px;
+}
+
+.timeline-date {
+    font-size: 12px;
+    color: #adb5bd;
+}
+
+.timeline-pending {
+    font-size: 12px;
+    color: #6c757d;
+    font-style: italic;
+}
+
+.timeline-line {
+    position: absolute;
+    top: 20px;
+    left: 50%;
+    right: -50%;
+    height: 3px;
+    background: linear-gradient(90deg, #6c757d 0%, #6c757d 100%);
+    z-index: 1;
+    transform: translateY(-50%);
+}
+
+.timeline-item.completed + .timeline-item .timeline-line {
+    background: linear-gradient(90deg, #28a745 0%, #6c757d 100%);
+}
+
+.timeline-item.completed:not(:last-child) .timeline-line {
+    background: #28a745;
+}
+
+/* Responsive timeline for mobile */
+@media (max-width: 768px) {
+    .treatment-timeline {
+        flex-direction: column;
+        align-items: flex-start;
+        padding-left: 30px;
+    }
+    
+    .timeline-item {
+        flex-direction: row;
+        align-items: center;
+        width: 100%;
+        margin-bottom: 20px;
+    }
+    
+    .timeline-marker {
+        margin-bottom: 0;
+        margin-right: 15px;
+        width: 35px;
+        height: 35px;
+    }
+    
+    .timeline-content {
+        text-align: left;
+        min-height: auto;
+    }
+    
+    .timeline-line {
+        position: absolute;
+        left: 17px;
+        top: 50%;
+        bottom: -20px;
+        width: 3px;
+        height: 40px;
+        right: auto;
+        transform: none;
+        background: #6c757d;
+    }
+    
+    .timeline-item:last-child .timeline-line {
+        display: none;
+    }
+}

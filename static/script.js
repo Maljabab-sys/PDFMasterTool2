@@ -471,7 +471,10 @@ function renderPatientList(patients) {
                             <strong>Patient Since:</strong> ${new Date(patient.created_at).toLocaleDateString()}
                         </div>
                         
-                        <h6 class="fw-bold mb-3">Medical Slides (${patient.cases_count})</h6>
+                        <h6 class="fw-bold mb-3">Treatment Timeline</h6>
+                        ${renderTreatmentTimeline(patient.cases)}
+                        
+                        <h6 class="fw-bold mb-3 mt-4">Medical Slides (${patient.cases_count})</h6>
                         ${renderPatientCases(patient.cases)}
                     </div>
                 </div>
@@ -601,6 +604,68 @@ function renderPatientCases(cases) {
         `;
     });
     
+    return html;
+}
+
+// Render treatment timeline
+function renderTreatmentTimeline(cases) {
+    // Define timeline stages
+    const stages = [
+        { name: 'Registration', icon: 'bi-person-plus-fill', color: '#28a745' },
+        { name: 'Orthodontic Visit', icon: 'bi-arrow-repeat', color: '#007bff' },
+        { name: 'Debond', icon: 'bi-check-circle-fill', color: '#ffc107' }
+    ];
+    
+    // Find which stages have cases
+    const completedStages = new Set();
+    const stageData = {};
+    
+    cases.forEach(case_ => {
+        const visitType = case_.visit_type;
+        if (['Registration', 'Orthodontic Visit', 'Debond'].includes(visitType)) {
+            completedStages.add(visitType);
+            if (!stageData[visitType] || new Date(case_.created_at) > new Date(stageData[visitType].created_at)) {
+                stageData[visitType] = case_;
+            }
+        }
+    });
+    
+    // Count orthodontic visits
+    const orthodonticVisits = cases.filter(c => c.visit_type === 'Orthodontic Visit').length;
+    
+    let html = '<div class="treatment-timeline">';
+    
+    stages.forEach((stage, index) => {
+        const isCompleted = completedStages.has(stage.name);
+        const isActive = isCompleted;
+        const case_ = stageData[stage.name];
+        
+        html += `
+            <div class="timeline-item ${isCompleted ? 'completed' : 'pending'}">
+                <div class="timeline-marker" style="background-color: ${isActive ? stage.color : '#6c757d'}">
+                    <i class="${stage.icon}" style="color: white; font-size: 12px;"></i>
+                </div>
+                <div class="timeline-content">
+                    <div class="timeline-title" style="color: ${isActive ? stage.color : '#6c757d'}">
+                        ${stage.name}
+                        ${stage.name === 'Orthodontic Visit' && orthodonticVisits > 1 ? ` (${orthodonticVisits})` : ''}
+                    </div>
+                    ${isCompleted ? `
+                        <div class="timeline-date">
+                            ${new Date(case_.created_at).toLocaleDateString('en-US', {
+                                month: 'short', day: 'numeric', year: 'numeric'
+                            })}
+                        </div>
+                    ` : `
+                        <div class="timeline-pending">Pending</div>
+                    `}
+                </div>
+                ${index < stages.length - 1 ? '<div class="timeline-line"></div>' : ''}
+            </div>
+        `;
+    });
+    
+    html += '</div>';
     return html;
 }
 
