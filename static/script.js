@@ -649,7 +649,7 @@ function renderTreatmentTimeline(cases) {
         html += `
             <div class="timeline-item ${isCompleted ? 'completed' : 'pending'}" data-stage="${stageKey}">
                 <div class="timeline-marker">
-                    <i class="${stage.icon}" style="color: white; font-size: 10px;"></i>
+                    <i class="${stage.icon}" style="color: white; font-size: 12px;"></i>
                 </div>
                 <div class="timeline-content">
                     <div class="timeline-title" style="color: ${isCompleted ? stage.color : '#adb5bd'}">

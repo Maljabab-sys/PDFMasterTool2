@@ -267,11 +267,11 @@ body {
     display: flex;
     align-items: center;
     position: relative;
-    padding: 8px;
-    margin: 10px auto;
-    max-width: 280px;
+    padding: 10px;
+    margin: 12px auto;
+    max-width: 336px;
     background: rgba(255, 255, 255, 0.02);
-    border-radius: 8px;
+    border-radius: 10px;
     border: 1px solid rgba(255, 255, 255, 0.05);
 }
 
@@ -285,13 +285,13 @@ body {
 }
 
 .timeline-marker {
-    width: 20px;
-    height: 20px;
-    border-radius: 4px;
+    width: 24px;
+    height: 24px;
+    border-radius: 5px;
     display: flex;
     align-items: center;
     justify-content: center;
-    margin-bottom: 5px;
+    margin-bottom: 6px;
     border: 1px solid var(--bs-dark);
     transition: all 0.2s ease;
     position: relative;
@@ -309,27 +309,27 @@ body {
 
 .timeline-content {
     text-align: center;
-    min-width: 50px;
+    min-width: 60px;
 }
 
 .timeline-title {
     font-weight: 500;
-    font-size: 8px;
-    margin-bottom: 1px;
+    font-size: 10px;
+    margin-bottom: 2px;
     letter-spacing: 0.1px;
     text-transform: uppercase;
     line-height: 1.1;
 }
 
 .timeline-date {
-    font-size: 6px;
+    font-size: 7px;
     color: #adb5bd;
     font-weight: 400;
     line-height: 1;
 }
 
 .timeline-pending {
-    font-size: 6px;
+    font-size: 7px;
     color: #6c757d;
     font-style: italic;
     line-height: 1;
@@ -338,9 +338,9 @@ body {
 /* Connection lines between stages */
 .timeline-connection {
     position: absolute;
-    top: 10px;
-    left: calc(50% + 10px);
-    width: calc(100% - 20px);
+    top: 12px;
+    left: calc(50% + 12px);
+    width: calc(100% - 24px);
     height: 2px;
     background: #495057;
     z-index: 1;
