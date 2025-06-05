@@ -637,16 +637,16 @@ function renderTreatmentTimeline(cases) {
     
     stages.forEach((stage, index) => {
         const isCompleted = completedStages.has(stage.name);
-        const isActive = isCompleted;
         const case_ = stageData[stage.name];
+        const stageKey = stage.name.toLowerCase().replace(' ', '_');
         
         html += `
-            <div class="timeline-item ${isCompleted ? 'completed' : 'pending'}">
-                <div class="timeline-marker" style="background-color: ${isActive ? stage.color : '#6c757d'}">
-                    <i class="${stage.icon}" style="color: white; font-size: 12px;"></i>
+            <div class="timeline-item ${isCompleted ? 'completed' : 'pending'}" data-stage="${stageKey}">
+                <div class="timeline-marker">
+                    <i class="${stage.icon}" style="color: white; font-size: 16px;"></i>
                 </div>
                 <div class="timeline-content">
-                    <div class="timeline-title" style="color: ${isActive ? stage.color : '#6c757d'}">
+                    <div class="timeline-title" style="color: ${isCompleted ? stage.color : '#adb5bd'}">
                         ${stage.name}
                         ${stage.name === 'Orthodontic Visit' && orthodonticVisits > 1 ? ` (${orthodonticVisits})` : ''}
                     </div>
@@ -660,7 +660,6 @@ function renderTreatmentTimeline(cases) {
                         <div class="timeline-pending">Pending</div>
                     `}
                 </div>
-                ${index < stages.length - 1 ? '<div class="timeline-line"></div>' : ''}
             </div>
         `;
     });
