@@ -100,38 +100,34 @@ def create_pdf(images, case_title, notes, output_path):
         # Add images
         for i, image_path in enumerate(images, 1):
             try:
-                # Optimize image for PDF
-                optimized_path = optimize_image(image_path)
-                
                 # Add image title
                 story.append(Paragraph(f"Slide {i}", heading_style))
                 
                 # Calculate image dimensions for PDF
-                with Image.open(optimized_path) as img:
+                with Image.open(image_path) as img:
                     img_width, img_height = img.size
-                    # Scale to fit page width (max 7 inches)
-                    max_width = 7 * inch
-                    max_height = 5 * inch
+                    # Scale to fit page width (max 6 inches)
+                    max_width = 6 * inch
+                    max_height = 4 * inch
                     
                     aspect_ratio = img_width / img_height
                     if img_width > img_height:
-                        width = min(max_width, 7 * inch)
+                        width = min(max_width, 6 * inch)
                         height = width / aspect_ratio
+                        if height > max_height:
+                            height = max_height
+                            width = height * aspect_ratio
                     else:
-                        height = min(max_height, 5 * inch)
+                        height = min(max_height, 4 * inch)
                         width = height * aspect_ratio
+                        if width > max_width:
+                            width = max_width
+                            height = width / aspect_ratio
                 
-                # Add image to PDF
-                img_obj = RLImage(optimized_path, width=width, height=height)
+                # Add image to PDF directly without optimization
+                img_obj = RLImage(image_path, width=width, height=height)
                 story.append(img_obj)
                 story.append(Spacer(1, 0.3*inch))
-                
-                # Clean up optimized image if it's different from original
-                if optimized_path != image_path:
-                    try:
-                        os.unlink(optimized_path)
-                    except:
-                        pass
                         
                 # Add page break between images (except for last image)
                 if i < len(images):
