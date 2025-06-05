@@ -495,6 +495,10 @@ def create_medical_layout(images, heading_style, styles, pagesize):
 def create_pdf(images, case_title, notes, output_path, template='classic', orientation='portrait', images_per_slide=1):
     """Create PDF slide deck from images and text"""
     try:
+        # Handle case with no images - log warning but continue
+        if not images:
+            logging.warning(f"Creating PDF with no images for case: {case_title}")
+        
         # Set page size based on orientation
         pagesize = A4 if orientation == 'portrait' else (A4[1], A4[0])
         
@@ -510,7 +514,7 @@ def create_pdf(images, case_title, notes, output_path, template='classic', orien
             spaceAfter=6,
             spaceBefore=12,
             alignment=1,  # Center alignment
-            textColor=colors.Color(0.8, 0.6, 0.2),  # Golden/amber color like in the design
+            textColor=colors.Color(int(0.8*255), int(0.6*255), int(0.2*255)),
             fontName='Helvetica-Bold'
         )
         
@@ -520,7 +524,7 @@ def create_pdf(images, case_title, notes, output_path, template='classic', orien
             fontSize=12,
             spaceAfter=24,
             alignment=1,  # Center alignment
-            textColor=colors.Color(0.5, 0.5, 0.5),  # Gray color
+            textColor=colors.Color(int(0.5*255), int(0.5*255), int(0.5*255)),
             fontName='Helvetica'
         )
         
@@ -530,7 +534,7 @@ def create_pdf(images, case_title, notes, output_path, template='classic', orien
             fontSize=14,
             spaceAfter=8,
             spaceBefore=16,
-            textColor=colors.Color(0.3, 0.3, 0.3),  # Dark gray
+            textColor=colors.Color(int(0.3*255), int(0.3*255), int(0.3*255)),
             fontName='Helvetica-Bold'
         )
         
@@ -554,21 +558,26 @@ def create_pdf(images, case_title, notes, output_path, template='classic', orien
         from reportlab.platypus import PageBreak
         story.append(PageBreak())
         
-        # Add images based on template
-        if template == 'classic':
-            story.extend(create_classic_layout(images, heading_style, styles, pagesize))
-        elif template == 'modern':
-            story.extend(create_modern_layout(images, heading_style, styles, pagesize, notes))
-        elif template == 'grid':
-            story.extend(create_grid_layout(images, heading_style, styles, pagesize, images_per_slide))
-        elif template == 'timeline':
-            story.extend(create_timeline_layout(images, heading_style, styles, pagesize))
-        elif template == 'comparison':
-            story.extend(create_comparison_layout(images, heading_style, styles, pagesize))
-        elif template == 'medical':
-            story.extend(create_medical_layout(images, heading_style, styles, pagesize))
+        # Add images based on template (handle empty image list)
+        if images:
+            if template == 'classic':
+                story.extend(create_classic_layout(images, heading_style, styles, pagesize))
+            elif template == 'modern':
+                story.extend(create_modern_layout(images, heading_style, styles, pagesize, notes))
+            elif template == 'grid':
+                story.extend(create_grid_layout(images, heading_style, styles, pagesize, images_per_slide))
+            elif template == 'timeline':
+                story.extend(create_timeline_layout(images, heading_style, styles, pagesize))
+            elif template == 'comparison':
+                story.extend(create_comparison_layout(images, heading_style, styles, pagesize))
+            elif template == 'medical':
+                story.extend(create_medical_layout(images, heading_style, styles, pagesize))
+            else:
+                story.extend(create_classic_layout(images, heading_style, styles, pagesize))
         else:
-            story.extend(create_classic_layout(images, heading_style, styles, pagesize))
+            # No images provided - add placeholder message
+            story.append(Paragraph("No images were uploaded for this case.", heading_style))
+            story.append(Spacer(1, 0.5*inch))
         
         # Build PDF
         doc.build(story)
