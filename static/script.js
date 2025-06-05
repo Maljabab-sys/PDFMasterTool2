@@ -81,36 +81,7 @@ document.addEventListener('DOMContentLoaded', function() {
         return truncatedName + '.' + extension;
     }
     
-    // Form validation
-    function validateForm() {
-        const caseTitle = document.getElementById('case_title').value.trim();
-        const files = fileInput.files;
-        
-        if (!caseTitle) {
-            showError('Please enter a case title.');
-            return false;
-        }
-        
-        if (files.length === 0) {
-            showError('Please select at least one image.');
-            return false;
-        }
-        
-        // Validate file types and sizes
-        for (let file of files) {
-            if (!file.type.startsWith('image/')) {
-                showError(`${file.name} is not a valid image file.`);
-                return false;
-            }
-            
-            if (file.size > 16 * 1024 * 1024) { // 16MB
-                showError(`${file.name} is too large. Maximum file size is 16MB.`);
-                return false;
-            }
-        }
-        
-        return true;
-    }
+
     
     // Show error message
     function showError(message) {
@@ -138,8 +109,19 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Form submission handler
     form.addEventListener('submit', function(e) {
-        if (!validateForm()) {
+        // Basic validation only
+        const caseTitle = document.getElementById('case_title').value.trim();
+        const files = fileInput.files;
+        
+        if (!caseTitle) {
             e.preventDefault();
+            showError('Please enter a case title.');
+            return;
+        }
+        
+        if (files.length === 0) {
+            e.preventDefault();
+            showError('Please select at least one image.');
             return;
         }
         
@@ -151,9 +133,11 @@ document.addEventListener('DOMContentLoaded', function() {
         // Show progress indicator
         showProgressIndicator();
         
-        // Disable form inputs
-        const inputs = form.querySelectorAll('input, textarea, button');
-        inputs.forEach(input => input.disabled = true);
+        // Disable form inputs after a brief delay to ensure form submission
+        setTimeout(() => {
+            const inputs = form.querySelectorAll('input, textarea, button');
+            inputs.forEach(input => input.disabled = true);
+        }, 100);
     });
     
     // Show progress indicator

@@ -183,7 +183,7 @@ def upload_files():
         # Validate and save uploaded files
         uploaded_files = []
         for file in files:
-            if file and file.filename != '' and allowed_file(file.filename):
+            if file and file.filename and file.filename != '' and allowed_file(file.filename):
                 # Generate unique filename
                 filename = secure_filename(file.filename)
                 unique_filename = f"{uuid.uuid4()}_{filename}"
