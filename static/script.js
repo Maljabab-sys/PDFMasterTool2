@@ -176,38 +176,22 @@ document.addEventListener('DOMContentLoaded', function() {
 // Handle visit type change
 function handleVisitTypeChange() {
     const visitType = document.getElementById('visitType').value;
-    const section1 = document.getElementById('section1');
     const registrationFields = document.getElementById('registrationFields');
     const followupFields = document.getElementById('followupFields');
-    const extraOralSection = document.getElementById('extraOralSection');
-    const intraOralSection = document.getElementById('intraOralSection');
     
-    // Hide all sections first
-    if (section1) section1.style.display = 'none';
+    // Hide all fields first
     if (registrationFields) registrationFields.style.display = 'none';
     if (followupFields) followupFields.style.display = 'none';
-    if (extraOralSection) extraOralSection.style.display = 'none';
-    if (intraOralSection) intraOralSection.style.display = 'none';
     
     // Clear required attributes
     clearRequiredFields();
     
-    if (visitType) {
-        // Show Section 1 (Patient Data)
-        if (section1) section1.style.display = 'block';
-        
-        // Show appropriate fields in Section 1
-        if (visitType === 'Registration') {
-            if (registrationFields) registrationFields.style.display = 'block';
-            setRegistrationRequired();
-        } else if (visitType === 'Orthodontic Visit' || visitType === 'Debond') {
-            if (followupFields) followupFields.style.display = 'block';
-            setFollowupRequired();
-        }
-        
-        // Show Section 2 and 3 (Image uploads)
-        if (extraOralSection) extraOralSection.style.display = 'block';
-        if (intraOralSection) intraOralSection.style.display = 'block';
+    if (visitType === 'Registration') {
+        if (registrationFields) registrationFields.style.display = 'block';
+        setRegistrationRequired();
+    } else if (visitType === 'Orthodontic Visit' || visitType === 'Debond') {
+        if (followupFields) followupFields.style.display = 'block';
+        setFollowupRequired();
     }
 }
 
@@ -317,8 +301,6 @@ function selectPatient(id, mrn, firstName, lastName, clinic) {
 
 // Section navigation for single-page app
 function showSection(sectionName) {
-    console.log('Showing section:', sectionName);
-    
     // Hide all sections
     document.querySelectorAll('.section').forEach(section => {
         section.style.display = 'none';
@@ -331,26 +313,18 @@ function showSection(sectionName) {
     
     // Show selected section
     if (sectionName === 'new-case') {
-        const section = document.getElementById('new-case-section');
-        section.style.display = 'block';
-        console.log('New case section display:', section.style.display);
+        document.getElementById('new-case-section').style.display = 'block';
         document.querySelector('[onclick="showSection(\'new-case\')"]').classList.add('active');
     } else if (sectionName === 'case-history') {
-        const section = document.getElementById('case-history-section');
-        section.style.display = 'block';
-        console.log('Case history section display:', section.style.display);
+        document.getElementById('case-history-section').style.display = 'block';
         document.querySelector('[onclick="showSection(\'case-history\')"]').classList.add('active');
         loadCaseHistory();
     } else if (sectionName === 'patient-list') {
-        const section = document.getElementById('patient-list-section');
-        section.style.display = 'block';
-        console.log('Patient list section display:', section.style.display);
+        document.getElementById('patient-list-section').style.display = 'block';
         document.querySelector('[onclick="showSection(\'patient-list\')"]').classList.add('active');
         loadPatientList();
     } else if (sectionName === 'settings') {
-        const section = document.getElementById('settings-section');
-        section.style.display = 'block';
-        console.log('Settings section display:', section.style.display);
+        document.getElementById('settings-section').style.display = 'block';
         document.querySelector('[onclick="showSection(\'settings\')"]').classList.add('active');
         loadUserSettings();
     }
@@ -371,82 +345,35 @@ function checkUrlFragment() {
 // Initialize on page load
 document.addEventListener('DOMContentLoaded', function() {
     checkUrlFragment();
-    
-    // Load initial content for all sections
-    setTimeout(() => {
-        loadUserSettings();
-    }, 100);
 });
 
 // Load case history via AJAX
 function loadCaseHistory() {
-    console.log('Loading case history...');
     const content = document.getElementById('case-history-content');
-    if (!content) {
-        console.error('case-history-content element not found');
-        return;
-    }
     content.innerHTML = '<div class="text-center"><div class="spinner-border" role="status"></div></div>';
     
     fetch('/api/cases')
-        .then(response => {
-            console.log('Case history response:', response);
-            return response.json();
-        })
+        .then(response => response.json())
         .then(data => {
-            console.log('Case history data:', data);
-            try {
-                content.innerHTML = renderCaseHistory(data.cases);
-                console.log('Case history rendered successfully');
-                
-                // Add test content to verify visibility
-                content.innerHTML += '<div class="alert alert-success mt-3" style="background: blue !important; color: white !important; padding: 20px !important; font-size: 18px !important;">TEST: Case history loaded successfully with ' + data.cases.length + ' cases</div>';
-            } catch (error) {
-                console.error('Error rendering case history:', error);
-                content.innerHTML = '<div class="alert alert-danger">Error rendering case history: ' + error.message + '</div>';
-            }
+            content.innerHTML = renderCaseHistory(data.cases);
         })
         .catch(error => {
-            console.error('Error loading case history:', error);
-            content.innerHTML = '<div class="alert alert-danger">Error loading case history: ' + error.message + '</div>';
+            content.innerHTML = '<div class="alert alert-danger">Error loading case history</div>';
         });
 }
 
 // Load patient list via AJAX
 function loadPatientList() {
-    console.log('Loading patient list...');
     const content = document.getElementById('patient-list-content');
-    if (!content) {
-        console.error('patient-list-content element not found');
-        return;
-    }
     content.innerHTML = '<div class="text-center"><div class="spinner-border" role="status"></div></div>';
     
     fetch('/api/patients')
-        .then(response => {
-            console.log('Patient list response:', response);
-            return response.json();
-        })
+        .then(response => response.json())
         .then(data => {
-            console.log('Patient list data:', data);
-            try {
-                const renderedHtml = renderPatientList(data.patients);
-                content.innerHTML = renderedHtml;
-                console.log('Patient list rendered successfully');
-                console.log('Rendered HTML length:', renderedHtml.length);
-                console.log('Content area height:', content.offsetHeight);
-                console.log('Content area visible?', content.style.display !== 'none');
-                
-                // Add test content to verify visibility
-                content.innerHTML += '<div class="alert alert-info mt-3" style="background: red !important; color: white !important; padding: 20px !important; font-size: 18px !important;">TEST: Patient list loaded successfully with ' + data.patients.length + ' patients</div>';
-            } catch (error) {
-                console.error('Error rendering patient list:', error);
-                content.innerHTML = '<div class="alert alert-danger">Error rendering patient list: ' + error.message + '</div>';
-            }
+            content.innerHTML = renderPatientList(data.patients);
         })
         .catch(error => {
-            console.error('Error loading patient list:', error);
-            content.innerHTML = '<div class="alert alert-danger">Error loading patient list: ' + error.message + '</div>';
+            content.innerHTML = '<div class="alert alert-danger">Error loading patient list</div>';
         });
 }
 
