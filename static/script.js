@@ -1,3 +1,7 @@
+// Global variables for slide presentation
+let currentSlideIndex = 1;
+let selectedPatientData = null;
+
 document.addEventListener('DOMContentLoaded', function() {
     const form = document.getElementById('slideForm');
     const submitBtn = document.getElementById('submitBtn');
@@ -957,4 +961,289 @@ function updateDefaultProfileIcon() {
     if (!preview || preview.style.display === 'none') {
         updateNavProfileImage(null, gender);
     }
+}
+
+// New Slide Presentation Functions
+function initializeSlidePresentation() {
+    const visitType = document.getElementById('visitType').value;
+    if (!visitType) return;
+    
+    // Show slide presentation and hide original form
+    document.getElementById('slidePresentation').style.display = 'block';
+    document.getElementById('originalForm').style.display = 'none';
+    
+    // Update slide title based on visit type
+    const slideTitle = document.getElementById('slideTitle');
+    const titles = {
+        'Registration': 'Orthodontic Registration',
+        'Orthodontic Visit': 'Orthodontic Treatment Progress',
+        'Debond': 'Orthodontic Debonding'
+    };
+    slideTitle.textContent = titles[visitType] || 'Orthodontic Case Presentation';
+    
+    // Show appropriate form section on slide 1
+    const registrationSection = document.getElementById('registrationSection');
+    const searchSection = document.getElementById('searchSection');
+    
+    if (visitType === 'Registration') {
+        registrationSection.style.display = 'block';
+        searchSection.style.display = 'none';
+    } else {
+        registrationSection.style.display = 'none';
+        searchSection.style.display = 'block';
+    }
+    
+    // Store visit type
+    document.getElementById('hiddenVisitType').value = visitType;
+    
+    // Reset to first slide
+    currentSlideIndex = 1;
+    showSlide(1);
+}
+
+function showSlide(slideNumber) {
+    // Hide all slides
+    document.querySelectorAll('.slide-container').forEach(slide => {
+        slide.classList.remove('active');
+    });
+    
+    // Show current slide
+    document.getElementById(`slide${slideNumber}`).classList.add('active');
+    
+    // Update slide indicator
+    document.getElementById('currentSlide').textContent = slideNumber;
+    
+    // Update navigation buttons
+    const prevBtn = document.getElementById('prevSlide');
+    const nextBtn = document.getElementById('nextSlide');
+    const submitBtn = document.getElementById('submitSlides');
+    
+    prevBtn.disabled = slideNumber === 1;
+    
+    if (slideNumber === 3) {
+        nextBtn.style.display = 'none';
+        submitBtn.style.display = 'inline-block';
+    } else {
+        nextBtn.style.display = 'inline-block';
+        submitBtn.style.display = 'none';
+    }
+}
+
+function nextSlide() {
+    if (currentSlideIndex < 3) {
+        // Validate current slide before moving to next
+        if (validateCurrentSlide()) {
+            currentSlideIndex++;
+            showSlide(currentSlideIndex);
+        }
+    }
+}
+
+function previousSlide() {
+    if (currentSlideIndex > 1) {
+        currentSlideIndex--;
+        showSlide(currentSlideIndex);
+    }
+}
+
+function validateCurrentSlide() {
+    const visitType = document.getElementById('visitType').value;
+    
+    if (currentSlideIndex === 1) {
+        if (visitType === 'Registration') {
+            // Validate registration fields
+            const firstName = document.getElementById('slideFirstName').value.trim();
+            const lastName = document.getElementById('slideLastName').value.trim();
+            const mrn = document.getElementById('slideMrn').value.trim();
+            const clinic = document.getElementById('slideClinic').value;
+            
+            if (!firstName || !lastName || !mrn || !clinic) {
+                showError('Please fill in all patient information fields.');
+                return false;
+            }
+            
+            // Store registration data
+            document.getElementById('hiddenFirstName').value = firstName;
+            document.getElementById('hiddenLastName').value = lastName;
+            document.getElementById('hiddenMrn').value = mrn;
+            document.getElementById('hiddenClinic').value = clinic;
+            
+        } else {
+            // Validate patient selection
+            if (!selectedPatientData) {
+                showError('Please search and select a patient.');
+                return false;
+            }
+            
+            // Store selected patient data
+            document.getElementById('hiddenPatientId').value = selectedPatientData.id;
+            document.getElementById('hiddenFirstName').value = selectedPatientData.firstName;
+            document.getElementById('hiddenLastName').value = selectedPatientData.lastName;
+            document.getElementById('hiddenMrn').value = selectedPatientData.mrn;
+            document.getElementById('hiddenClinic').value = selectedPatientData.clinic;
+        }
+    }
+    
+    return true;
+}
+
+function triggerFileInput(inputId) {
+    document.getElementById(inputId).click();
+}
+
+function handleSlideImageUpload(input, previewId) {
+    const file = input.files[0];
+    if (!file) return;
+    
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+        showError('Please select an image file.');
+        input.value = '';
+        return;
+    }
+    
+    // Validate file size (5MB)
+    if (file.size > 5 * 1024 * 1024) {
+        showError(`${file.name} is too large. Maximum file size is 5MB.`);
+        input.value = '';
+        return;
+    }
+    
+    const uploadBox = input.closest('.slide-upload-box');
+    const preview = document.getElementById(previewId);
+    
+    // Show preview
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        uploadBox.innerHTML = `
+            <img src="${e.target.result}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 8px;">
+            <button type="button" class="btn btn-danger btn-sm position-absolute top-0 end-0 m-2" 
+                    onclick="removeSlideImage('${input.id}', '${previewId}')" style="z-index: 10;">
+                <i class="bi bi-x"></i>
+            </button>
+        `;
+        uploadBox.classList.add('has-image');
+    };
+    reader.readAsDataURL(file);
+}
+
+function removeSlideImage(inputId, previewId) {
+    const input = document.getElementById(inputId);
+    const uploadBox = input.closest('.slide-upload-box');
+    
+    input.value = '';
+    uploadBox.classList.remove('has-image');
+    uploadBox.innerHTML = `
+        <i class="bi bi-camera" style="font-size: 3rem; color: #6c757d; margin-bottom: 1rem;"></i>
+        <p class="h5 text-muted">Upload Image</p>
+        <input type="file" id="${inputId}" accept="image/*" style="display: none;" onchange="handleSlideImageUpload(this, '${previewId}')">
+        <div id="${previewId}" class="image-preview"></div>
+    `;
+    
+    // Re-add click handler
+    uploadBox.onclick = () => triggerFileInput(inputId);
+}
+
+function slideSearchPatients() {
+    const searchTerm = document.getElementById('slidePatientSearch').value.trim();
+    
+    if (searchTerm.length < 2) {
+        document.getElementById('slidePatientResults').innerHTML = '';
+        return;
+    }
+    
+    fetch('/search_patients', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            mrn: searchTerm
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        displaySlideSearchResults(data.patients);
+    })
+    .catch(error => {
+        console.error('Error searching patients:', error);
+        showError('Error searching patients. Please try again.');
+    });
+}
+
+function displaySlideSearchResults(patients) {
+    const resultsDiv = document.getElementById('slidePatientResults');
+    
+    if (patients.length === 0) {
+        resultsDiv.innerHTML = '<p class="text-muted">No patients found.</p>';
+        return;
+    }
+    
+    let html = '<div class="list-group">';
+    patients.forEach(patient => {
+        html += `
+            <button type="button" class="list-group-item list-group-item-action" 
+                    onclick="selectSlidePatient(${patient.id}, '${patient.mrn}', '${patient.first_name}', '${patient.last_name}', '${patient.clinic}')">
+                <div class="d-flex justify-content-between">
+                    <h6 class="mb-1">${patient.first_name} ${patient.last_name}</h6>
+                    <small class="text-muted">${patient.clinic}</small>
+                </div>
+                <p class="mb-1">MRN: ${patient.mrn}</p>
+            </button>
+        `;
+    });
+    html += '</div>';
+    
+    resultsDiv.innerHTML = html;
+}
+
+function selectSlidePatient(id, mrn, firstName, lastName, clinic) {
+    selectedPatientData = {
+        id: id,
+        mrn: mrn,
+        firstName: firstName,
+        lastName: lastName,
+        clinic: clinic
+    };
+    
+    // Update display
+    document.getElementById('slideSelectedPatientDetails').innerHTML = `
+        <strong>${firstName} ${lastName}</strong> (${clinic})
+    `;
+    document.getElementById('slidePatientMrn').textContent = `MRN: ${mrn}`;
+    document.getElementById('slideSelectedPatientInfo').style.display = 'block';
+    
+    // Clear search results
+    document.getElementById('slidePatientResults').innerHTML = '';
+    document.getElementById('slidePatientSearch').value = `${firstName} ${lastName}`;
+}
+
+function submitPresentation() {
+    // Collect all uploaded files and add them to the form
+    const form = document.getElementById('slideForm');
+    const fileInputs = ['extraOral1', 'extraOral2', 'extraOral3', 'intraOral1', 'intraOral2', 'intraOral3', 'intraOral4', 'intraOral5'];
+    
+    // Remove existing file inputs from form
+    const existingFileInputs = form.querySelectorAll('input[type="file"]');
+    existingFileInputs.forEach(input => input.remove());
+    
+    // Add file inputs with files to the form
+    fileInputs.forEach((inputId, index) => {
+        const input = document.getElementById(inputId);
+        if (input && input.files.length > 0) {
+            const clonedInput = input.cloneNode(true);
+            clonedInput.name = `images`;
+            clonedInput.style.display = 'none';
+            form.appendChild(clonedInput);
+        }
+    });
+    
+    // Show loading state
+    const submitBtn = document.getElementById('submitSlides');
+    const originalText = submitBtn.innerHTML;
+    submitBtn.innerHTML = '<i class="bi bi-hourglass-split me-2"></i>Processing...';
+    submitBtn.disabled = true;
+    
+    // Submit the form
+    form.submit();
 }
