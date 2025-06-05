@@ -835,6 +835,75 @@ def too_large(e):
 def not_found(e):
     return render_template('index.html'), 404
 
+@app.route('/api/cases')
+def api_cases():
+    """API endpoint for case history"""
+    cases = Case.query.order_by(Case.created_at.desc()).all()
+    cases_data = []
+    
+    for case in cases:
+        case_data = {
+            'id': case.id,
+            'title': case.title,
+            'visit_type': case.visit_type,
+            'created_at': case.created_at.isoformat(),
+            'image_count': case.image_count,
+            'patient': None
+        }
+        
+        if case.patient:
+            case_data['patient'] = {
+                'id': case.patient.id,
+                'first_name': case.patient.first_name,
+                'last_name': case.patient.last_name,
+                'mrn': case.patient.mrn,
+                'clinic': case.patient.clinic
+            }
+            
+        if case.visit_description:
+            case_data['visit_description'] = case.visit_description
+            
+        cases_data.append(case_data)
+    
+    return jsonify({'cases': cases_data})
+
+@app.route('/api/patients')
+def api_patients():
+    """API endpoint for patient list with cases"""
+    patients = Patient.query.order_by(Patient.created_at.desc()).all()
+    patients_data = []
+    
+    for patient in patients:
+        patient_cases = Case.query.filter_by(patient_id=patient.id).order_by(Case.created_at.desc()).all()
+        
+        cases_data = []
+        for case in patient_cases:
+            case_data = {
+                'id': case.id,
+                'title': case.title,
+                'visit_type': case.visit_type,
+                'created_at': case.created_at.isoformat(),
+                'image_count': case.image_count
+            }
+            if case.visit_description:
+                case_data['visit_description'] = case.visit_description
+            cases_data.append(case_data)
+        
+        patient_data = {
+            'id': patient.id,
+            'first_name': patient.first_name,
+            'last_name': patient.last_name,
+            'mrn': patient.mrn,
+            'clinic': patient.clinic,
+            'created_at': patient.created_at.isoformat(),
+            'cases_count': len(cases_data),
+            'cases': cases_data
+        }
+        
+        patients_data.append(patient_data)
+    
+    return jsonify({'patients': patients_data})
+
 @app.errorhandler(500)
 def server_error(e):
     logging.error(f"Server error: {str(e)}")
