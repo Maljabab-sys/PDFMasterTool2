@@ -29,12 +29,26 @@ app.secret_key = os.environ.get("SESSION_SECRET", "dev-secret-key-change-in-prod
 app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
 
 # Configure the database
-app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///cases.db"
+app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get("DATABASE_URL")
 app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
     "pool_recycle": 300,
     "pool_pre_ping": True,
 }
 db.init_app(app)
+
+# Patient model
+class Patient(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    mrn = db.Column(db.String(50), unique=True, nullable=False)
+    first_name = db.Column(db.String(100), nullable=False)
+    last_name = db.Column(db.String(100), nullable=False)
+    clinic = db.Column(db.String(20), nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    cases = db.relationship('Case', backref='patient', lazy=True)
+    
+    def __repr__(self):
+        return f'<Patient {self.mrn} - {self.first_name} {self.last_name}>'
 
 # Case model
 class Case(db.Model):
@@ -48,7 +62,12 @@ class Case(db.Model):
     pdf_filename = db.Column(db.String(255))
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     
-    def __init__(self, title, notes, template, orientation, images_per_slide, image_count, pdf_filename):
+    # New fields for visit types
+    visit_type = db.Column(db.String(50), nullable=False)
+    patient_id = db.Column(db.Integer, db.ForeignKey('patient.id'), nullable=True)
+    visit_description = db.Column(db.Text)
+    
+    def __init__(self, title, notes, template, orientation, images_per_slide, image_count, pdf_filename, visit_type, patient_id=None, visit_description=None):
         self.title = title
         self.notes = notes
         self.template = template
@@ -56,9 +75,12 @@ class Case(db.Model):
         self.images_per_slide = images_per_slide
         self.image_count = image_count
         self.pdf_filename = pdf_filename
+        self.visit_type = visit_type
+        self.patient_id = patient_id
+        self.visit_description = visit_description
     
     def __repr__(self):
-        return f'<Case {self.title}>'
+        return f'<Case {self.title} - {self.visit_type}>'
 
 # Initialize database
 with app.app_context():
@@ -575,11 +597,52 @@ def success():
                          image_count=success_info.get('image_count', 0),
                          timestamp=success_info.get('timestamp', 'Unknown'))
 
+@app.route('/search_patients', methods=['POST'])
+def search_patients():
+    """Search for patients by MRN"""
+    data = request.get_json()
+    mrn_search = data.get('mrn', '').strip()
+    
+    if len(mrn_search) < 2:
+        return jsonify({'patients': []})
+    
+    # Search patients by MRN (partial match)
+    patients = Patient.query.filter(Patient.mrn.ilike(f'%{mrn_search}%')).all()
+    
+    patients_data = []
+    for patient in patients:
+        patients_data.append({
+            'id': patient.id,
+            'mrn': patient.mrn,
+            'first_name': patient.first_name,
+            'last_name': patient.last_name,
+            'clinic': patient.clinic
+        })
+    
+    return jsonify({'patients': patients_data})
+
 @app.route('/cases')
 def cases():
-    """Display all submitted cases"""
-    cases = Case.query.order_by(Case.created_at.desc()).all()
-    return render_template('cases.html', cases=cases)
+    """Display all submitted cases with search functionality"""
+    search_query = request.args.get('search', '').strip()
+    
+    if search_query:
+        # Search in case title, notes, visit type, patient name, and MRN
+        cases = Case.query.join(Patient, Case.patient_id == Patient.id, isouter=True).filter(
+            db.or_(
+                Case.title.ilike(f'%{search_query}%'),
+                Case.notes.ilike(f'%{search_query}%'),
+                Case.visit_type.ilike(f'%{search_query}%'),
+                Case.visit_description.ilike(f'%{search_query}%'),
+                Patient.mrn.ilike(f'%{search_query}%'),
+                Patient.first_name.ilike(f'%{search_query}%'),
+                Patient.last_name.ilike(f'%{search_query}%')
+            )
+        ).order_by(Case.created_at.desc()).all()
+    else:
+        cases = Case.query.order_by(Case.created_at.desc()).all()
+    
+    return render_template('cases.html', cases=cases, search_query=search_query)
 
 @app.route('/case/<int:case_id>')
 def case_detail(case_id):
@@ -604,8 +667,11 @@ def download_case(case_id):
 @app.route('/upload', methods=['POST'])
 def upload_files():
     try:
-        case_title = request.form.get('case_title', '').strip()
+        # Get basic form data
+        case_title = request.form.get('title', '').strip()
         notes = request.form.get('notes', '').strip()
+        visit_type = request.form.get('visit_type', '').strip()
+        
         template = 'medical'  # Only medical template
         orientation = 'portrait'  # Fixed to portrait
         images_per_slide = 1  # Not used in medical template
@@ -613,6 +679,58 @@ def upload_files():
         if not case_title:
             flash('Please provide a case title.', 'error')
             return redirect(url_for('index'))
+            
+        if not visit_type:
+            flash('Please select a visit type.', 'error')
+            return redirect(url_for('index'))
+        
+        patient_id = None
+        
+        # Handle visit-specific data
+        if visit_type == 'Registration':
+            # Registration: Create new patient
+            mrn = request.form.get('mrn', '').strip()
+            clinic = request.form.get('clinic', '').strip()
+            first_name = request.form.get('first_name', '').strip()
+            last_name = request.form.get('last_name', '').strip()
+            
+            if not all([mrn, clinic, first_name, last_name]):
+                flash('Please fill in all required patient information.', 'error')
+                return redirect(url_for('index'))
+            
+            # Check if MRN already exists
+            existing_patient = Patient.query.filter_by(mrn=mrn).first()
+            if existing_patient:
+                flash(f'Patient with MRN {mrn} already exists.', 'error')
+                return redirect(url_for('index'))
+            
+            # Create new patient
+            new_patient = Patient(
+                mrn=mrn,
+                first_name=first_name,
+                last_name=last_name,
+                clinic=clinic
+            )
+            db.session.add(new_patient)
+            db.session.commit()
+            patient_id = new_patient.id
+            
+        elif visit_type in ['Orthodontic Visit', 'Debond']:
+            # Follow-up visit: Find existing patient
+            patient_id = request.form.get('patient_id', '').strip()
+            
+            if not patient_id:
+                flash('Please select a patient.', 'error')
+                return redirect(url_for('index'))
+            
+            # Verify patient exists
+            patient = Patient.query.get(patient_id)
+            if not patient:
+                flash('Selected patient not found.', 'error')
+                return redirect(url_for('index'))
+        
+        # Get visit description for follow-up visits
+        visit_description = request.form.get('visit_description', '').strip() if visit_type != 'Registration' else None
         
         # Check if files were uploaded
         if 'images' not in request.files:
@@ -657,7 +775,7 @@ def upload_files():
         pdf_path = os.path.join(app.config['UPLOAD_FOLDER'], pdf_filename)
         
         if create_pdf(uploaded_files, case_title, notes, pdf_path, template, orientation, images_per_slide):
-            # Save case to database
+            # Save case to database with visit information
             case = Case(
                 title=case_title,
                 notes=notes,
@@ -665,7 +783,10 @@ def upload_files():
                 orientation=orientation,
                 images_per_slide=images_per_slide,
                 image_count=len(uploaded_files),
-                pdf_filename=pdf_filename
+                pdf_filename=pdf_filename,
+                visit_type=visit_type,
+                patient_id=patient_id,
+                visit_description=visit_description
             )
             db.session.add(case)
             db.session.commit()
