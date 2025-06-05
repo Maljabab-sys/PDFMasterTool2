@@ -1,6 +1,3 @@
-// Global variables
-let selectedPatientData = null;
-
 document.addEventListener('DOMContentLoaded', function() {
     const form = document.getElementById('slideForm');
     const submitBtn = document.getElementById('submitBtn');
@@ -51,202 +48,199 @@ document.addEventListener('DOMContentLoaded', function() {
             previewImg.src = e.target.result;
             placeholder.style.display = 'none';
             preview.style.display = 'block';
+            container.style.borderColor = '#28a745';
+            container.style.backgroundColor = 'rgba(40, 167, 69, 0.05)';
         };
         reader.readAsDataURL(file);
         
         // Handle remove button
         removeBtn.onclick = function() {
             input.value = '';
+            placeholder.style.display = 'block';
             preview.style.display = 'none';
-            placeholder.style.display = 'flex';
+            container.style.borderColor = '#dee2e6';
+            container.style.backgroundColor = '';
         };
     }
     
+    // Truncate filename for display
     function truncateFilename(filename, maxLength) {
         if (filename.length <= maxLength) return filename;
-        const start = filename.substring(0, maxLength - 3);
-        return start + '...';
+        const ext = filename.substring(filename.lastIndexOf('.'));
+        const name = filename.substring(0, filename.lastIndexOf('.'));
+        const truncated = name.substring(0, maxLength - ext.length - 3) + '...';
+        return truncated + ext;
     }
     
+    // Show error message
     function showError(message) {
-        const errorDiv = document.createElement('div');
-        errorDiv.className = 'alert alert-danger alert-dismissible fade show position-fixed';
-        errorDiv.style.cssText = 'top: 20px; right: 20px; z-index: 9999; max-width: 350px;';
-        errorDiv.innerHTML = `
+        // Remove existing alerts
+        const existingAlerts = document.querySelectorAll('.alert');
+        existingAlerts.forEach(alert => alert.remove());
+        
+        // Create new alert
+        const alertDiv = document.createElement('div');
+        alertDiv.className = 'alert alert-danger alert-dismissible fade show';
+        alertDiv.innerHTML = `
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>
             ${message}
             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
         `;
-        document.body.appendChild(errorDiv);
         
-        setTimeout(() => {
-            if (errorDiv.parentNode) {
-                errorDiv.parentNode.removeChild(errorDiv);
+        // Insert at top of form
+        form.insertBefore(alertDiv, form.firstChild);
+        
+        // Scroll to alert
+        alertDiv.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+    
+    // Form submission handler
+    form.addEventListener('submit', function(e) {
+        
+        // Basic validation
+        const visitType = document.getElementById('visitType').value;
+        
+        if (!visitType) {
+            showError('Please select a visit type.');
+            return;
+        }
+        
+        // Set case title automatically
+        document.getElementById('title').value = 'Medical Case';
+        
+        // Validate visit-specific fields
+        if (visitType === 'Registration') {
+            const mrn = document.getElementById('mrn').value.trim();
+            const clinic = document.getElementById('clinic').value;
+            const firstName = document.getElementById('firstName').value.trim();
+            const lastName = document.getElementById('lastName').value.trim();
+            
+            if (!mrn || !clinic || !firstName || !lastName) {
+                e.preventDefault();
+                showError('Please fill in all required patient information.');
+                return;
             }
-        }, 5000);
-    }
-    
-    function showProgressIndicator() {
-        const progressDiv = document.createElement('div');
-        progressDiv.className = 'progress-indicator';
-        progressDiv.innerHTML = `
-            <div class="d-flex align-items-center">
-                <div class="spinner-border spinner-border-sm me-2" role="status"></div>
-                <span>Processing images...</span>
-            </div>
-        `;
-        document.body.appendChild(progressDiv);
-        return progressDiv;
-    }
-    
-    // Character count handlers
-    function updateCharacterCount(input, maxLength) {
-        const countElement = document.getElementById(input.id.replace(/([A-Z])/g, '') + 'Count') || 
-                            document.getElementById(input.id + 'Count');
-        if (countElement) {
-            countElement.textContent = input.value.length;
+        } else if (visitType === 'Orthodontic Visit' || visitType === 'Debond') {
+            const patientId = document.getElementById('selectedPatientId').value;
+            if (!patientId) {
+                e.preventDefault();
+                showError('Please search and select a patient.');
+                return;
+            }
         }
-    }
-    
-    // Add character count listeners
-    const textInputs = ['caseTitle', 'notes', 'visitDescription'];
-    textInputs.forEach(id => {
-        const element = document.getElementById(id);
-        if (element) {
-            element.addEventListener('input', function() {
-                const maxLength = this.getAttribute('maxlength') || 1000;
-                updateCharacterCount(this, maxLength);
-            });
-        }
+        
+        // Images are optional - no validation required
+        // Show loading state
+        submitBtn.classList.add('loading');
+        submitText.classList.add('d-none');
+        loadingText.classList.remove('d-none');
+        
+        // Show progress indicator
+        showProgressIndicator();
+        
+        // Disable form inputs after a brief delay to ensure form submission
+        setTimeout(() => {
+            const inputs = form.querySelectorAll('input, textarea, button, select');
+            inputs.forEach(input => input.disabled = true);
+        }, 100);
+        
+        // Don't redirect automatically - let the server handle it
     });
     
-    // Form submission
-    if (form) {
-        form.addEventListener('submit', function(e) {
-            e.preventDefault();
+    // Show progress indicator
+    function showProgressIndicator() {
+        const progressBar = document.createElement('div');
+        progressBar.className = 'upload-progress active';
+        document.body.appendChild(progressBar);
+    }
+    
+    // Character count functionality
+    function updateCharacterCount(input, maxLength) {
+        const countElement = document.getElementById(input.id + 'Count');
+        if (countElement) {
+            countElement.textContent = input.value.length;
             
-            if (submitBtn) {
-                submitBtn.disabled = true;
-                if (submitText) submitText.style.display = 'none';
-                if (loadingText) loadingText.style.display = 'inline';
+            // Color coding
+            const percentage = (input.value.length / maxLength) * 100;
+            if (percentage > 90) {
+                countElement.style.color = 'var(--bs-danger)';
+            } else if (percentage > 75) {
+                countElement.style.color = 'var(--bs-warning)';
+            } else {
+                countElement.style.color = 'var(--bs-muted)';
             }
-            
-            const progressIndicator = showProgressIndicator();
-            
-            const formData = new FormData(form);
-            
-            fetch(form.action, {
-                method: 'POST',
-                body: formData
-            })
-            .then(response => {
-                if (response.ok) {
-                    return response.text();
-                }
-                throw new Error('Upload failed');
-            })
-            .then(data => {
-                progressIndicator.remove();
-                window.location.href = '/success';
-            })
-            .catch(error => {
-                progressIndicator.remove();
-                console.error('Error:', error);
-                showError('Error uploading files. Please try again.');
-                
-                if (submitBtn) {
-                    submitBtn.disabled = false;
-                    if (submitText) submitText.style.display = 'inline';
-                    if (loadingText) loadingText.style.display = 'none';
-                }
-            });
-        });
+        }
     }
 });
 
+// Handle visit type change
 function handleVisitTypeChange() {
     const visitType = document.getElementById('visitType').value;
     const registrationFields = document.getElementById('registrationFields');
     const followupFields = document.getElementById('followupFields');
     
-    // Clear all fields first
+    // Hide all fields first
+    if (registrationFields) registrationFields.style.display = 'none';
+    if (followupFields) followupFields.style.display = 'none';
+    
+    // Clear required attributes
     clearRequiredFields();
     
     if (visitType === 'Registration') {
-        setRegistrationRequired();
         if (registrationFields) registrationFields.style.display = 'block';
-        if (followupFields) followupFields.style.display = 'none';
+        setRegistrationRequired();
     } else if (visitType === 'Orthodontic Visit' || visitType === 'Debond') {
-        setFollowupRequired();
-        if (registrationFields) registrationFields.style.display = 'none';
         if (followupFields) followupFields.style.display = 'block';
-    } else {
-        if (registrationFields) registrationFields.style.display = 'none';
-        if (followupFields) followupFields.style.display = 'none';
+        setFollowupRequired();
     }
 }
 
 function clearRequiredFields() {
-    // Clear registration fields
-    const regFields = ['mrn', 'clinic', 'firstName', 'lastName'];
-    regFields.forEach(field => {
+    const fields = ['mrn', 'clinic', 'firstName', 'lastName', 'mrnSearch'];
+    fields.forEach(field => {
         const element = document.getElementById(field);
-        if (element) {
-            element.required = false;
-            element.value = '';
-        }
+        if (element) element.removeAttribute('required');
     });
-    
-    // Clear followup fields
-    const followupField = document.getElementById('selectedPatientId');
-    if (followupField) {
-        followupField.required = false;
-        followupField.value = '';
-    }
-    
-    // Hide patient info
-    const patientInfo = document.getElementById('selectedPatientInfo');
-    if (patientInfo) patientInfo.style.display = 'none';
-    
-    // Clear search results
-    const results = document.getElementById('patientResults');
-    if (results) results.innerHTML = '';
 }
 
 function setRegistrationRequired() {
-    const regFields = ['mrn', 'clinic', 'firstName', 'lastName'];
-    regFields.forEach(field => {
+    const fields = ['mrn', 'clinic', 'firstName', 'lastName'];
+    fields.forEach(field => {
         const element = document.getElementById(field);
-        if (element) element.required = true;
+        if (element) element.setAttribute('required', 'required');
     });
 }
 
 function setFollowupRequired() {
-    const followupField = document.getElementById('selectedPatientId');
-    if (followupField) followupField.required = true;
+    const mrnSearch = document.getElementById('mrnSearch');
+    if (mrnSearch) mrnSearch.setAttribute('required', 'required');
 }
 
+// Search patients function
 function searchPatients() {
-    const searchTerm = document.getElementById('mrnSearch').value.trim();
+    const mrnSearch = document.getElementById('mrnSearch').value.trim();
+    const resultsDiv = document.getElementById('patientResults');
     
-    if (searchTerm.length < 2) {
-        document.getElementById('patientResults').innerHTML = '';
+    if (mrnSearch.length < 2) {
+        resultsDiv.innerHTML = '';
         return;
     }
     
+    // Make AJAX request to search patients
     fetch('/search_patients', {
         method: 'POST',
         headers: {
-            'Content-Type': 'application/x-www-form-urlencoded',
+            'Content-Type': 'application/json',
         },
-        body: `search_term=${encodeURIComponent(searchTerm)}`
+        body: JSON.stringify({ mrn: mrnSearch })
     })
     .then(response => response.json())
     .then(data => {
         displaySearchResults(data.patients);
     })
     .catch(error => {
-        console.error('Error:', error);
-        showError('Error searching for patients');
+        console.error('Error searching patients:', error);
+        resultsDiv.innerHTML = '<div class="alert alert-danger">Error searching patients</div>';
     });
 }
 
@@ -254,393 +248,595 @@ function displaySearchResults(patients) {
     const resultsDiv = document.getElementById('patientResults');
     
     if (patients.length === 0) {
-        resultsDiv.innerHTML = '<div class="alert alert-info">No patients found</div>';
+        resultsDiv.innerHTML = '<div class="alert alert-warning">No patients found</div>';
         return;
     }
     
-    const resultsHtml = patients.map(patient => 
-        `<div class="list-group-item list-group-item-action" style="cursor: pointer;" 
-                    onclick="selectPatient(${patient.id}, '${patient.mrn}', '${patient.first_name}', '${patient.last_name}', '${patient.clinic}')">
-            <div class="d-flex w-100 justify-content-between">
-                <h6 class="mb-1">${patient.first_name} ${patient.last_name}</h6>
-                <small class="badge bg-primary">${patient.clinic}</small>
-            </div>
-            <p class="mb-1">MRN: ${patient.mrn}</p>
-        </div>`
-    ).join('');
+    let html = '<div class="list-group">';
+    patients.forEach(patient => {
+        html += `
+            <button type="button" class="list-group-item list-group-item-action list-group-item-dark border-secondary patient-result" 
+                    onclick="selectPatient('${patient.id}', '${patient.mrn}', '${patient.first_name}', '${patient.last_name}', '${patient.clinic}')">
+                <div class="d-flex w-100 justify-content-between">
+                    <h6 class="mb-1 text-light"><strong>MRN: ${patient.mrn}</strong></h6>
+                    <small class="text-muted">${patient.clinic}</small>
+                </div>
+                <p class="mb-1 text-light">${patient.first_name} ${patient.last_name}</p>
+            </button>
+        `;
+    });
+    html += '</div>';
     
-    resultsDiv.innerHTML = `<div class="list-group">${resultsHtml}</div>`;
+    resultsDiv.innerHTML = html;
 }
 
 function selectPatient(id, mrn, firstName, lastName, clinic) {
-    document.getElementById('selectedPatientId').value = id;
-    document.getElementById('selectedPatientDetails').textContent = `${firstName} ${lastName} (MRN: ${mrn}, Clinic: ${clinic})`;
-    document.getElementById('selectedPatientInfo').style.display = 'block';
-    document.getElementById('patientResults').innerHTML = '';
-    document.getElementById('mrnSearch').value = '';
+    // Remove previous selections
+    document.querySelectorAll('.patient-result').forEach(el => {
+        el.classList.remove('selected');
+        el.classList.remove('list-group-item-success');
+    });
     
-    // Store patient data for later use
-    selectedPatientData = {
-        id: id,
-        mrn: mrn,
-        first_name: firstName,
-        last_name: lastName,
-        clinic: clinic
-    };
+    // Mark clicked patient as selected
+    const clickedElement = event.target.closest('.patient-result');
+    if (clickedElement) {
+        clickedElement.classList.add('selected');
+        clickedElement.classList.add('list-group-item-success');
+    }
+    
+    // Show selected patient info
+    const selectedPatientInfo = document.getElementById('selectedPatientInfo');
+    const selectedPatientDetails = document.getElementById('selectedPatientDetails');
+    const selectedPatientId = document.getElementById('selectedPatientId');
+    
+    if (selectedPatientInfo) selectedPatientInfo.style.display = 'block';
+    if (selectedPatientDetails) {
+        selectedPatientDetails.textContent = `MRN: ${mrn} - ${firstName} ${lastName} (${clinic})`;
+    }
+    if (selectedPatientId) selectedPatientId.value = id;
+    
+    // Keep search results visible but update search field
+    document.getElementById('mrnSearch').value = `${firstName} ${lastName}`;
 }
 
-// Section navigation functions
+// Section navigation for single-page app
 function showSection(sectionName) {
     // Hide all sections
-    const sections = document.querySelectorAll('.section');
-    sections.forEach(section => section.style.display = 'none');
+    document.querySelectorAll('.section').forEach(section => {
+        section.style.display = 'none';
+    });
+    
+    // Update navigation active state
+    document.querySelectorAll('.nav-link').forEach(link => {
+        link.classList.remove('active');
+    });
     
     // Show selected section
-    const targetSection = document.getElementById(sectionName + '-section');
-    if (targetSection) {
-        targetSection.style.display = 'block';
-    }
-    
-    // Update navigation
-    const navLinks = document.querySelectorAll('.nav-link');
-    navLinks.forEach(link => link.classList.remove('active'));
-    
-    const activeLink = document.querySelector(`[onclick="showSection('${sectionName}')"]`);
-    if (activeLink) {
-        activeLink.classList.add('active');
-    }
-    
-    // Load content based on section
-    if (sectionName === 'case-history') {
+    if (sectionName === 'new-case') {
+        document.getElementById('new-case-section').style.display = 'block';
+        document.querySelector('[onclick="showSection(\'new-case\')"]').classList.add('active');
+    } else if (sectionName === 'case-history') {
+        document.getElementById('case-history-section').style.display = 'block';
+        document.querySelector('[onclick="showSection(\'case-history\')"]').classList.add('active');
         loadCaseHistory();
     } else if (sectionName === 'patient-list') {
+        document.getElementById('patient-list-section').style.display = 'block';
+        document.querySelector('[onclick="showSection(\'patient-list\')"]').classList.add('active');
         loadPatientList();
     } else if (sectionName === 'settings') {
+        document.getElementById('settings-section').style.display = 'block';
+        document.querySelector('[onclick="showSection(\'settings\')"]').classList.add('active');
         loadUserSettings();
     }
 }
 
+// Check URL fragment on page load to handle post-submission redirects
 function checkUrlFragment() {
-    const hash = window.location.hash.substring(1);
-    if (hash) {
-        showSection(hash);
+    const fragment = window.location.hash.substring(1);
+    if (fragment === 'case-history') {
+        showSection('case-history');
+    } else if (fragment === 'patient-list') {
+        showSection('patient-list');
+    } else {
+        showSection('new-case');
     }
 }
 
-// Case History functions
+// Initialize on page load
+document.addEventListener('DOMContentLoaded', function() {
+    checkUrlFragment();
+});
+
+// Load case history via AJAX
 function loadCaseHistory() {
+    const content = document.getElementById('case-history-content');
+    content.innerHTML = '<div class="text-center"><div class="spinner-border" role="status"></div></div>';
+    
     fetch('/api/cases')
         .then(response => response.json())
         .then(data => {
-            renderCaseHistory(data.cases);
+            content.innerHTML = renderCaseHistory(data.cases);
         })
         .catch(error => {
-            console.error('Error loading case history:', error);
-            document.getElementById('caseHistoryContent').innerHTML = 
-                '<div class="alert alert-danger">Error loading case history</div>';
+            content.innerHTML = '<div class="alert alert-danger">Error loading case history</div>';
         });
 }
 
+// Load patient list via AJAX
 function loadPatientList() {
+    const content = document.getElementById('patient-list-content');
+    content.innerHTML = '<div class="text-center"><div class="spinner-border" role="status"></div></div>';
+    
     fetch('/api/patients')
         .then(response => response.json())
         .then(data => {
-            renderPatientList(data.patients);
+            content.innerHTML = renderPatientList(data.patients);
         })
         .catch(error => {
-            console.error('Error loading patients:', error);
-            document.getElementById('patientListContent').innerHTML = 
-                '<div class="alert alert-danger">Error loading patients</div>';
+            content.innerHTML = '<div class="alert alert-danger">Error loading patient list</div>';
         });
 }
 
+// Render case history HTML in single column layout with Riyadh timezone
 function renderCaseHistory(cases) {
-    const content = document.getElementById('caseHistoryContent');
-    
-    if (cases.length === 0) {
-        content.innerHTML = `
-            <div class="text-center py-5">
-                <i class="bi bi-folder2-open display-1 text-muted"></i>
-                <h4 class="mt-3">No cases yet</h4>
-                <p class="text-muted">Start by creating your first case presentation</p>
-                <button class="btn btn-primary" onclick="showSection('home')">
-                    <i class="bi bi-plus me-2"></i>Create Case
-                </button>
-            </div>
-        `;
-        return;
+    if (!cases.length) {
+        return '<div class="text-center text-muted py-5"><i class="bi bi-folder2-open display-1 mb-3"></i><h4>No slides found</h4></div>';
     }
     
-    const casesHtml = cases.map(case_ => `
-        <div class="col-md-6 col-lg-4 mb-4">
-            <div class="card h-100 shadow-sm">
-                <div class="card-body">
-                    <h5 class="card-title">${case_.title}</h5>
-                    <p class="card-text text-muted">${case_.visit_type}</p>
-                    ${case_.patient_name ? `<p class="card-text"><small class="text-muted">Patient: ${case_.patient_name}</small></p>` : ''}
-                    <p class="card-text"><small class="text-muted">${new Date(case_.created_at).toLocaleDateString()}</small></p>
+    let html = '<div class="list-group">';
+    cases.forEach(case_ => {
+        const badgeClass = case_.visit_type === 'Registration' ? 'bg-success' : 
+                          case_.visit_type === 'Orthodontic Visit' ? 'bg-primary' : 'bg-warning';
+        
+        // Convert to Riyadh timezone (UTC+3)
+        const date = new Date(case_.created_at);
+        const riyadhTime = new Date(date.getTime() + (3 * 60 * 60 * 1000));
+        
+        html += `
+            <div class="list-group-item border rounded shadow-sm mb-3 p-4">
+                <div class="d-flex w-100 justify-content-between align-items-start mb-3">
+                    <div class="flex-grow-1">
+                        <h5 class="mb-1 fw-bold">${case_.title}</h5>
+                        <div class="text-muted small mb-2">
+                            <i class="bi bi-calendar me-1"></i>
+                            ${riyadhTime.toLocaleDateString('en-US', {
+                                year: 'numeric', month: 'long', day: 'numeric'
+                            })} at ${riyadhTime.toLocaleTimeString('en-US', {
+                                hour: 'numeric', minute: '2-digit', hour12: true
+                            })} (Riyadh Time)
+                        </div>
+                        ${case_.patient ? `
+                        <div class="mb-2">
+                            <i class="bi bi-person me-1"></i>
+                            <strong>Patient:</strong> ${case_.patient.first_name} ${case_.patient.last_name}<br>
+                            <small class="text-muted ms-3">MRN: ${case_.patient.mrn} | ${case_.patient.clinic}</small>
+                        </div>
+                        ` : ''}
+                    </div>
+                    <span class="badge ${badgeClass} ms-3">${case_.visit_type}</span>
                 </div>
-                <div class="card-footer bg-transparent">
-                    <a href="/case/${case_.id}" class="btn btn-outline-primary btn-sm">
-                        <i class="bi bi-eye me-1"></i>View
+                <div class="d-flex gap-2">
+                    <a href="/download/${case_.id}" class="btn btn-primary btn-sm">
+                        <i class="bi bi-download me-1"></i>Download Slide
                     </a>
-                    ${case_.pdf_filename ? `
-                        <a href="/download/${case_.id}" class="btn btn-primary btn-sm">
-                            <i class="bi bi-download me-1"></i>Download
-                        </a>
-                    ` : ''}
                 </div>
-            </div>
-        </div>
-    `).join('');
-    
-    content.innerHTML = `<div class="row">${casesHtml}</div>`;
-}
-
-function renderPatientList(patients) {
-    const content = document.getElementById('patientListContent');
-    
-    if (patients.length === 0) {
-        content.innerHTML = `
-            <div class="text-center py-5">
-                <i class="bi bi-people display-1 text-muted"></i>
-                <h4 class="mt-3">No patients yet</h4>
-                <p class="text-muted">Patients will appear here after registration</p>
             </div>
         `;
-        return;
+    });
+    html += '</div>';
+    return html;
+}
+
+// Store patients data globally for search
+let allPatients = [];
+
+// Render patient list HTML
+function renderPatientList(patients) {
+    // Store patients for search functionality
+    allPatients = patients;
+    
+    if (!patients.length) {
+        return '<div class="text-center text-muted py-5"><i class="bi bi-people display-1 mb-3"></i><h4>No patients found</h4></div>';
     }
     
-    const patientsHtml = patients.map(patient => `
-        <div class="col-md-6 col-lg-4 mb-4">
-            <div class="card h-100 shadow-sm">
-                <div class="card-body">
-                    <h5 class="card-title">${patient.first_name} ${patient.last_name}</h5>
-                    <p class="card-text">
-                        <strong>MRN:</strong> ${patient.mrn}<br>
-                        <strong>Clinic:</strong> ${patient.clinic}<br>
-                        <strong>Cases:</strong> ${patient.case_count || 0}
-                    </p>
-                    <p class="card-text">
-                        <small class="text-muted">Registered: ${new Date(patient.created_at).toLocaleDateString()}</small>
-                    </p>
-                </div>
-                <div class="card-footer bg-transparent">
-                    <button class="btn btn-outline-primary btn-sm" onclick="renderPatientCases(${patient.id})">
-                        <i class="bi bi-folder me-1"></i>View Cases
+    let html = '<div class="accordion" id="patientAccordion">';
+    patients.forEach((patient, index) => {
+        html += `
+            <div class="accordion-item patient-item" data-patient-name="${patient.first_name.toLowerCase()} ${patient.last_name.toLowerCase()}" 
+                 data-patient-mrn="${patient.mrn.toLowerCase()}" data-patient-clinic="${patient.clinic.toLowerCase()}">
+                <h2 class="accordion-header">
+                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" 
+                            data-bs-target="#patient-${patient.id}" aria-expanded="false">
+                        <div class="d-flex align-items-center w-100">
+                            <i class="bi bi-person-circle me-3 text-primary" style="font-size: 1.5rem;"></i>
+                            <div class="flex-grow-1">
+                                <div class="fw-bold">${patient.first_name} ${patient.last_name}</div>
+                                <small class="text-muted">MRN: ${patient.mrn} | ${patient.clinic} | ${patient.cases_count} slide(s)</small>
+                            </div>
+                        </div>
                     </button>
+                </h2>
+                <div id="patient-${patient.id}" class="accordion-collapse collapse" 
+                     data-bs-parent="#patientAccordion">
+                    <div class="accordion-body">
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <strong>Medical Record Number:</strong> ${patient.mrn}
+                            </div>
+                            <div class="col-md-6">
+                                <strong>Clinic:</strong> ${patient.clinic}
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <strong>Patient Since:</strong> ${new Date(patient.created_at).toLocaleDateString()}
+                        </div>
+                        
+                        <h6 class="fw-bold mb-3">Treatment Timeline</h6>
+                        ${renderTreatmentTimeline(patient.cases)}
+                        
+                        <h6 class="fw-bold mb-3 mt-4">Medical Slides (${patient.cases_count})</h6>
+                        ${renderPatientCases(patient.cases)}
+                    </div>
                 </div>
             </div>
-        </div>
-    `).join('');
-    
-    content.innerHTML = `<div class="row">${patientsHtml}</div>`;
-}
-
-function filterPatients() {
-    const searchTerm = document.getElementById('patientFilter').value.toLowerCase();
-    const patientCards = document.querySelectorAll('#patientListContent .card');
-    
-    patientCards.forEach(card => {
-        const text = card.textContent.toLowerCase();
-        card.closest('.col-md-6').style.display = text.includes(searchTerm) ? 'block' : 'none';
+        `;
     });
+    html += '</div>';
+    return html;
 }
 
+// Filter patients based on search input
+function filterPatients() {
+    const searchTerm = document.getElementById('patientSearchInput').value.toLowerCase();
+    const patientItems = document.querySelectorAll('.patient-item');
+    let visibleCount = 0;
+    
+    patientItems.forEach(item => {
+        const name = item.getAttribute('data-patient-name');
+        const mrn = item.getAttribute('data-patient-mrn');
+        const clinic = item.getAttribute('data-patient-clinic');
+        
+        if (name.includes(searchTerm) || mrn.includes(searchTerm) || clinic.includes(searchTerm)) {
+            item.style.display = 'block';
+            visibleCount++;
+        } else {
+            item.style.display = 'none';
+        }
+    });
+    
+    // Show/hide no results message
+    const accordion = document.getElementById('patientAccordion');
+    let noResultsMsg = document.getElementById('no-search-results');
+    
+    if (visibleCount === 0 && searchTerm.length > 0) {
+        if (!noResultsMsg) {
+            noResultsMsg = document.createElement('div');
+            noResultsMsg.id = 'no-search-results';
+            noResultsMsg.className = 'text-center text-muted py-4';
+            noResultsMsg.innerHTML = '<i class="bi bi-search display-4 mb-3"></i><h5>No patients found</h5><p>Try adjusting your search terms</p>';
+            accordion.parentNode.appendChild(noResultsMsg);
+        }
+        noResultsMsg.style.display = 'block';
+    } else if (noResultsMsg) {
+        noResultsMsg.style.display = 'none';
+    }
+}
+
+// Clear patient search
 function clearPatientSearch() {
-    document.getElementById('patientFilter').value = '';
+    document.getElementById('patientSearchInput').value = '';
     filterPatients();
 }
 
-function renderPatientCases(patientId) {
-    fetch(`/api/patients/${patientId}/cases`)
-        .then(response => response.json())
-        .then(data => {
-            const content = document.getElementById('patientListContent');
+// Render patient cases in single column with dark theme and Riyadh timezone
+function renderPatientCases(cases) {
+    if (!cases.length) {
+        return '<div class="text-muted">No slides found</div>';
+    }
+    
+    // Group cases by date in Riyadh timezone
+    const groupedCases = {};
+    cases.forEach(case_ => {
+        const date = new Date(case_.created_at);
+        // Convert to Riyadh timezone (UTC+3)
+        const riyadhTime = new Date(date.getTime() + (3 * 60 * 60 * 1000));
+        const dateKey = riyadhTime.toLocaleDateString('en-US', {
+            year: 'numeric',
+            month: 'long', 
+            day: 'numeric'
+        });
+        
+        if (!groupedCases[dateKey]) {
+            groupedCases[dateKey] = [];
+        }
+        groupedCases[dateKey].push({...case_, riyadhTime});
+    });
+    
+    let html = '';
+    Object.keys(groupedCases).forEach(dateKey => {
+        html += `
+            <div class="mb-4">
+                <h6 class="text-white px-3 py-2 rounded mb-3" style="background-color: #4a148c; font-weight: bold;">
+                    <i class="bi bi-calendar2-week me-2"></i>${dateKey}
+                </h6>
+                <div class="list-group">
+        `;
+        
+        groupedCases[dateKey].forEach(case_ => {
+            const badgeClass = case_.visit_type === 'Registration' ? 'bg-success' : 
+                              case_.visit_type === 'Orthodontic Visit' ? 'bg-primary' : 'bg-warning';
             
-            if (data.cases.length === 0) {
-                content.innerHTML = `
-                    <div class="text-center py-5">
-                        <button class="btn btn-secondary mb-3" onclick="loadPatientList()">
-                            <i class="bi bi-arrow-left me-2"></i>Back to Patients
-                        </button>
-                        <h4>No cases for this patient yet</h4>
-                    </div>
-                `;
-                return;
-            }
-            
-            const casesHtml = data.cases.map(case_ => `
-                <div class="col-md-6 col-lg-4 mb-4">
-                    <div class="card h-100 shadow-sm">
-                        <div class="card-body">
-                            <h5 class="card-title">${case_.title}</h5>
-                            <p class="card-text">${case_.visit_type}</p>
-                            <p class="card-text">
-                                <small class="text-muted">${new Date(case_.created_at).toLocaleDateString()}</small>
-                            </p>
-                        </div>
-                        <div class="card-footer bg-transparent">
-                            <a href="/case/${case_.id}" class="btn btn-outline-primary btn-sm">
-                                <i class="bi bi-eye me-1"></i>View
-                            </a>
-                            ${case_.pdf_filename ? `
-                                <a href="/download/${case_.id}" class="btn btn-primary btn-sm">
-                                    <i class="bi bi-download me-1"></i>Download
-                                </a>
+            html += `
+                <div class="list-group-item bg-dark border-secondary mb-2 rounded">
+                    <div class="d-flex w-100 justify-content-between align-items-start">
+                        <div class="flex-grow-1">
+                            <h6 class="mb-1 text-light">${case_.title}</h6>
+                            <small class="text-muted">
+                                <i class="bi bi-clock me-1"></i>
+                                ${case_.riyadhTime.toLocaleTimeString('en-US', {
+                                    hour: 'numeric',
+                                    minute: '2-digit',
+                                    hour12: true
+                                })} (Riyadh Time)
+                            </small>
+                            ${case_.visit_description ? `
+                            <div class="mt-1">
+                                <small class="text-muted">
+                                    <strong>Notes:</strong> ${case_.visit_description.substring(0, 100)}${case_.visit_description.length > 100 ? '...' : ''}
+                                </small>
+                            </div>
                             ` : ''}
                         </div>
+                        <span class="badge ${badgeClass} ms-3">${case_.visit_type}</span>
+                    </div>
+                    <div class="mt-2">
+                        <a href="/download/${case_.id}" class="btn btn-outline-light btn-sm">
+                            <i class="bi bi-download me-1"></i>Download Slide
+                        </a>
                     </div>
                 </div>
-            `).join('');
-            
-            content.innerHTML = `
-                <div class="mb-3">
-                    <button class="btn btn-secondary" onclick="loadPatientList()">
-                        <i class="bi bi-arrow-left me-2"></i>Back to Patients
-                    </button>
-                    <h4 class="mt-3">Cases for ${data.patient.first_name} ${data.patient.last_name}</h4>
-                </div>
-                ${renderTreatmentTimeline(data.cases)}
-                <div class="row">${casesHtml}</div>
             `;
-        })
-        .catch(error => {
-            console.error('Error loading patient cases:', error);
         });
-}
-
-function renderTreatmentTimeline(cases) {
-    if (cases.length === 0) return '';
-    
-    // Sort cases by visit type order
-    const visitOrder = { 'Registration': 1, 'Orthodontic Visit': 2, 'Debond': 3 };
-    const sortedCases = cases.sort((a, b) => visitOrder[a.visit_type] - visitOrder[b.visit_type]);
-    
-    const timelineHtml = sortedCases.map((case_, index) => {
-        let stageColor = 'success';
-        let icon = 'check-circle-fill';
         
-        if (case_.visit_type === 'Registration') {
-            stageColor = 'success';
-            icon = 'person-plus-fill';
-        } else if (case_.visit_type === 'Orthodontic Visit') {
-            stageColor = 'primary';
-            icon = 'gear-fill';
-        } else if (case_.visit_type === 'Debond') {
-            stageColor = 'warning';
-            icon = 'trophy-fill';
-        }
-        
-        return `
-            <div class="timeline-item">
-                <div class="timeline-marker bg-${stageColor}">
-                    <i class="bi bi-${icon}"></i>
-                </div>
-                <div class="timeline-content">
-                    <div class="timeline-header">
-                        <span class="timeline-title">${case_.visit_type}</span>
-                        <span class="timeline-date" style="background-color: #4a148c; color: white; padding: 2px 8px; border-radius: 4px; font-size: 0.8em;">
-                            ${new Date(case_.created_at).toLocaleDateString()}
-                        </span>
-                    </div>
-                    <p class="timeline-description">${case_.title}</p>
+        html += `
                 </div>
             </div>
         `;
-    }).join('');
+    });
     
-    return `
-        <div class="timeline-container mb-4">
-            <h5 class="mb-3">Treatment Timeline</h5>
-            <div class="timeline">
-                ${timelineHtml}
-            </div>
-        </div>
-    `;
+    return html;
 }
 
-// Settings functions
+// Render treatment timeline
+function renderTreatmentTimeline(cases) {
+    // Define timeline stages
+    const stages = [
+        { name: 'Registration', icon: 'bi-person-plus-fill', color: '#28a745' },
+        { name: 'Orthodontic Visit', icon: 'bi-arrow-repeat', color: '#007bff' },
+        { name: 'Debond', icon: 'bi-check-circle-fill', color: '#ffc107' }
+    ];
+    
+    // Find which stages have cases
+    const completedStages = new Set();
+    const stageData = {};
+    
+    cases.forEach(case_ => {
+        const visitType = case_.visit_type;
+        if (['Registration', 'Orthodontic Visit', 'Debond'].includes(visitType)) {
+            completedStages.add(visitType);
+            if (!stageData[visitType] || new Date(case_.created_at) > new Date(stageData[visitType].created_at)) {
+                stageData[visitType] = case_;
+            }
+        }
+    });
+    
+    // Count orthodontic visits
+    const orthodonticVisits = cases.filter(c => c.visit_type === 'Orthodontic Visit').length;
+    
+    let html = '<div class="treatment-timeline">';
+    
+    stages.forEach((stage, index) => {
+        const isCompleted = completedStages.has(stage.name);
+        const case_ = stageData[stage.name];
+        const stageKey = stage.name.toLowerCase().replace(' ', '_');
+        
+        // Check if next stage is also completed for connection line
+        const nextStage = stages[index + 1];
+        const nextCompleted = nextStage ? completedStages.has(nextStage.name) : false;
+        const showConnection = index < stages.length - 1;
+        const connectionActive = isCompleted && nextCompleted;
+        
+        html += `
+            <div class="timeline-item ${isCompleted ? 'completed' : 'pending'}" data-stage="${stageKey}">
+                <div class="timeline-marker">
+                    <i class="${stage.icon}" style="color: white; font-size: 12px;"></i>
+                </div>
+                <div class="timeline-content">
+                    <div class="timeline-title" style="color: ${isCompleted ? stage.color : '#adb5bd'}">
+                        ${stage.name}
+                        ${stage.name === 'Orthodontic Visit' && orthodonticVisits > 1 ? ` (${orthodonticVisits})` : ''}
+                    </div>
+                    ${isCompleted ? `
+                        <div class="timeline-date">
+                            ${new Date(case_.created_at).toLocaleDateString('en-US', {
+                                month: 'short', day: 'numeric', year: 'numeric'
+                            })}
+                        </div>
+                    ` : `
+                        <div class="timeline-pending">Pending</div>
+                    `}
+                </div>
+                ${showConnection ? `<div class="timeline-connection ${connectionActive ? 'active' : ''}"></div>` : ''}
+            </div>
+        `;
+    });
+    
+    html += '</div>';
+    return html;
+}
+
+// Character count for visit description
+document.addEventListener('DOMContentLoaded', function() {
+    const visitDescInput = document.getElementById('visitDescription');
+    if (visitDescInput) {
+        visitDescInput.addEventListener('input', function() {
+            const countElement = document.getElementById('visitDescCount');
+            if (countElement) {
+                countElement.textContent = this.value.length;
+            }
+        });
+    }
+});
+
+// Settings functionality
 function loadUserSettings() {
-    fetch('/api/user/settings')
+    fetch('/api/user-settings')
         .then(response => response.json())
         .then(data => {
             if (data.settings) {
-                const settings = data.settings;
-                document.getElementById('fullName').value = settings.full_name || '';
-                document.getElementById('email').value = settings.email || '';
-                document.getElementById('position').value = settings.position || '';
-                document.getElementById('gender').value = settings.gender || '';
+                document.getElementById('fullName').value = data.settings.full_name || '';
+                document.getElementById('email').value = data.settings.email || '';
+                document.getElementById('position').value = data.settings.position || '';
+                document.getElementById('gender').value = data.settings.gender || '';
                 
-                if (settings.profile_image) {
+                // Load clinics
+                loadUserClinics(data.settings.clinics || []);
+                
+                // Load profile image if exists
+                if (data.settings.profile_image) {
                     const preview = document.getElementById('profilePreview');
                     const placeholder = document.getElementById('uploadPlaceholder');
-                    preview.src = `/static/uploads/profiles/${settings.profile_image}`;
-                    preview.style.display = 'block';
-                    placeholder.style.display = 'none';
                     
-                    updateNavProfileImage(`/static/uploads/profiles/${settings.profile_image}`, settings.gender);
+                    if (preview && placeholder) {
+                        preview.src = data.settings.profile_image;
+                        preview.style.display = 'block';
+                        placeholder.style.display = 'none';
+                    }
+                    
+                    // Update navigation profile image
+                    updateNavProfileImage(data.settings.profile_image, data.settings.gender);
                 } else {
-                    updateDefaultProfileIcon();
+                    // No image, use gender-based icon
+                    updateNavProfileImage(null, data.settings.gender || '');
                 }
-                
-                loadUserClinics(data.clinics || []);
             }
+            
+            // Update clinic dropdown in registration form
+            updateClinicDropdown(data.settings?.clinics || []);
         })
         .catch(error => {
             console.error('Error loading settings:', error);
         });
 }
 
+// Add form submission handler for settings
+document.addEventListener('DOMContentLoaded', function() {
+    const settingsForm = document.getElementById('settingsForm');
+    if (settingsForm) {
+        settingsForm.addEventListener('submit', function(e) {
+            e.preventDefault(); // Prevent default form submission
+            
+            // Create FormData from form
+            const formData = new FormData(settingsForm);
+            
+            // Submit via AJAX
+            fetch('/save_settings', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => {
+                if (response.ok) {
+                    // Show success popup
+                    showSuccessPopup('Settings saved successfully!');
+                    
+                    // Reload settings to update UI
+                    setTimeout(() => {
+                        loadUserSettings();
+                    }, 500);
+                } else {
+                    throw new Error('Failed to save settings');
+                }
+            })
+            .catch(error => {
+                console.error('Error saving settings:', error);
+                alert('Error saving settings. Please try again.');
+            });
+        });
+    }
+});
+
 function loadUserClinics(clinics) {
     const container = document.getElementById('clinicsContainer');
+    container.innerHTML = '';
     
     if (clinics.length === 0) {
-        container.innerHTML = '<p class="text-muted">No clinics added yet</p>';
+        addClinic();
         return;
     }
     
-    const clinicsHtml = clinics.map((clinic, index) => `
-        <div class="clinic-item d-flex align-items-center mb-2">
-            <input type="text" class="form-control me-2" value="${clinic.name}" readonly>
-            <button type="button" class="btn btn-outline-danger btn-sm" onclick="removeClinic(this)">
-                <i class="bi bi-trash"></i>
-            </button>
-        </div>
-    `).join('');
-    
-    container.innerHTML = clinicsHtml;
-    
-    updateClinicDropdown(clinics);
+    clinics.forEach((clinic, index) => {
+        const clinicHtml = `
+            <div class="clinic-entry mb-3">
+                <div class="row">
+                    <div class="col-md-8">
+                        <label class="form-label">Clinic Name</label>
+                        <input type="text" class="form-control clinic-input" name="clinics[]" 
+                               value="${clinic}" placeholder="Enter clinic name...">
+                    </div>
+                    <div class="col-md-4 d-flex align-items-end">
+                        <button type="button" class="btn btn-outline-danger btn-sm remove-clinic" 
+                                onclick="removeClinic(this)" ${clinics.length === 1 ? 'style="display: none;"' : ''}>
+                            <i class="bi bi-trash"></i> Remove
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+        container.insertAdjacentHTML('beforeend', clinicHtml);
+    });
 }
 
 function addClinic() {
     const container = document.getElementById('clinicsContainer');
+    const clinicCount = container.querySelectorAll('.clinic-entry').length;
     
-    if (container.querySelector('p')) {
-        container.innerHTML = '';
-    }
-    
-    const clinicItem = document.createElement('div');
-    clinicItem.className = 'clinic-item d-flex align-items-center mb-2';
-    clinicItem.innerHTML = `
-        <input type="text" class="form-control me-2" placeholder="Enter clinic name..." required>
-        <button type="button" class="btn btn-outline-danger btn-sm" onclick="removeClinic(this)">
-            <i class="bi bi-trash"></i>
-        </button>
+    const clinicHtml = `
+        <div class="clinic-entry mb-3">
+            <div class="row">
+                <div class="col-md-8">
+                    <label class="form-label">Clinic Name</label>
+                    <input type="text" class="form-control clinic-input" name="clinics[]" 
+                           placeholder="Enter clinic name...">
+                </div>
+                <div class="col-md-4 d-flex align-items-end">
+                    <button type="button" class="btn btn-outline-danger btn-sm remove-clinic" 
+                            onclick="removeClinic(this)">
+                        <i class="bi bi-trash"></i> Remove
+                    </button>
+                </div>
+            </div>
+        </div>
     `;
     
-    container.appendChild(clinicItem);
-    clinicItem.querySelector('input').focus();
+    container.insertAdjacentHTML('beforeend', clinicHtml);
+    
+    // Show remove buttons if more than one clinic
+    if (clinicCount >= 0) {
+        container.querySelectorAll('.remove-clinic').forEach(btn => {
+            btn.style.display = 'block';
+        });
+    }
 }
 
 function removeClinic(button) {
-    const clinicItem = button.closest('.clinic-item');
-    clinicItem.remove();
-    
     const container = document.getElementById('clinicsContainer');
-    if (container.children.length === 0) {
-        container.innerHTML = '<p class="text-muted">No clinics added yet</p>';
+    const clinicEntry = button.closest('.clinic-entry');
+    clinicEntry.remove();
+    
+    // Hide remove buttons if only one clinic left
+    const remainingClinics = container.querySelectorAll('.clinic-entry');
+    if (remainingClinics.length === 1) {
+        remainingClinics[0].querySelector('.remove-clinic').style.display = 'none';
     }
 }
 
@@ -648,68 +844,51 @@ function updateClinicDropdown(clinics) {
     const clinicSelect = document.getElementById('clinic');
     if (!clinicSelect) return;
     
-    // Keep default options
-    clinicSelect.innerHTML = `
-        <option value="">Select clinic...</option>
-        <option value="KFMC">KFMC</option>
-        <option value="DC">DC</option>
-    `;
+    // Start with empty select
+    clinicSelect.innerHTML = '<option value="">Select clinic...</option>';
     
-    // Add user clinics
+    // Add all user's clinics (including any custom ones)
     clinics.forEach(clinic => {
-        if (clinic.name !== 'KFMC' && clinic.name !== 'DC') {
+        if (clinic) {
             const option = document.createElement('option');
-            option.value = clinic.name;
-            option.textContent = clinic.name;
+            option.value = clinic;
+            option.textContent = clinic;
             clinicSelect.appendChild(option);
         }
     });
 }
 
 function showAbout() {
-    const aboutHtml = `
-        <div class="text-center py-5">
-            <h2>Patient Data Organizer</h2>
-            <p class="lead">Professional medical case presentation platform</p>
-            <div class="row mt-5">
-                <div class="col-md-4">
-                    <i class="bi bi-upload display-4 text-primary"></i>
-                    <h5 class="mt-3">Easy Upload</h5>
-                    <p>Upload medical images with predefined labels</p>
-                </div>
-                <div class="col-md-4">
-                    <i class="bi bi-file-pdf display-4 text-success"></i>
-                    <h5 class="mt-3">PDF Generation</h5>
-                    <p>Generate professional slide decks</p>
-                </div>
-                <div class="col-md-4">
-                    <i class="bi bi-people display-4 text-info"></i>
-                    <h5 class="mt-3">Patient Management</h5>
-                    <p>Track patient visits and treatment progress</p>
-                </div>
-            </div>
-        </div>
-    `;
-    
-    const sections = document.querySelectorAll('.section');
-    sections.forEach(section => section.style.display = 'none');
-    
-    const homeSection = document.getElementById('home-section');
-    if (homeSection) {
-        homeSection.innerHTML = aboutHtml;
-        homeSection.style.display = 'block';
-    }
+    alert('Patient Data Organizer v1.0\n\nA professional medical case presentation tool for healthcare professionals.\n\nDeveloped for organizing patient data and creating professional slide presentations.');
 }
 
 function showSuccessPopup(message = 'Settings saved successfully!') {
-    const popup = document.getElementById('successPopup');
-    const text = popup.querySelector('.success-text');
-    text.textContent = message;
+    // Remove any existing popup
+    const existing = document.querySelector('.success-popup');
+    if (existing) {
+        existing.remove();
+    }
     
-    popup.classList.add('show');
+    // Create popup element
+    const popup = document.createElement('div');
+    popup.className = 'success-popup';
+    popup.innerHTML = `
+        <div class="success-icon">
+            <i class="bi bi-check" style="color: white; font-size: 14px; font-weight: bold;"></i>
+        </div>
+        <div class="success-text">${message}</div>
+    `;
     
+    // Add to page
+    document.body.appendChild(popup);
+    
+    // Trigger animation
+    setTimeout(() => popup.classList.add('show'), 100);
+    
+    // Auto hide after 3 seconds
     setTimeout(() => {
-        popup.classList.remove('show');
+        popup.classList.add('hide');
+        setTimeout(() => popup.remove(), 400);
     }, 3000);
 }
 
@@ -717,18 +896,21 @@ function handleProfileImageUpload(input) {
     const file = input.files[0];
     if (!file) return;
     
+    // Validate file type
     if (!file.type.startsWith('image/')) {
-        showError('Please select an image file.');
+        alert('Please select an image file.');
         input.value = '';
         return;
     }
     
+    // Validate file size (2MB)
     if (file.size > 2 * 1024 * 1024) {
-        showError('Profile image must be under 2MB.');
+        alert('Image size must be less than 2MB.');
         input.value = '';
         return;
     }
     
+    // Show preview
     const reader = new FileReader();
     reader.onload = function(e) {
         const preview = document.getElementById('profilePreview');
@@ -738,26 +920,31 @@ function handleProfileImageUpload(input) {
         preview.style.display = 'block';
         placeholder.style.display = 'none';
         
+        // Update navigation profile image
         updateNavProfileImage(e.target.result);
     };
     reader.readAsDataURL(file);
 }
 
 function updateNavProfileImage(imageSrc, gender = '') {
-    const navImage = document.querySelector('.navbar .rounded-circle');
-    if (navImage) {
-        if (imageSrc) {
-            navImage.src = imageSrc;
-            navImage.style.display = 'block';
-            const icon = navImage.nextElementSibling;
-            if (icon) icon.style.display = 'none';
+    const navImage = document.getElementById('navProfileImage');
+    const navIcon = document.getElementById('navProfileIcon');
+    
+    if (imageSrc) {
+        navImage.src = imageSrc;
+        navImage.style.display = 'block';
+        navIcon.style.display = 'none';
+    } else {
+        navImage.style.display = 'none';
+        navIcon.style.display = 'block';
+        
+        // Update icon based on gender
+        if (gender === 'male') {
+            navIcon.className = 'bi bi-person-fill-check';
+        } else if (gender === 'female') {
+            navIcon.className = 'bi bi-person-heart';
         } else {
-            navImage.style.display = 'none';
-            const icon = navImage.nextElementSibling;
-            if (icon) {
-                icon.style.display = 'block';
-                icon.className = `bi bi-person${gender === 'female' ? '-dress' : ''}-circle`;
-            }
+            navIcon.className = 'bi bi-person-circle';
         }
     }
 }
@@ -765,92 +952,9 @@ function updateNavProfileImage(imageSrc, gender = '') {
 function updateDefaultProfileIcon() {
     const gender = document.getElementById('gender').value;
     const preview = document.getElementById('profilePreview');
-    const placeholder = document.getElementById('uploadPlaceholder');
     
-    if (!preview.src || preview.src.includes('blob:') || preview.src.includes('data:')) {
-        preview.style.display = 'none';
-        placeholder.style.display = 'flex';
-        
-        const icon = placeholder.querySelector('i');
-        if (icon) {
-            icon.className = gender === 'female' ? 'bi bi-person-dress text-muted' : 'bi bi-person text-muted';
-        }
-        
+    // Only update icon if no image is uploaded
+    if (!preview || preview.style.display === 'none') {
         updateNavProfileImage(null, gender);
     }
 }
-
-function showError(message) {
-    const errorDiv = document.createElement('div');
-    errorDiv.className = 'alert alert-danger alert-dismissible fade show position-fixed';
-    errorDiv.style.cssText = 'top: 20px; right: 20px; z-index: 9999; max-width: 350px;';
-    errorDiv.innerHTML = `
-        ${message}
-        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-    `;
-    document.body.appendChild(errorDiv);
-    
-    setTimeout(() => {
-        if (errorDiv.parentNode) {
-            errorDiv.parentNode.removeChild(errorDiv);
-        }
-    }, 5000);
-}
-
-function saveSettings() {
-    const formData = new FormData();
-    
-    formData.append('full_name', document.getElementById('fullName').value);
-    formData.append('email', document.getElementById('email').value);
-    formData.append('position', document.getElementById('position').value);
-    formData.append('gender', document.getElementById('gender').value);
-    
-    const profileImage = document.getElementById('profileImage').files[0];
-    if (profileImage) {
-        formData.append('profile_image', profileImage);
-    }
-    
-    const clinics = [];
-    document.querySelectorAll('#clinicsContainer input[type="text"]').forEach(input => {
-        if (input.value.trim()) {
-            clinics.push(input.value.trim());
-        }
-    });
-    
-    clinics.forEach(clinic => {
-        formData.append('clinics', clinic);
-    });
-    
-    fetch('/settings/save', {
-        method: 'POST',
-        body: formData
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            showSuccessPopup('Settings saved successfully!');
-            
-            if (data.profile_image) {
-                updateNavProfileImage(`/static/uploads/profiles/${data.profile_image}`);
-            }
-            
-            if (clinics.length > 0) {
-                updateClinicDropdown(clinics.map(name => ({name})));
-            }
-        } else {
-            showError(data.message || 'Error saving settings');
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        showError('Error saving settings');
-    });
-}
-
-// Initialize on page load
-document.addEventListener('DOMContentLoaded', function() {
-    checkUrlFragment();
-    
-    // Handle browser back/forward
-    window.addEventListener('hashchange', checkUrlFragment);
-});
