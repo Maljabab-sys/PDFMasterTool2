@@ -942,13 +942,19 @@ def save_settings():
         }
         
         logging.info(f"Settings saved: {full_name}, {email}, {position}, {clinics}")
-        flash('Settings saved successfully!', 'success')
+        
+        # Return JSON response for AJAX
+        if request.headers.get('Content-Type') != 'application/x-www-form-urlencoded':
+            return jsonify({'success': True, 'message': 'Settings saved successfully!'})
         
     except Exception as e:
         logging.error(f"Error saving settings: {str(e)}")
+        if request.headers.get('Content-Type') != 'application/x-www-form-urlencoded':
+            return jsonify({'success': False, 'message': 'Error saving settings. Please try again.'}), 500
         flash('Error saving settings. Please try again.', 'error')
     
-    return redirect(url_for('index') + '#settings')
+    # Always return JSON for AJAX requests
+    return jsonify({'success': True, 'message': 'Settings saved successfully!'})
 
 @app.errorhandler(500)
 def server_error(e):

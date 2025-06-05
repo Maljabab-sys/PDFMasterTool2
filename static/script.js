@@ -639,10 +639,33 @@ document.addEventListener('DOMContentLoaded', function() {
     const settingsForm = document.getElementById('settingsForm');
     if (settingsForm) {
         settingsForm.addEventListener('submit', function(e) {
-            // Allow form to submit normally, but reload settings after redirect
-            setTimeout(() => {
-                loadUserSettings();
-            }, 100);
+            e.preventDefault(); // Prevent default form submission
+            
+            // Create FormData from form
+            const formData = new FormData(settingsForm);
+            
+            // Submit via AJAX
+            fetch('/save_settings', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => {
+                if (response.ok) {
+                    // Show success popup
+                    showSuccessPopup('Settings saved successfully!');
+                    
+                    // Reload settings to update UI
+                    setTimeout(() => {
+                        loadUserSettings();
+                    }, 500);
+                } else {
+                    throw new Error('Failed to save settings');
+                }
+            })
+            .catch(error => {
+                console.error('Error saving settings:', error);
+                alert('Error saving settings. Please try again.');
+            });
         });
     }
 });
@@ -742,4 +765,34 @@ function updateClinicDropdown(clinics) {
 
 function showAbout() {
     alert('Patient Data Organizer v1.0\n\nA professional medical case presentation tool for healthcare professionals.\n\nDeveloped for organizing patient data and creating professional slide presentations.');
+}
+
+function showSuccessPopup(message = 'Settings saved successfully!') {
+    // Remove any existing popup
+    const existing = document.querySelector('.success-popup');
+    if (existing) {
+        existing.remove();
+    }
+    
+    // Create popup element
+    const popup = document.createElement('div');
+    popup.className = 'success-popup';
+    popup.innerHTML = `
+        <div class="success-icon">
+            <i class="bi bi-check" style="color: white; font-size: 14px; font-weight: bold;"></i>
+        </div>
+        <div class="success-text">${message}</div>
+    `;
+    
+    // Add to page
+    document.body.appendChild(popup);
+    
+    // Trigger animation
+    setTimeout(() => popup.classList.add('show'), 100);
+    
+    // Auto hide after 3 seconds
+    setTimeout(() => {
+        popup.classList.add('hide');
+        setTimeout(() => popup.remove(), 400);
+    }, 3000);
 }

@@ -248,6 +248,58 @@
             box-shadow: 0 10px 25px rgba(0,0,0,0.1);
         }
         
+        /* Success popup notification */
+        .success-popup {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: linear-gradient(135deg, #28a745, #20c997);
+            color: white;
+            padding: 16px 24px;
+            border-radius: 12px;
+            box-shadow: 0 8px 32px rgba(40, 167, 69, 0.3);
+            z-index: 9999;
+            transform: translateX(400px);
+            opacity: 0;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            min-width: 280px;
+        }
+        
+        .success-popup.show {
+            transform: translateX(0);
+            opacity: 1;
+        }
+        
+        .success-popup.hide {
+            transform: translateX(400px);
+            opacity: 0;
+        }
+        
+        .success-icon {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            animation: checkmark 0.6s ease-in-out;
+        }
+        
+        @keyframes checkmark {
+            0% { transform: scale(0) rotate(45deg); }
+            50% { transform: scale(1.2) rotate(45deg); }
+            100% { transform: scale(1) rotate(45deg); }
+        }
+        
+        .success-text {
+            font-weight: 600;
+            font-size: 15px;
+        }
+        
         /* Tooltip styling */
         .tooltip {
             font-size: 0.875rem;
