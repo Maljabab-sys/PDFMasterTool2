@@ -7,6 +7,103 @@
     <link href="https://cdn.replit.com/agent/bootstrap-agent-dark-theme.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
     <style>
+        /* Mobile-first responsive design */
+        * {
+            box-sizing: border-box;
+        }
+        
+        body {
+            overflow-x: hidden;
+        }
+        
+        .container {
+            max-width: 100%;
+            padding-left: 15px;
+            padding-right: 15px;
+        }
+        
+        /* Upload box responsive styling */
+        .upload-box {
+            width: 100%;
+            min-height: 200px;
+            margin-bottom: 1rem;
+        }
+        
+        .image-upload-container {
+            width: 100%;
+            height: 180px;
+            position: relative;
+        }
+        
+        .upload-placeholder {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        /* Mobile responsive grid fixes */
+        @media (max-width: 576px) {
+            .col-lg-4, .col-md-4, .col-sm-4 {
+                flex: 0 0 33.333333%;
+                max-width: 33.333333%;
+            }
+            
+            .col-lg-4.col-md-6.col-sm-6 {
+                flex: 0 0 50%;
+                max-width: 50%;
+            }
+            
+            .upload-box {
+                min-height: 150px;
+            }
+            
+            .image-upload-container {
+                height: 130px;
+            }
+            
+            .display-6 {
+                font-size: 2rem !important;
+            }
+            
+            .form-label {
+                font-size: 0.9rem;
+            }
+            
+            .container {
+                padding-left: 10px;
+                padding-right: 10px;
+            }
+            
+            .nav-pills .nav-link {
+                padding: 0.5rem 0.75rem;
+                font-size: 0.9rem;
+            }
+            
+            .display-5 {
+                font-size: 2rem !important;
+            }
+            
+            .lead {
+                font-size: 1rem;
+            }
+        }
+        
+        /* Tablet responsive adjustments */
+        @media (min-width: 577px) and (max-width: 768px) {
+            .col-lg-4, .col-md-4 {
+                flex: 0 0 33.333333%;
+                max-width: 33.333333%;
+            }
+            
+            .col-lg-4.col-md-6 {
+                flex: 0 0 50%;
+                max-width: 50%;
+            }
+        }
+        
         /* Custom animations and styling */
         .animated-select {
             transition: all 0.3s ease;
