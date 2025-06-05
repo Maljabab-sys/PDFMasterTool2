@@ -368,16 +368,20 @@ function loadPatientList() {
         });
 }
 
-// Render case history HTML in single column layout
+// Render case history HTML in single column layout with Riyadh timezone
 function renderCaseHistory(cases) {
     if (!cases.length) {
-        return '<div class="text-center text-muted py-5"><i class="bi bi-folder2-open display-1 mb-3"></i><h4>No cases found</h4></div>';
+        return '<div class="text-center text-muted py-5"><i class="bi bi-folder2-open display-1 mb-3"></i><h4>No slides found</h4></div>';
     }
     
     let html = '<div class="list-group">';
     cases.forEach(case_ => {
         const badgeClass = case_.visit_type === 'Registration' ? 'bg-success' : 
                           case_.visit_type === 'Orthodontic Visit' ? 'bg-primary' : 'bg-warning';
+        
+        // Convert to Riyadh timezone (UTC+3)
+        const date = new Date(case_.created_at);
+        const riyadhTime = new Date(date.getTime() + (3 * 60 * 60 * 1000));
         
         html += `
             <div class="list-group-item border rounded shadow-sm mb-3 p-4">
@@ -386,10 +390,11 @@ function renderCaseHistory(cases) {
                         <h5 class="mb-1 fw-bold">${case_.title}</h5>
                         <div class="text-muted small mb-2">
                             <i class="bi bi-calendar me-1"></i>
-                            ${new Date(case_.created_at).toLocaleDateString('en-US', {
-                                year: 'numeric', month: 'long', day: 'numeric',
+                            ${riyadhTime.toLocaleDateString('en-US', {
+                                year: 'numeric', month: 'long', day: 'numeric'
+                            })} at ${riyadhTime.toLocaleTimeString('en-US', {
                                 hour: 'numeric', minute: '2-digit', hour12: true
-                            })}
+                            })} (Riyadh Time)
                         </div>
                         ${case_.patient ? `
                         <div class="mb-2">
@@ -403,7 +408,7 @@ function renderCaseHistory(cases) {
                 </div>
                 <div class="d-flex gap-2">
                     <a href="/download/${case_.id}" class="btn btn-primary btn-sm">
-                        <i class="bi bi-download me-1"></i>Download PDF
+                        <i class="bi bi-download me-1"></i>Download Slide
                     </a>
                 </div>
             </div>
@@ -437,7 +442,7 @@ function renderPatientList(patients) {
                             <i class="bi bi-person-circle me-3 text-primary" style="font-size: 1.5rem;"></i>
                             <div class="flex-grow-1">
                                 <div class="fw-bold">${patient.first_name} ${patient.last_name}</div>
-                                <small class="text-muted">MRN: ${patient.mrn} | ${patient.clinic} | ${patient.cases_count} case(s)</small>
+                                <small class="text-muted">MRN: ${patient.mrn} | ${patient.clinic} | ${patient.cases_count} slide(s)</small>
                             </div>
                         </div>
                     </button>
@@ -457,7 +462,7 @@ function renderPatientList(patients) {
                             <strong>Patient Since:</strong> ${new Date(patient.created_at).toLocaleDateString()}
                         </div>
                         
-                        <h6 class="fw-bold mb-3">Medical Records (${patient.cases_count})</h6>
+                        <h6 class="fw-bold mb-3">Medical Slides (${patient.cases_count})</h6>
                         ${renderPatientCases(patient.cases)}
                     </div>
                 </div>
@@ -511,46 +516,82 @@ function clearPatientSearch() {
     filterPatients();
 }
 
-// Render patient cases
+// Render patient cases in single column with dark theme and Riyadh timezone
 function renderPatientCases(cases) {
     if (!cases.length) {
-        return '<div class="text-muted">No medical records found</div>';
+        return '<div class="text-muted">No slides found</div>';
     }
     
-    let html = '<div class="row g-3">';
+    // Group cases by date in Riyadh timezone
+    const groupedCases = {};
     cases.forEach(case_ => {
-        const badgeClass = case_.visit_type === 'Registration' ? 'bg-success' : 
-                          case_.visit_type === 'Orthodontic Visit' ? 'bg-primary' : 'bg-warning';
+        const date = new Date(case_.created_at);
+        // Convert to Riyadh timezone (UTC+3)
+        const riyadhTime = new Date(date.getTime() + (3 * 60 * 60 * 1000));
+        const dateKey = riyadhTime.toLocaleDateString('en-US', {
+            year: 'numeric',
+            month: 'long', 
+            day: 'numeric'
+        });
+        
+        if (!groupedCases[dateKey]) {
+            groupedCases[dateKey] = [];
+        }
+        groupedCases[dateKey].push({...case_, riyadhTime});
+    });
+    
+    let html = '';
+    Object.keys(groupedCases).forEach(dateKey => {
+        html += `
+            <div class="mb-4">
+                <h6 class="text-light bg-secondary px-3 py-2 rounded mb-3">
+                    <i class="bi bi-calendar2-week me-2"></i>${dateKey}
+                </h6>
+                <div class="list-group">
+        `;
+        
+        groupedCases[dateKey].forEach(case_ => {
+            const badgeClass = case_.visit_type === 'Registration' ? 'bg-success' : 
+                              case_.visit_type === 'Orthodontic Visit' ? 'bg-primary' : 'bg-warning';
+            
+            html += `
+                <div class="list-group-item bg-dark border-secondary mb-2 rounded">
+                    <div class="d-flex w-100 justify-content-between align-items-start">
+                        <div class="flex-grow-1">
+                            <h6 class="mb-1 text-light">${case_.title}</h6>
+                            <small class="text-muted">
+                                <i class="bi bi-clock me-1"></i>
+                                ${case_.riyadhTime.toLocaleTimeString('en-US', {
+                                    hour: 'numeric',
+                                    minute: '2-digit',
+                                    hour12: true
+                                })} (Riyadh Time)
+                            </small>
+                            ${case_.visit_description ? `
+                            <div class="mt-1">
+                                <small class="text-muted">
+                                    <strong>Notes:</strong> ${case_.visit_description.substring(0, 100)}${case_.visit_description.length > 100 ? '...' : ''}
+                                </small>
+                            </div>
+                            ` : ''}
+                        </div>
+                        <span class="badge ${badgeClass} ms-3">${case_.visit_type}</span>
+                    </div>
+                    <div class="mt-2">
+                        <a href="/download/${case_.id}" class="btn btn-outline-light btn-sm">
+                            <i class="bi bi-download me-1"></i>Download Slide
+                        </a>
+                    </div>
+                </div>
+            `;
+        });
         
         html += `
-            <div class="col-md-6">
-                <div class="card border-0 bg-light">
-                    <div class="card-body p-3">
-                        <div class="d-flex justify-content-between align-items-start mb-2">
-                            <h6 class="card-title mb-0">${case_.title}</h6>
-                            <span class="badge ${badgeClass} small">${case_.visit_type}</span>
-                        </div>
-                        <small class="text-muted d-block mb-2">
-                            ${new Date(case_.created_at).toLocaleDateString('en-US', {
-                                year: 'numeric', month: 'short', day: 'numeric'
-                            })}
-                        </small>
-                        ${case_.visit_description ? `
-                        <small class="text-muted d-block mb-2">
-                            <strong>Notes:</strong> ${case_.visit_description.substring(0, 100)}${case_.visit_description.length > 100 ? '...' : ''}
-                        </small>
-                        ` : ''}
-                        <div class="d-grid">
-                            <a href="/download/${case_.id}" class="btn btn-outline-primary btn-sm">
-                                <i class="bi bi-download me-1"></i>Download
-                            </a>
-                        </div>
-                    </div>
                 </div>
             </div>
         `;
     });
-    html += '</div>';
+    
     return html;
 }
 
