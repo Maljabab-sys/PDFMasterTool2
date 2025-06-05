@@ -68,7 +68,7 @@ with app.app_context():
 UPLOAD_FOLDER = 'uploads'
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'webp', 'gif'}
 MAX_FILE_SIZE = 5 * 1024 * 1024  # 5MB per file
-MAX_IMAGES = 8  # Exactly 8 images for medical template
+MAX_IMAGES = 8  # 3 extra-oral + 5 intra-oral images for medical template
 
 # Ensure upload directory exists
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
@@ -338,28 +338,27 @@ def create_medical_layout(images, heading_style, styles, pagesize):
         alignment=TA_LEFT
     )
     
-    # Ensure we have exactly 8 images - first 4 are extra-oral, last 4 are intra-oral
+    # Ensure we have exactly 8 images - first 3 are extra-oral, last 5 are intra-oral
     if len(images) < 8:
         logging.warning(f"Expected 8 images, got {len(images)}")
         # Pad with empty placeholders if needed
         while len(images) < 8:
             images.append("")
     
-    extra_oral = images[:4]  # First 4 images
-    intra_oral = images[4:8]  # Last 4 images
+    extra_oral = images[:3]  # First 3 images
+    intra_oral = images[3:8]  # Last 5 images
     
-    # Extra-oral section: 3 images next to each other, 1 smile image below centered
+    # Extra-oral section: 3 images next to each other (enlarged to fit page)
     if extra_oral:
         story.append(Paragraph("Extra-oral", section_style))
         story.append(Spacer(1, 0.15*inch))
         
-        # First row: 3 facial images
-        first_row = extra_oral[:3]
+        # Single row: 3 images next to each other, larger size
         img_row = []
-        for img_path in first_row:
-            if img_path:  # Only if we have an actual image path
+        for img_path in extra_oral:
+            if img_path:
                 try:
-                    img_obj = RLImage(img_path, width=1.8*inch, height=1.6*inch)
+                    img_obj = RLImage(img_path, width=2.2*inch, height=1.8*inch)
                     img_row.append(img_obj)
                 except Exception as e:
                     logging.error(f"Error adding image {img_path}: {str(e)}")
@@ -371,35 +370,20 @@ def create_medical_layout(images, heading_style, styles, pagesize):
         while len(img_row) < 3:
             img_row.append("")
         
-        table = Table([img_row], colWidths=[2*inch, 2*inch, 2*inch])
+        table = Table([img_row], colWidths=[2.3*inch, 2.3*inch, 2.3*inch])
         table.setStyle(TableStyle([
             ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
             ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-            ('LEFTPADDING', (0, 0), (-1, -1), 3),
-            ('RIGHTPADDING', (0, 0), (-1, -1), 3),
-            ('TOPPADDING', (0, 0), (-1, -1), 3),
-            ('BOTTOMPADDING', (0, 0), (-1, -1), 3),
+            ('LEFTPADDING', (0, 0), (-1, -1), 2),
+            ('RIGHTPADDING', (0, 0), (-1, -1), 2),
+            ('TOPPADDING', (0, 0), (-1, -1), 2),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 2),
             ('GRID', (0, 0), (-1, -1), 0.5, colors.lightgrey),
         ]))
         story.append(table)
-        story.append(Spacer(1, 0.15*inch))
-        
-        # Second row: 1 smile image centered (if we have a 4th image)
-        if len(extra_oral) > 3 and extra_oral[3]:
-            try:
-                smile_img = RLImage(extra_oral[3], width=2*inch, height=1.2*inch)
-                smile_table = Table([["", smile_img, ""]], colWidths=[2*inch, 2*inch, 2*inch])
-                smile_table.setStyle(TableStyle([
-                    ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-                    ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-                    ('GRID', (1, 0), (1, 0), 0.5, colors.lightgrey),  # Only grid the image cell
-                ]))
-                story.append(smile_table)
-                story.append(Spacer(1, 0.25*inch))
-            except Exception as e:
-                logging.error(f"Error adding smile image: {str(e)}")
+        story.append(Spacer(1, 0.3*inch))
     
-    # Intra-oral section: 3 images next to each other, then 2 images centered below
+    # Intra-oral section: 5 images total - 3 on top row, 2 centered below
     if intra_oral:
         story.append(Paragraph("Intra oral:", section_style))
         story.append(Spacer(1, 0.15*inch))
@@ -410,7 +394,7 @@ def create_medical_layout(images, heading_style, styles, pagesize):
         for img_path in first_row:
             if img_path:
                 try:
-                    img_obj = RLImage(img_path, width=1.8*inch, height=1.2*inch)
+                    img_obj = RLImage(img_path, width=2.2*inch, height=1.6*inch)
                     img_row.append(img_obj)
                 except Exception as e:
                     logging.error(f"Error adding image {img_path}: {str(e)}")
@@ -422,35 +406,67 @@ def create_medical_layout(images, heading_style, styles, pagesize):
         while len(img_row) < 3:
             img_row.append("")
         
-        table = Table([img_row], colWidths=[2*inch, 2*inch, 2*inch])
+        table = Table([img_row], colWidths=[2.3*inch, 2.3*inch, 2.3*inch])
         table.setStyle(TableStyle([
             ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
             ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-            ('LEFTPADDING', (0, 0), (-1, -1), 3),
-            ('RIGHTPADDING', (0, 0), (-1, -1), 3),
-            ('TOPPADDING', (0, 0), (-1, -1), 3),
-            ('BOTTOMPADDING', (0, 0), (-1, -1), 3),
+            ('LEFTPADDING', (0, 0), (-1, -1), 2),
+            ('RIGHTPADDING', (0, 0), (-1, -1), 2),
+            ('TOPPADDING', (0, 0), (-1, -1), 2),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 2),
             ('GRID', (0, 0), (-1, -1), 0.5, colors.lightgrey),
         ]))
         story.append(table)
         story.append(Spacer(1, 0.15*inch))
         
-        # Second row: 2 images centered below
+        # Second row: 2 images centered below (4th and 5th images)
         if len(intra_oral) > 3:
-            second_row = intra_oral[3:]  # Remaining images (should be 1)
-            if len(second_row) == 1:
-                # If only 1 image, center it
-                try:
-                    img_obj = RLImage(second_row[0], width=1.8*inch, height=1.2*inch)
-                    centered_table = Table([["", img_obj, ""]], colWidths=[2*inch, 2*inch, 2*inch])
+            second_row = intra_oral[3:5]  # Take 4th and 5th images
+            if len(second_row) >= 1:
+                img_row = []
+                
+                # Add spacing columns to center the images
+                if len(second_row) == 1:
+                    # Single image centered
+                    img_row = [""]
+                    try:
+                        img_obj = RLImage(second_row[0], width=2.2*inch, height=1.6*inch)
+                        img_row.append(img_obj)
+                    except Exception as e:
+                        logging.error(f"Error adding centered image: {str(e)}")
+                        img_row.append("")
+                    img_row.append("")
+                    
+                elif len(second_row) == 2:
+                    # Two images centered
+                    img_row = [""]
+                    for img_path in second_row:
+                        try:
+                            img_obj = RLImage(img_path, width=2.2*inch, height=1.6*inch)
+                            img_row.append(img_obj)
+                        except Exception as e:
+                            logging.error(f"Error adding image: {str(e)}")
+                            img_row.append("")
+                    img_row.append("")
+                
+                # Create table with proper centering
+                if len(second_row) == 1:
+                    centered_table = Table([img_row], colWidths=[2.3*inch, 2.3*inch, 2.3*inch])
                     centered_table.setStyle(TableStyle([
                         ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
                         ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
                         ('GRID', (1, 0), (1, 0), 0.5, colors.lightgrey),
                     ]))
-                    story.append(centered_table)
-                except Exception as e:
-                    logging.error(f"Error adding centered image: {str(e)}")
+                else:
+                    # For 2 images, use 4-column layout for better centering
+                    centered_table = Table([img_row], colWidths=[1.15*inch, 2.3*inch, 2.3*inch, 1.15*inch])
+                    centered_table.setStyle(TableStyle([
+                        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+                        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+                        ('GRID', (1, 0), (2, 0), 0.5, colors.lightgrey),
+                    ]))
+                
+                story.append(centered_table)
     
     return story
 
