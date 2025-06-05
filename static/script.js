@@ -361,6 +361,11 @@ function checkUrlFragment() {
 // Initialize on page load
 document.addEventListener('DOMContentLoaded', function() {
     checkUrlFragment();
+    
+    // Load initial content for all sections
+    setTimeout(() => {
+        loadUserSettings();
+    }, 100);
 });
 
 // Load case history via AJAX
