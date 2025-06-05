@@ -1,75 +1,72 @@
 document.addEventListener('DOMContentLoaded', function() {
-    const fileInput = document.getElementById('images');
-    const previewContainer = document.getElementById('previewContainer');
-    const previewArea = document.getElementById('imagePreview');
     const form = document.getElementById('slideForm');
     const submitBtn = document.getElementById('submitBtn');
     const submitText = document.getElementById('submitText');
     const loadingText = document.getElementById('loadingText');
     
-    let selectedFiles = [];
-    
-    // File input change handler
-    fileInput.addEventListener('change', function(e) {
-        const files = Array.from(e.target.files);
-        selectedFiles = files;
-        displayPreview(files);
+    // Initialize Bootstrap tooltips
+    const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
     });
     
-    // Display image preview
-    function displayPreview(files) {
-        previewContainer.innerHTML = '';
+    // Handle individual image uploads
+    const imageInputs = document.querySelectorAll('.image-input');
+    imageInputs.forEach(input => {
+        input.addEventListener('change', function(e) {
+            handleImageUpload(this, e.target.files[0]);
+        });
+    });
+    
+    let uploadedImages = {};
+    
+    // Handle individual image upload
+    function handleImageUpload(input, file) {
+        if (!file) return;
         
-        if (files.length === 0) {
-            previewArea.style.display = 'none';
+        // Validate file type
+        if (!file.type.startsWith('image/')) {
+            showError('Please select an image file.');
+            input.value = '';
             return;
         }
         
-        previewArea.style.display = 'block';
-        previewArea.classList.add('fade-in');
+        // Validate file size (5MB)
+        if (file.size > 5 * 1024 * 1024) {
+            showError(`${file.name} is too large. Maximum file size is 5MB.`);
+            input.value = '';
+            return;
+        }
         
-        files.forEach((file, index) => {
-            if (file.type.startsWith('image/')) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    const previewItem = createPreviewItem(e.target.result, file.name, index);
-                    previewContainer.appendChild(previewItem);
-                };
-                reader.readAsDataURL(file);
-            }
-        });
-    }
-    
-    // Create preview item
-    function createPreviewItem(src, filename, index) {
-        const col = document.createElement('div');
-        col.className = 'col-6 col-sm-4 col-md-3';
+        const container = input.closest('.image-upload-container');
+        const placeholder = container.querySelector('.upload-placeholder');
+        const preview = container.querySelector('.image-preview');
+        const previewImg = preview.querySelector('.preview-img');
+        const removeBtn = preview.querySelector('.btn-remove-image');
         
-        col.innerHTML = `
-            <div class="preview-item">
-                <img src="${src}" alt="${filename}" class="preview-image">
-                <button type="button" class="remove-image" onclick="removeImage(${index})">
-                    <i class="bi bi-x"></i>
-                </button>
-                <div class="preview-filename">${truncateFilename(filename, 20)}</div>
-            </div>
-        `;
+        // Show preview
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            previewImg.src = e.target.result;
+            placeholder.style.display = 'none';
+            preview.style.display = 'block';
+            container.style.borderColor = '#28a745';
+            container.style.backgroundColor = 'rgba(40, 167, 69, 0.05)';
+        };
+        reader.readAsDataURL(file);
         
-        return col;
-    }
-    
-    // Remove image from selection
-    window.removeImage = function(index) {
-        selectedFiles.splice(index, 1);
-        updateFileInput();
-        displayPreview(selectedFiles);
-    };
-    
-    // Update file input with remaining files
-    function updateFileInput() {
-        const dt = new DataTransfer();
-        selectedFiles.forEach(file => dt.items.add(file));
-        fileInput.files = dt.files;
+        // Handle remove button
+        removeBtn.onclick = function() {
+            input.value = '';
+            placeholder.style.display = 'block';
+            preview.style.display = 'none';
+            container.style.borderColor = '#dee2e6';
+            container.style.backgroundColor = '';
+            delete uploadedImages[input.id];
+        };
+        
+        // Store file reference
+        uploadedImages[input.id] = file;
     }
     
     // Truncate filename for display
