@@ -47,6 +47,15 @@ class Case(db.Model):
     pdf_filename = db.Column(db.String(255))
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     
+    def __init__(self, title, notes, template, orientation, images_per_slide, image_count, pdf_filename):
+        self.title = title
+        self.notes = notes
+        self.template = template
+        self.orientation = orientation
+        self.images_per_slide = images_per_slide
+        self.image_count = image_count
+        self.pdf_filename = pdf_filename
+    
     def __repr__(self):
         return f'<Case {self.title}>'
 
@@ -475,7 +484,6 @@ def index():
 
 @app.route('/success')
 def success():
-    from flask import session
     success_info = session.get('success_info', {})
     if not success_info:
         return redirect(url_for('index'))
@@ -488,6 +496,32 @@ def success():
                          template=success_info.get('template', 'unknown'),
                          image_count=success_info.get('image_count', 0),
                          timestamp=success_info.get('timestamp', 'Unknown'))
+
+@app.route('/cases')
+def cases():
+    """Display all submitted cases"""
+    cases = Case.query.order_by(Case.created_at.desc()).all()
+    return render_template('cases.html', cases=cases)
+
+@app.route('/case/<int:case_id>')
+def case_detail(case_id):
+    """Display details of a specific case"""
+    case = Case.query.get_or_404(case_id)
+    return render_template('case_detail.html', case=case)
+
+@app.route('/download/<int:case_id>')
+def download_case(case_id):
+    """Download PDF for a specific case"""
+    case = Case.query.get_or_404(case_id)
+    pdf_path = os.path.join(app.config['UPLOAD_FOLDER'], case.pdf_filename)
+    
+    if os.path.exists(pdf_path):
+        return send_file(pdf_path, as_attachment=True, 
+                        download_name=f"{case.title}_slides.pdf",
+                        mimetype='application/pdf')
+    else:
+        flash('PDF file not found. It may have been deleted.', 'error')
+        return redirect(url_for('cases'))
 
 @app.route('/upload', methods=['POST'])
 def upload_files():

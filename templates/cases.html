@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Case History - Slide Deck Generator</title>
+    <link href="https://cdn.replit.com/agent/bootstrap-agent-dark-theme.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark border-bottom">
+        <div class="container">
+            <a class="navbar-brand fw-bold" href="{{ url_for('index') }}">
+                <i class="bi bi-file-earmark-slides me-2"></i>Slide Generator
+            </a>
+            <div class="navbar-nav ms-auto">
+                <a class="nav-link" href="{{ url_for('index') }}">
+                    <i class="bi bi-plus-circle me-1"></i>New Case
+                </a>
+                <a class="nav-link active" href="{{ url_for('cases') }}">
+                    <i class="bi bi-folder me-1"></i>Case History
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container my-5">
+        <div class="row">
+            <div class="col-12">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h2 class="fw-bold mb-0">Case History</h2>
+                    <a href="{{ url_for('index') }}" class="btn btn-primary">
+                        <i class="bi bi-plus-circle me-2"></i>Create New Case
+                    </a>
+                </div>
+
+                {% if cases %}
+                    <div class="row g-4">
+                        {% for case in cases %}
+                        <div class="col-lg-6 col-xl-4">
+                            <div class="card h-100 shadow-sm">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between align-items-start mb-3">
+                                        <h5 class="card-title fw-bold mb-0">{{ case.title }}</h5>
+                                        <span class="badge bg-secondary">{{ case.template|title }}</span>
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <small class="text-muted">
+                                            <i class="bi bi-calendar me-1"></i>
+                                            {{ case.created_at.strftime('%B %d, %Y') }}
+                                        </small>
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <div class="row g-2 text-center">
+                                            <div class="col-4">
+                                                <div class="border rounded p-2">
+                                                    <div class="fw-semibold">{{ case.image_count }}</div>
+                                                    <small class="text-muted">Images</small>
+                                                </div>
+                                            </div>
+                                            <div class="col-4">
+                                                <div class="border rounded p-2">
+                                                    <div class="fw-semibold">{{ case.orientation|title }}</div>
+                                                    <small class="text-muted">Layout</small>
+                                                </div>
+                                            </div>
+                                            <div class="col-4">
+                                                <div class="border rounded p-2">
+                                                    <div class="fw-semibold">{{ case.images_per_slide }}</div>
+                                                    <small class="text-muted">Per Slide</small>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    {% if case.notes %}
+                                    <p class="card-text text-muted small">
+                                        {{ case.notes[:100] }}{% if case.notes|length > 100 %}...{% endif %}
+                                    </p>
+                                    {% endif %}
+                                </div>
+                                
+                                <div class="card-footer bg-transparent border-0 pt-0">
+                                    <div class="d-grid gap-2">
+                                        <a href="{{ url_for('download_case', case_id=case.id) }}" 
+                                           class="btn btn-primary">
+                                            <i class="bi bi-download me-2"></i>Download PDF
+                                        </a>
+                                        <a href="{{ url_for('case_detail', case_id=case.id) }}" 
+                                           class="btn btn-outline-secondary btn-sm">
+                                            <i class="bi bi-eye me-2"></i>View Details
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="text-center py-5">
+                        <div class="mb-4">
+                            <i class="bi bi-folder-x display-1 text-muted"></i>
+                        </div>
+                        <h4 class="text-muted mb-3">No Cases Found</h4>
+                        <p class="text-muted mb-4">You haven't created any slide decks yet.</p>
+                        <a href="{{ url_for('index') }}" class="btn btn-primary btn-lg">
+                            <i class="bi bi-plus-circle me-2"></i>Create Your First Case
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
