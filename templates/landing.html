@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Medical Case Manager</title>
+    <link href="https://cdn.replit.com/agent/bootstrap-agent-dark-theme.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark border-bottom">
+        <div class="container">
+            <a class="navbar-brand fw-bold" href="{{ url_for('index') }}">
+                <i class="bi bi-file-medical me-2"></i>Medical Case Manager
+            </a>
+            <div class="navbar-nav ms-auto">
+                <a class="nav-link" href="{{ url_for('new_case') }}">
+                    <i class="bi bi-plus-circle me-1"></i>New Case
+                </a>
+                <a class="nav-link" href="{{ url_for('patient_list') }}">
+                    <i class="bi bi-people me-1"></i>Patients
+                </a>
+                <a class="nav-link" href="{{ url_for('cases') }}">
+                    <i class="bi bi-folder me-1"></i>Case History
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <div class="container my-5">
+        <div class="row justify-content-center text-center">
+            <div class="col-lg-8">
+                <div class="mb-5">
+                    <i class="bi bi-file-medical display-1 text-primary mb-4"></i>
+                    <h1 class="display-4 fw-bold mb-3">Medical Case Manager</h1>
+                    <p class="lead text-muted mb-4">Professional medical case presentation and patient management system</p>
+                </div>
+
+                <!-- Quick Actions -->
+                <div class="row g-4 mb-5">
+                    <div class="col-md-4">
+                        <div class="card border-0 bg-dark h-100">
+                            <div class="card-body text-center p-4">
+                                <i class="bi bi-plus-circle display-6 text-primary mb-3"></i>
+                                <h5 class="card-title">Create New Case</h5>
+                                <p class="card-text text-muted mb-4">Generate professional medical case presentations with images and documentation</p>
+                                <a href="{{ url_for('new_case') }}" class="btn btn-primary">
+                                    Start New Case
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card border-0 bg-dark h-100">
+                            <div class="card-body text-center p-4">
+                                <i class="bi bi-people display-6 text-success mb-3"></i>
+                                <h5 class="card-title">Manage Patients</h5>
+                                <p class="card-text text-muted mb-4">View and manage patient records, search by MRN, and track treatment history</p>
+                                <a href="{{ url_for('patient_list') }}" class="btn btn-success">
+                                    View Patients
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card border-0 bg-dark h-100">
+                            <div class="card-body text-center p-4">
+                                <i class="bi bi-folder display-6 text-warning mb-3"></i>
+                                <h5 class="card-title">Case History</h5>
+                                <p class="card-text text-muted mb-4">Browse all generated cases, download PDFs, and review documentation</p>
+                                <a href="{{ url_for('cases') }}" class="btn btn-warning">
+                                    Browse Cases
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Features -->
+                <div class="row text-start">
+                    <div class="col-12">
+                        <h3 class="text-center mb-4">Features</h3>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <div class="d-flex">
+                            <i class="bi bi-check-circle-fill text-success me-3 flex-shrink-0"></i>
+                            <div>
+                                <h6 class="mb-1">Professional Templates</h6>
+                                <small class="text-muted">Medical case templates designed for clinical presentations</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <div class="d-flex">
+                            <i class="bi bi-check-circle-fill text-success me-3 flex-shrink-0"></i>
+                            <div>
+                                <h6 class="mb-1">Patient Management</h6>
+                                <small class="text-muted">Comprehensive patient record system with MRN tracking</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <div class="d-flex">
+                            <i class="bi bi-check-circle-fill text-success me-3 flex-shrink-0"></i>
+                            <div>
+                                <h6 class="mb-1">PDF Generation</h6>
+                                <small class="text-muted">High-quality PDF output for presentations and documentation</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <div class="d-flex">
+                            <i class="bi bi-check-circle-fill text-success me-3 flex-shrink-0"></i>
+                            <div>
+                                <h6 class="mb-1">Visit Types</h6>
+                                <small class="text-muted">Support for Registration, Orthodontic Visit, and Debond cases</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
