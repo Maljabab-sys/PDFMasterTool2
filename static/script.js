@@ -4,6 +4,9 @@ document.addEventListener('DOMContentLoaded', function() {
     const submitText = document.getElementById('submitText');
     const loadingText = document.getElementById('loadingText');
     
+    // Check if elements exist before proceeding
+    if (!form) return;
+    
     // Initialize Bootstrap tooltips
     const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
     tooltipTriggerList.map(function (tooltipTriggerEl) {
@@ -125,7 +128,8 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     // Form submission handler
-    form.addEventListener('submit', function(e) {
+    if (form) {
+        form.addEventListener('submit', function(e) {
         
         // Basic validation
         const visitTypeRadios = document.querySelectorAll('input[name="visit_type"]');
@@ -178,7 +182,8 @@ document.addEventListener('DOMContentLoaded', function() {
         }, 100);
         
         // Don't redirect automatically - let the server handle it
-    });
+        });
+    }
     
     // Show progress indicator
     function showProgressIndicator() {
@@ -355,19 +360,27 @@ function showSection(sectionName) {
     
     // Show selected section
     if (sectionName === 'new-case') {
-        document.getElementById('new-case-section').style.display = 'block';
-        document.querySelector('[onclick="showSection(\'new-case\')"]').classList.add('active');
+        const section = document.getElementById('new-case-section');
+        if (section) section.style.display = 'block';
+        const link = document.querySelector('[onclick="showSection(\'new-case\')"]');
+        if (link) link.classList.add('active');
     } else if (sectionName === 'case-history') {
-        document.getElementById('case-history-section').style.display = 'block';
-        document.querySelector('[onclick="showSection(\'case-history\')"]').classList.add('active');
+        const section = document.getElementById('case-history-section');
+        if (section) section.style.display = 'block';
+        const link = document.querySelector('[onclick="showSection(\'case-history\')"]');
+        if (link) link.classList.add('active');
         loadCaseHistory();
     } else if (sectionName === 'patient-list') {
-        document.getElementById('patient-list-section').style.display = 'block';
-        document.querySelector('[onclick="showSection(\'patient-list\')"]').classList.add('active');
+        const section = document.getElementById('patient-list-section');
+        if (section) section.style.display = 'block';
+        const link = document.querySelector('[onclick="showSection(\'patient-list\')"]');
+        if (link) link.classList.add('active');
         loadPatientList();
     } else if (sectionName === 'settings') {
-        document.getElementById('settings-section').style.display = 'block';
-        document.querySelector('[onclick="showSection(\'settings\')"]').classList.add('active');
+        const section = document.getElementById('settings-section');
+        if (section) section.style.display = 'block';
+        const link = document.querySelector('[onclick="showSection(\'settings\')"]');
+        if (link) link.classList.add('active');
         loadUserSettings();
     }
 }
@@ -392,6 +405,7 @@ document.addEventListener('DOMContentLoaded', function() {
 // Load case history via AJAX
 function loadCaseHistory() {
     const content = document.getElementById('case-history-content');
+    if (!content) return;
     content.innerHTML = '<div class="text-center"><div class="spinner-border" role="status"></div></div>';
     
     fetch('/api/cases')
@@ -407,6 +421,7 @@ function loadCaseHistory() {
 // Load patient list via AJAX
 function loadPatientList() {
     const content = document.getElementById('patient-list-content');
+    if (!content) return;
     content.innerHTML = '<div class="text-center"><div class="spinner-border" role="status"></div></div>';
     
     fetch('/api/patients')
