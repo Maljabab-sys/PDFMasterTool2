@@ -128,18 +128,21 @@ document.addEventListener('DOMContentLoaded', function() {
     form.addEventListener('submit', function(e) {
         
         // Basic validation
-        const visitType = document.getElementById('visitType').value;
+        const visitTypeRadios = document.querySelectorAll('input[name="visit_type"]');
+        let visitType = null;
+        visitTypeRadios.forEach(radio => {
+            if (radio.checked) {
+                visitType = radio.value;
+            }
+        });
         
         if (!visitType) {
             showError('Please select a visit type.');
             return;
         }
         
-        // Set case title automatically
-        document.getElementById('title').value = 'Medical Case';
-        
         // Validate visit-specific fields
-        if (visitType === 'Registration') {
+        if (visitType === 'registration') {
             const mrn = document.getElementById('mrn').value.trim();
             const clinic = document.getElementById('clinic').value;
             const firstName = document.getElementById('firstName').value.trim();
@@ -150,7 +153,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 showError('Please fill in all required patient information.');
                 return;
             }
-        } else if (visitType === 'Orthodontic Visit' || visitType === 'Debond') {
+        } else if (visitType === 'orthodontic_visit' || visitType === 'debond') {
             const patientId = document.getElementById('selectedPatientId').value;
             if (!patientId) {
                 e.preventDefault();
@@ -205,22 +208,31 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // Handle visit type change
 function handleVisitTypeChange() {
-    const visitType = document.getElementById('visitType').value;
+    const visitTypeRadios = document.querySelectorAll('input[name="visit_type"]');
     const registrationFields = document.getElementById('registrationFields');
     const followupFields = document.getElementById('followupFields');
     
+    if (!registrationFields || !followupFields) return;
+    
+    let selectedValue = null;
+    visitTypeRadios.forEach(radio => {
+        if (radio.checked) {
+            selectedValue = radio.value;
+        }
+    });
+    
     // Hide all fields first
-    if (registrationFields) registrationFields.style.display = 'none';
-    if (followupFields) followupFields.style.display = 'none';
+    registrationFields.style.display = 'none';
+    followupFields.style.display = 'none';
     
     // Clear required attributes
     clearRequiredFields();
     
-    if (visitType === 'Registration') {
-        if (registrationFields) registrationFields.style.display = 'block';
+    if (selectedValue === 'registration') {
+        registrationFields.style.display = 'block';
         setRegistrationRequired();
-    } else if (visitType === 'Orthodontic Visit' || visitType === 'Debond') {
-        if (followupFields) followupFields.style.display = 'block';
+    } else if (selectedValue === 'orthodontic_visit' || selectedValue === 'debond') {
+        followupFields.style.display = 'block';
         setFollowupRequired();
     }
 }

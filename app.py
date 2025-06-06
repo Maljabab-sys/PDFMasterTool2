@@ -1107,8 +1107,12 @@ def upload_files():
         # Get visit description for follow-up visits
         visit_description = request.form.get('visit_description', '').strip() if visit_type != 'Registration' else None
         
-        # Handle optional image uploads in correct order
-        image_fields = ['eofv', 'eosv', 'eomv', 'iorv', 'iofv', 'iolv', 'iouv', 'iolowerv']
+        # Handle specific image upload fields for the new structure
+        image_fields = [
+            'extra_oral_front', 'extra_oral_left', 'extra_oral_right',
+            'intra_oral_center', 'intra_oral_upper', 'intra_oral_lower',
+            'intra_oral_left', 'intra_oral_right'
+        ]
         uploaded_files = []
         
         for field_name in image_fields:
