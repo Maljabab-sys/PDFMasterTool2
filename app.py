@@ -1192,10 +1192,11 @@ def upload_files():
                 'template': template,
                 'image_count': len(uploaded_files),
                 'timestamp': datetime.now().strftime('%B %d, %Y at %I:%M %p'),
-                'case_id': case.id
+                'case_id': case.id,
+                'show_success_animation': True
             }
             
-            return redirect(url_for('index') + '#case-history')
+            return redirect(url_for('new_case') + '?success=true')
         else:
             flash('Error generating PDF. Please try again.', 'error')
             return redirect(url_for('index'))

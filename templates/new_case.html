@@ -456,6 +456,117 @@
             document.body.appendChild(alert);
             setTimeout(() => alert.remove(), 3000);
         }
+
+        function showSuccessAnimation() {
+            // Create overlay
+            const overlay = document.createElement('div');
+            overlay.className = 'success-overlay';
+            overlay.style.cssText = `
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0, 0, 0, 0.8);
+                z-index: 10000;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                opacity: 0;
+                transition: opacity 0.3s ease;
+            `;
+
+            // Create success modal
+            const modal = document.createElement('div');
+            modal.style.cssText = `
+                background: linear-gradient(135deg, #28a745, #20c997);
+                border-radius: 20px;
+                padding: 3rem;
+                text-align: center;
+                color: white;
+                max-width: 400px;
+                box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+                transform: scale(0.5);
+                transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            `;
+
+            // Create checkmark animation
+            const checkmark = document.createElement('div');
+            checkmark.innerHTML = `
+                <svg width="80" height="80" viewBox="0 0 100 100" style="margin-bottom: 1rem;">
+                    <circle cx="50" cy="50" r="45" fill="none" stroke="white" stroke-width="3" opacity="0.3"/>
+                    <path d="M25 50 L40 65 L75 30" fill="none" stroke="white" stroke-width="4" stroke-linecap="round" 
+                          stroke-dasharray="60" stroke-dashoffset="60" style="animation: checkmark 0.6s ease-in-out 0.3s forwards;">
+                    </path>
+                </svg>
+                <style>
+                    @keyframes checkmark {
+                        to {
+                            stroke-dashoffset: 0;
+                        }
+                    }
+                    @keyframes pulse {
+                        0%, 100% { transform: scale(1); }
+                        50% { transform: scale(1.05); }
+                    }
+                </style>
+            `;
+
+            const title = document.createElement('h3');
+            title.textContent = 'Case Submitted Successfully!';
+            title.style.cssText = 'margin-bottom: 1rem; font-weight: bold;';
+
+            const message = document.createElement('p');
+            message.textContent = 'Your medical case has been processed and saved.';
+            message.style.cssText = 'margin-bottom: 2rem; opacity: 0.9;';
+
+            const button = document.createElement('button');
+            button.textContent = 'View Cases';
+            button.className = 'btn btn-light btn-lg';
+            button.style.cssText = 'font-weight: bold; color: #28a745;';
+
+            modal.appendChild(checkmark);
+            modal.appendChild(title);
+            modal.appendChild(message);
+            modal.appendChild(button);
+            overlay.appendChild(modal);
+            document.body.appendChild(overlay);
+
+            // Animate in
+            setTimeout(() => {
+                overlay.style.opacity = '1';
+                modal.style.transform = 'scale(1)';
+                modal.style.animation = 'pulse 2s ease-in-out infinite';
+            }, 10);
+
+            // Handle button click and auto-close
+            button.onclick = () => closeSuccessModal(overlay);
+            setTimeout(() => closeSuccessModal(overlay), 3000);
+        }
+
+        function closeSuccessModal(overlay) {
+            overlay.style.opacity = '0';
+            setTimeout(() => {
+                if (overlay.parentNode) {
+                    overlay.remove();
+                }
+                // Redirect to case history
+                window.location.href = '/cases';
+            }, 300);
+        }
+
+        // Check if we should show success animation
+        document.addEventListener('DOMContentLoaded', function() {
+            // Check URL parameters or session data for success
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.get('success') === 'true' || window.location.hash === '#success') {
+                setTimeout(showSuccessAnimation, 500);
+                // Clean up URL
+                if (window.history && window.history.replaceState) {
+                    window.history.replaceState({}, document.title, window.location.pathname);
+                }
+            }
+        });
     </script>
 </body>
 </html>
