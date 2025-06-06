@@ -761,8 +761,9 @@ def cases():
     search_query = request.args.get('search', '').strip()
     
     if search_query:
-        # Search in case title, notes, visit type, patient name, and MRN
+        # Search in case title, notes, visit type, patient name, and MRN for current user only
         cases = Case.query.join(Patient, Case.patient_id == Patient.id, isouter=True).filter(
+            Case.user_id == current_user.id,
             db.or_(
                 Case.title.ilike(f'%{search_query}%'),
                 Case.notes.ilike(f'%{search_query}%'),
