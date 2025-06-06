@@ -645,7 +645,17 @@ def index():
 @app.route('/dashboard')
 @login_required
 def dashboard():
-    return render_template('index.html')
+    return redirect(url_for('new_case'))
+
+@app.route('/new_case')
+@login_required
+def new_case():
+    return render_template('new_case.html')
+
+@app.route('/patient_list')
+@login_required
+def patient_list():
+    return render_template('patient_list.html')
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -758,6 +768,7 @@ def success():
                          case_id=success_info.get('case_id', 0))
 
 @app.route('/search_patients', methods=['POST'])
+@login_required
 def search_patients():
     """Search for patients by MRN"""
     data = request.get_json()
@@ -789,6 +800,7 @@ def search_patients():
     return jsonify({'patients': patients_data})
 
 @app.route('/cases')
+@login_required
 def cases():
     """Display all submitted cases with search functionality"""
     search_query = request.args.get('search', '').strip()
@@ -812,12 +824,14 @@ def cases():
     return render_template('cases.html', cases=cases, search_query=search_query)
 
 @app.route('/case/<int:case_id>')
+@login_required
 def case_detail(case_id):
     """Display details of a specific case"""
     case = Case.query.get_or_404(case_id)
     return render_template('case_detail.html', case=case)
 
 @app.route('/download/<int:case_id>')
+@login_required
 def download_case(case_id):
     """Download PDF for a specific case"""
     case = Case.query.get_or_404(case_id)
@@ -832,6 +846,7 @@ def download_case(case_id):
         return redirect(url_for('cases'))
 
 @app.route('/upload', methods=['POST'])
+@login_required
 def upload_files():
     try:
         # Get basic form data
@@ -845,13 +860,13 @@ def upload_files():
         
         if not case_title:
             flash('Please provide a case title.', 'error')
-            return redirect(url_for('index'))
+            return redirect(url_for('new_case'))
         
         # Images are optional - no validation required
             
         if not visit_type:
             flash('Please select a visit type.', 'error')
-            return redirect(url_for('index'))
+            return redirect(url_for('new_case'))
         
         patient_id = None
         
@@ -865,13 +880,13 @@ def upload_files():
             
             if not all([mrn, clinic, first_name, last_name]):
                 flash('Please fill in all required patient information.', 'error')
-                return redirect(url_for('index'))
+                return redirect(url_for('new_case'))
             
             # Check if MRN already exists
             existing_patient = Patient.query.filter_by(mrn=mrn).first()
             if existing_patient:
                 flash(f'Patient with MRN {mrn} already exists.', 'error')
-                return redirect(url_for('index'))
+                return redirect(url_for('new_case'))
             
             # Create new patient
             new_patient = Patient(
@@ -890,13 +905,13 @@ def upload_files():
             
             if not patient_id:
                 flash('Please select a patient.', 'error')
-                return redirect(url_for('index'))
+                return redirect(url_for('new_case'))
             
             # Verify patient exists
             patient = Patient.query.get(patient_id)
             if not patient:
                 flash('Selected patient not found.', 'error')
-                return redirect(url_for('index'))
+                return redirect(url_for('new_case'))
         
         # Get visit description for follow-up visits
         visit_description = request.form.get('visit_description', '').strip() if visit_type != 'Registration' else None
