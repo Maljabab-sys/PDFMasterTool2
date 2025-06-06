@@ -36,16 +36,26 @@ class User(UserMixin, db.Model):
     def __repr__(self):
         return f'<User {self.email}>'
 
+# Add user relationships
+User.patients = db.relationship('Patient', backref='user', lazy=True)
+User.cases = db.relationship('Case', backref='user', lazy=True)
+
 class Patient(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    mrn = db.Column(db.String(50), unique=True, nullable=False)  # Medical Record Number
+    mrn = db.Column(db.String(50), nullable=False)  # Medical Record Number
     first_name = db.Column(db.String(100), nullable=False)
     last_name = db.Column(db.String(100), nullable=False)
     clinic = db.Column(db.String(20), nullable=False)  # KFMC or DC
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     
+    # User relationship - each patient belongs to a specific user
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    
     # Relationship to cases
     cases = db.relationship('Case', backref='patient', lazy=True)
+    
+    # Unique constraint: MRN must be unique per user (not globally)
+    __table_args__ = (db.UniqueConstraint('mrn', 'user_id', name='unique_mrn_per_user'),)
     
     def __repr__(self):
         return f'<Patient {self.mrn} - {self.first_name} {self.last_name}>'
@@ -60,6 +70,9 @@ class Case(db.Model):
     image_count = db.Column(db.Integer, default=0)
     pdf_filename = db.Column(db.String(255))
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    # User relationship - each case belongs to a specific user
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     
     # New fields for visit types
     visit_type = db.Column(db.String(50), nullable=False)  # Registration, Orthodontic Visit, Debond

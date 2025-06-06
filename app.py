@@ -731,8 +731,9 @@ def search_patients():
     if len(mrn_search) < 2:
         return jsonify({'patients': []})
     
-    # Search patients by MRN or name (partial match)
+    # Search patients by MRN or name (partial match) for current user only
     patients = Patient.query.filter(
+        Patient.user_id == current_user.id,
         db.or_(
             Patient.mrn.ilike(f'%{mrn_search}%'),
             Patient.first_name.ilike(f'%{mrn_search}%'),
@@ -773,7 +774,7 @@ def cases():
             )
         ).order_by(Case.created_at.desc()).all()
     else:
-        cases = Case.query.order_by(Case.created_at.desc()).all()
+        cases = Case.query.filter_by(user_id=current_user.id).order_by(Case.created_at.desc()).all()
     
     return render_template('cases.html', cases=cases, search_query=search_query)
 
@@ -781,14 +782,14 @@ def cases():
 @login_required
 def case_detail(case_id):
     """Display details of a specific case"""
-    case = Case.query.get_or_404(case_id)
+    case = Case.query.filter_by(id=case_id, user_id=current_user.id).first_or_404()
     return render_template('case_detail.html', case=case)
 
 @app.route('/download/<int:case_id>')
 @login_required
 def download_case(case_id):
     """Download PDF for a specific case"""
-    case = Case.query.get_or_404(case_id)
+    case = Case.query.filter_by(id=case_id, user_id=current_user.id).first_or_404()
     pdf_path = os.path.join(app.config['UPLOAD_FOLDER'], case.pdf_filename)
     
     if os.path.exists(pdf_path):
@@ -836,18 +837,19 @@ def upload_files():
                 flash('Please fill in all required patient information.', 'error')
                 return redirect(url_for('new_case'))
             
-            # Check if MRN already exists
-            existing_patient = Patient.query.filter_by(mrn=mrn).first()
+            # Check if MRN already exists for this user
+            existing_patient = Patient.query.filter_by(mrn=mrn, user_id=current_user.id).first()
             if existing_patient:
                 flash(f'Patient with MRN {mrn} already exists.', 'error')
                 return redirect(url_for('new_case'))
             
-            # Create new patient
+            # Create new patient for current user
             new_patient = Patient(
                 mrn=mrn,
                 first_name=first_name,
                 last_name=last_name,
-                clinic=clinic
+                clinic=clinic,
+                user_id=current_user.id
             )
             db.session.add(new_patient)
             db.session.commit()
@@ -861,8 +863,8 @@ def upload_files():
                 flash('Please select a patient.', 'error')
                 return redirect(url_for('new_case'))
             
-            # Verify patient exists
-            patient = Patient.query.get(patient_id)
+            # Verify patient exists and belongs to current user
+            patient = Patient.query.filter_by(id=patient_id, user_id=current_user.id).first()
             if not patient:
                 flash('Selected patient not found.', 'error')
                 return redirect(url_for('new_case'))
@@ -905,7 +907,7 @@ def upload_files():
         # Get patient info for PDF if available
         patient_info = None
         if patient_id:
-            patient = Patient.query.get(patient_id)
+            patient = Patient.query.filter_by(id=patient_id, user_id=current_user.id).first()
             if patient:
                 patient_info = {
                     'name': f"{patient.first_name} {patient.last_name}",
@@ -915,7 +917,7 @@ def upload_files():
                 }
         
         if create_pdf(uploaded_files, case_title, notes, pdf_path, template, orientation, images_per_slide, patient_info):
-            # Save case to database with visit information
+            # Save case to database with visit information for current user
             case = Case(
                 title=case_title,
                 notes=notes,
@@ -926,7 +928,8 @@ def upload_files():
                 pdf_filename=pdf_filename,
                 visit_type=visit_type,
                 patient_id=patient_id,
-                visit_description=visit_description
+                visit_description=visit_description,
+                user_id=current_user.id
             )
             db.session.add(case)
             db.session.commit()
@@ -970,7 +973,7 @@ def not_found(e):
 @login_required
 def api_cases():
     """API endpoint for case history"""
-    cases = Case.query.order_by(Case.created_at.desc()).all()
+    cases = Case.query.filter_by(user_id=current_user.id).order_by(Case.created_at.desc()).all()
     cases_data = []
     
     for case in cases:
@@ -1003,11 +1006,11 @@ def api_cases():
 @login_required
 def api_patients():
     """API endpoint for patient list with cases"""
-    patients = Patient.query.order_by(Patient.created_at.desc()).all()
+    patients = Patient.query.filter_by(user_id=current_user.id).order_by(Patient.created_at.desc()).all()
     patients_data = []
     
     for patient in patients:
-        patient_cases = Case.query.filter_by(patient_id=patient.id).order_by(Case.created_at.desc()).all()
+        patient_cases = Case.query.filter_by(patient_id=patient.id, user_id=current_user.id).order_by(Case.created_at.desc()).all()
         
         cases_data = []
         for case in patient_cases:
