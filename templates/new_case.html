@@ -156,131 +156,139 @@
                         </div>
                     </div>
 
-                    <!-- Template & Layout -->
+                    <!-- Extra Oral Photos Section -->
                     <div class="card border-0 bg-dark mb-4">
                         <div class="card-body">
                             <h5 class="card-title mb-3">
-                                <i class="bi bi-layout-three-columns me-2"></i>Template & Layout
+                                <i class="bi bi-camera me-2"></i>Extra Oral Photos
+                                <span class="badge bg-secondary ms-2">3 Photos Required</span>
                             </h5>
-                            <div class="row">
+                            <div class="row" id="extraOralUploads">
                                 <div class="col-md-4 mb-3">
-                                    <label for="template" class="form-label">Template</label>
-                                    <select class="form-select" id="template" name="template">
-                                        <option value="medical">Medical Case</option>
-                                        <option value="classic">Classic</option>
-                                        <option value="modern">Modern</option>
-                                        <option value="grid">Grid</option>
-                                        <option value="timeline">Timeline</option>
-                                        <option value="comparison">Comparison</option>
-                                    </select>
+                                    <div class="image-upload-container">
+                                        <div class="upload-placeholder text-center p-4 border border-2 border-dashed rounded">
+                                            <i class="bi bi-camera fs-2 text-primary"></i>
+                                            <p class="mb-2 fw-semibold">Front View</p>
+                                            <input type="file" name="extra_oral_front" accept="image/*" class="form-control image-input" required>
+                                        </div>
+                                        <div class="image-preview" style="display: none;">
+                                            <img src="" alt="Preview" class="preview-img img-fluid rounded">
+                                            <button type="button" class="btn btn-sm btn-danger btn-remove-image mt-2">Remove</button>
+                                        </div>
+                                    </div>
                                 </div>
                                 <div class="col-md-4 mb-3">
-                                    <label for="orientation" class="form-label">Orientation</label>
-                                    <select class="form-select" id="orientation" name="orientation">
-                                        <option value="portrait">Portrait</option>
-                                        <option value="landscape">Landscape</option>
-                                    </select>
+                                    <div class="image-upload-container">
+                                        <div class="upload-placeholder text-center p-4 border border-2 border-dashed rounded">
+                                            <i class="bi bi-camera fs-2 text-primary"></i>
+                                            <p class="mb-2 fw-semibold">Left Profile</p>
+                                            <input type="file" name="extra_oral_left" accept="image/*" class="form-control image-input" required>
+                                        </div>
+                                        <div class="image-preview" style="display: none;">
+                                            <img src="" alt="Preview" class="preview-img img-fluid rounded">
+                                            <button type="button" class="btn btn-sm btn-danger btn-remove-image mt-2">Remove</button>
+                                        </div>
+                                    </div>
                                 </div>
                                 <div class="col-md-4 mb-3">
-                                    <label for="imagesPerSlide" class="form-label">Images per Slide</label>
-                                    <select class="form-select" id="imagesPerSlide" name="images_per_slide">
-                                        <option value="1">1</option>
-                                        <option value="2">2</option>
-                                        <option value="4">4</option>
-                                        <option value="6">6</option>
-                                    </select>
+                                    <div class="image-upload-container">
+                                        <div class="upload-placeholder text-center p-4 border border-2 border-dashed rounded">
+                                            <i class="bi bi-camera fs-2 text-primary"></i>
+                                            <p class="mb-2 fw-semibold">Right Profile</p>
+                                            <input type="file" name="extra_oral_right" accept="image/*" class="form-control image-input" required>
+                                        </div>
+                                        <div class="image-preview" style="display: none;">
+                                            <img src="" alt="Preview" class="preview-img img-fluid rounded">
+                                            <button type="button" class="btn btn-sm btn-danger btn-remove-image mt-2">Remove</button>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Additional Case Information -->
+                    <!-- Intra Oral Photos Section -->
                     <div class="card border-0 bg-dark mb-4">
                         <div class="card-body">
                             <h5 class="card-title mb-3">
-                                <i class="bi bi-info-circle me-2"></i>Additional Information
+                                <i class="bi bi-teeth me-2"></i>Intra Oral Photos
+                                <span class="badge bg-secondary ms-2">5 Photos Required</span>
                             </h5>
-                            <div class="row">
-                                <div class="col-md-6 mb-3">
-                                    <label for="priority" class="form-label">Case Priority</label>
-                                    <select class="form-select" id="priority" name="priority">
-                                        <option value="normal">Normal</option>
-                                        <option value="urgent">Urgent</option>
-                                        <option value="emergency">Emergency</option>
-                                    </select>
+                            <div class="row" id="intraOralUploads">
+                                <div class="col-md-4 mb-3 mx-auto">
+                                    <div class="image-upload-container">
+                                        <div class="upload-placeholder text-center p-4 border border-2 border-dashed rounded">
+                                            <i class="bi bi-teeth fs-2 text-success"></i>
+                                            <p class="mb-2 fw-semibold">Center Occlusion</p>
+                                            <input type="file" name="intra_oral_center" accept="image/*" class="form-control image-input" required>
+                                        </div>
+                                        <div class="image-preview" style="display: none;">
+                                            <img src="" alt="Preview" class="preview-img img-fluid rounded">
+                                            <button type="button" class="btn btn-sm btn-danger btn-remove-image mt-2">Remove</button>
+                                        </div>
+                                    </div>
                                 </div>
-                                <div class="col-md-6 mb-3">
-                                    <label for="category" class="form-label">Case Category</label>
-                                    <select class="form-select" id="category" name="category">
-                                        <option value="orthodontics">Orthodontics</option>
-                                        <option value="oral_surgery">Oral Surgery</option>
-                                        <option value="periodontics">Periodontics</option>
-                                        <option value="endodontics">Endodontics</option>
-                                        <option value="prosthodontics">Prosthodontics</option>
-                                        <option value="pediatric">Pediatric Dentistry</option>
-                                        <option value="oral_medicine">Oral Medicine</option>
-                                        <option value="other">Other</option>
-                                    </select>
+                            </div>
+                            <div class="row justify-content-center">
+                                <div class="col-md-3 mb-3">
+                                    <div class="image-upload-container">
+                                        <div class="upload-placeholder text-center p-3 border border-2 border-dashed rounded">
+                                            <i class="bi bi-teeth fs-3 text-success"></i>
+                                            <p class="mb-2 small fw-semibold">Upper Arch</p>
+                                            <input type="file" name="intra_oral_upper" accept="image/*" class="form-control form-control-sm image-input" required>
+                                        </div>
+                                        <div class="image-preview" style="display: none;">
+                                            <img src="" alt="Preview" class="preview-img img-fluid rounded">
+                                            <button type="button" class="btn btn-sm btn-danger btn-remove-image mt-2">Remove</button>
+                                        </div>
+                                    </div>
                                 </div>
-                                <div class="col-md-6 mb-3">
-                                    <label for="chief_complaint" class="form-label">Chief Complaint</label>
-                                    <input type="text" class="form-control" id="chief_complaint" name="chief_complaint" placeholder="Patient's main concern...">
+                                <div class="col-md-3 mb-3">
+                                    <div class="image-upload-container">
+                                        <div class="upload-placeholder text-center p-3 border border-2 border-dashed rounded">
+                                            <i class="bi bi-teeth fs-3 text-success"></i>
+                                            <p class="mb-2 small fw-semibold">Lower Arch</p>
+                                            <input type="file" name="intra_oral_lower" accept="image/*" class="form-control form-control-sm image-input" required>
+                                        </div>
+                                        <div class="image-preview" style="display: none;">
+                                            <img src="" alt="Preview" class="preview-img img-fluid rounded">
+                                            <button type="button" class="btn btn-sm btn-danger btn-remove-image mt-2">Remove</button>
+                                        </div>
+                                    </div>
                                 </div>
-                                <div class="col-md-6 mb-3">
-                                    <label for="treatment_plan" class="form-label">Treatment Plan</label>
-                                    <input type="text" class="form-control" id="treatment_plan" name="treatment_plan" placeholder="Proposed treatment...">
+                                <div class="col-md-3 mb-3">
+                                    <div class="image-upload-container">
+                                        <div class="upload-placeholder text-center p-3 border border-2 border-dashed rounded">
+                                            <i class="bi bi-teeth fs-3 text-success"></i>
+                                            <p class="mb-2 small fw-semibold">Left Lateral</p>
+                                            <input type="file" name="intra_oral_left" accept="image/*" class="form-control form-control-sm image-input" required>
+                                        </div>
+                                        <div class="image-preview" style="display: none;">
+                                            <img src="" alt="Preview" class="preview-img img-fluid rounded">
+                                            <button type="button" class="btn btn-sm btn-danger btn-remove-image mt-2">Remove</button>
+                                        </div>
+                                    </div>
                                 </div>
-                                <div class="col-12 mb-3">
-                                    <label for="diagnosis" class="form-label">Diagnosis</label>
-                                    <textarea class="form-control" id="diagnosis" name="diagnosis" rows="2" placeholder="Clinical diagnosis and findings..."></textarea>
+                                <div class="col-md-3 mb-3">
+                                    <div class="image-upload-container">
+                                        <div class="upload-placeholder text-center p-3 border border-2 border-dashed rounded">
+                                            <i class="bi bi-teeth fs-3 text-success"></i>
+                                            <p class="mb-2 small fw-semibold">Right Lateral</p>
+                                            <input type="file" name="intra_oral_right" accept="image/*" class="form-control form-control-sm image-input" required>
+                                        </div>
+                                        <div class="image-preview" style="display: none;">
+                                            <img src="" alt="Preview" class="preview-img img-fluid rounded">
+                                            <button type="button" class="btn btn-sm btn-danger btn-remove-image mt-2">Remove</button>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Image Upload -->
-                    <div class="card border-0 bg-dark mb-4">
-                        <div class="card-body">
-                            <h5 class="card-title mb-3">
-                                <i class="bi bi-images me-2"></i>Upload Images
-                            </h5>
-                            <div class="mb-3">
-                                <label class="form-label">Image Categories</label>
-                                <div class="row">
-                                    <div class="col-md-3 mb-2">
-                                        <div class="form-check">
-                                            <input class="form-check-input" type="checkbox" id="intraoral" name="image_categories" value="intraoral">
-                                            <label class="form-check-label" for="intraoral">Intraoral</label>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-3 mb-2">
-                                        <div class="form-check">
-                                            <input class="form-check-input" type="checkbox" id="extraoral" name="image_categories" value="extraoral">
-                                            <label class="form-check-label" for="extraoral">Extraoral</label>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-3 mb-2">
-                                        <div class="form-check">
-                                            <input class="form-check-input" type="checkbox" id="radiographs" name="image_categories" value="radiographs">
-                                            <label class="form-check-label" for="radiographs">Radiographs</label>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-3 mb-2">
-                                        <div class="form-check">
-                                            <input class="form-check-input" type="checkbox" id="models" name="image_categories" value="models">
-                                            <label class="form-check-label" for="models">Study Models</label>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            <div id="imageUploads" class="row">
-                                <!-- Initial upload boxes will be added by JavaScript -->
-                            </div>
-                            <button type="button" class="btn btn-outline-primary btn-sm mt-3" onclick="addImageUpload()">
-                                <i class="bi bi-plus-circle me-1"></i>Add More Images
-                            </button>
-                        </div>
-                    </div>
+
+
+
 
                     <!-- Action Buttons -->
                     <div class="row justify-content-center">
@@ -312,20 +320,72 @@
     <script>
         // Initialize the form
         document.addEventListener('DOMContentLoaded', function() {
-            // Add initial image upload boxes
-            for (let i = 0; i < 6; i++) {
-                addImageUpload();
-            }
-            
             // Set initial state
             handleVisitTypeChange();
             
-            // Add form submission handler for progress indicator
-            document.querySelector('form').addEventListener('submit', function() {
-                document.getElementById('uploadProgress').style.display = 'block';
-                document.querySelector('button[type="submit"]').disabled = true;
+            // Add event listeners to all image inputs
+            document.querySelectorAll('.image-input').forEach(input => {
+                input.addEventListener('change', function(e) {
+                    handleImageUpload(this, e.target.files[0]);
+                });
             });
+            
+            // Add form submission handler for progress indicator
+            const form = document.querySelector('form');
+            if (form) {
+                form.addEventListener('submit', function() {
+                    const progressEl = document.getElementById('uploadProgress');
+                    if (progressEl) {
+                        progressEl.style.display = 'block';
+                    }
+                    const submitBtn = document.querySelector('button[type="submit"]');
+                    if (submitBtn) {
+                        submitBtn.disabled = true;
+                    }
+                });
+            }
         });
+        
+        function handleImageUpload(input, file) {
+            if (!file) return;
+            
+            // Validate file type
+            if (!file.type.startsWith('image/')) {
+                alert('Please select an image file.');
+                input.value = '';
+                return;
+            }
+            
+            // Validate file size (5MB)
+            if (file.size > 5 * 1024 * 1024) {
+                alert(`${file.name} is too large. Maximum file size is 5MB.`);
+                input.value = '';
+                return;
+            }
+            
+            const container = input.closest('.image-upload-container');
+            const placeholder = container.querySelector('.upload-placeholder');
+            const preview = container.querySelector('.image-preview');
+            const previewImg = preview.querySelector('.preview-img');
+            const removeBtn = preview.querySelector('.btn-remove-image');
+            
+            // Show preview
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                previewImg.src = e.target.result;
+                placeholder.style.display = 'none';
+                preview.style.display = 'block';
+            };
+            reader.readAsDataURL(file);
+            
+            // Handle remove button
+            removeBtn.onclick = function() {
+                input.value = '';
+                placeholder.style.display = 'block';
+                preview.style.display = 'none';
+                previewImg.src = '';
+            };
+        }
         
         // Save draft functionality
         function saveDraft() {

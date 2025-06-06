@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Settings - Medical Case Manager</title>
+    <link href="https://cdn.replit.com/agent/bootstrap-agent-dark-theme.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark border-bottom">
+        <div class="container">
+            <a class="navbar-brand fw-bold" href="{{ url_for('index') }}">
+                <i class="bi bi-file-medical me-2"></i>Medical Case Manager
+            </a>
+            <div class="navbar-nav ms-auto">
+                <a class="nav-link" href="{{ url_for('new_case') }}">
+                    <i class="bi bi-plus-circle me-1"></i>New Case
+                </a>
+                <a class="nav-link" href="{{ url_for('patient_list') }}">
+                    <i class="bi bi-people me-1"></i>Patients
+                </a>
+                <a class="nav-link" href="{{ url_for('cases') }}">
+                    <i class="bi bi-folder me-1"></i>Case History
+                </a>
+                <a class="nav-link active" href="{{ url_for('settings') }}">
+                    <i class="bi bi-gear me-1"></i>Settings
+                </a>
+                <a class="nav-link" href="{{ url_for('logout') }}">
+                    <i class="bi bi-box-arrow-right me-1"></i>Logout
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container my-5">
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <!-- Header -->
+                <div class="text-center mb-5">
+                    <h1 class="display-5 fw-bold mb-3">Personal Settings</h1>
+                    <p class="lead text-muted">Manage your profile and clinic preferences</p>
+                </div>
+
+                <!-- Settings Form -->
+                <form id="settingsForm" method="post" action="{{ url_for('save_settings') }}" enctype="multipart/form-data">
+                    <!-- Profile Information -->
+                    <div class="card border-0 bg-dark mb-4">
+                        <div class="card-body">
+                            <h5 class="card-title mb-3">
+                                <i class="bi bi-person-circle me-2"></i>Profile Information
+                            </h5>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="fullName" class="form-label">Full Name *</label>
+                                    <input type="text" class="form-control" id="fullName" name="full_name" 
+                                           value="{{ current_user.first_name }} {{ current_user.last_name }}" required>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="email" class="form-label">Email Address *</label>
+                                    <input type="email" class="form-control" id="email" name="email" 
+                                           value="{{ current_user.email }}" required>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="position" class="form-label">Position *</label>
+                                    <select class="form-select" id="position" name="position" required>
+                                        <option value="">Select your position...</option>
+                                        <option value="Orthodontist" {{ 'selected' if current_user.position == 'Orthodontist' else '' }}>Orthodontist</option>
+                                        <option value="Oral Surgeon" {{ 'selected' if current_user.position == 'Oral Surgeon' else '' }}>Oral Surgeon</option>
+                                        <option value="Periodontist" {{ 'selected' if current_user.position == 'Periodontist' else '' }}>Periodontist</option>
+                                        <option value="Endodontist" {{ 'selected' if current_user.position == 'Endodontist' else '' }}>Endodontist</option>
+                                        <option value="Prosthodontist" {{ 'selected' if current_user.position == 'Prosthodontist' else '' }}>Prosthodontist</option>
+                                        <option value="Pediatric Dentist" {{ 'selected' if current_user.position == 'Pediatric Dentist' else '' }}>Pediatric Dentist</option>
+                                        <option value="General Dentist" {{ 'selected' if current_user.position == 'General Dentist' else '' }}>General Dentist</option>
+                                        <option value="Dental Resident" {{ 'selected' if current_user.position == 'Dental Resident' else '' }}>Dental Resident</option>
+                                        <option value="Dental Student" {{ 'selected' if current_user.position == 'Dental Student' else '' }}>Dental Student</option>
+                                        <option value="Other" {{ 'selected' if current_user.position == 'Other' else '' }}>Other</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="gender" class="form-label">Gender</label>
+                                    <select class="form-select" id="gender" name="gender">
+                                        <option value="">Select gender...</option>
+                                        <option value="male">Male</option>
+                                        <option value="female">Female</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Profile Image -->
+                    <div class="card border-0 bg-dark mb-4">
+                        <div class="card-body">
+                            <h5 class="card-title mb-3">
+                                <i class="bi bi-image me-2"></i>Profile Image
+                            </h5>
+                            <div class="row align-items-center">
+                                <div class="col-md-3 text-center">
+                                    <div class="profile-image-preview mb-3">
+                                        <img id="profilePreview" src="#" alt="Profile Preview" 
+                                             class="rounded-circle" style="width: 100px; height: 100px; object-fit: cover; display: none;">
+                                        <div id="profilePlaceholder" class="rounded-circle bg-secondary d-flex align-items-center justify-content-center" 
+                                             style="width: 100px; height: 100px; margin: 0 auto;">
+                                            <i class="bi bi-person-fill fs-1 text-muted"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-9">
+                                    <div class="mb-3">
+                                        <label for="profileImage" class="form-label">Upload Profile Image</label>
+                                        <input type="file" class="form-control" id="profileImage" name="profile_image" 
+                                               accept="image/*" onchange="handleProfileImageUpload(this)">
+                                        <div class="form-text">Recommended size: 200x200 pixels. Max file size: 2MB.</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Clinic Information -->
+                    <div class="card border-0 bg-dark mb-4">
+                        <div class="card-body">
+                            <h5 class="card-title mb-3">
+                                <i class="bi bi-building me-2"></i>Clinic Information
+                            </h5>
+                            <div class="mb-3">
+                                <label class="form-label">Primary Clinics *</label>
+                                <div class="row">
+                                    <div class="col-md-6 mb-2">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" id="kfmc" name="clinics" value="KFMC">
+                                            <label class="form-check-label" for="kfmc">
+                                                King Fahd Medical City (KFMC)
+                                            </label>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6 mb-2">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" id="dc" name="clinics" value="DC">
+                                            <label class="form-check-label" for="dc">
+                                                Dental Center (DC)
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div id="customClinics">
+                                <!-- Custom clinics will be added here -->
+                            </div>
+                            <button type="button" class="btn btn-outline-primary btn-sm" onclick="addCustomClinic()">
+                                <i class="bi bi-plus-circle me-1"></i>Add Custom Clinic
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Preferences -->
+                    <div class="card border-0 bg-dark mb-4">
+                        <div class="card-body">
+                            <h5 class="card-title mb-3">
+                                <i class="bi bi-sliders me-2"></i>Preferences
+                            </h5>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="defaultTemplate" class="form-label">Default Template</label>
+                                    <select class="form-select" id="defaultTemplate" name="default_template">
+                                        <option value="medical">Medical Case</option>
+                                        <option value="classic">Classic</option>
+                                        <option value="modern">Modern</option>
+                                        <option value="grid">Grid</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="defaultOrientation" class="form-label">Default Orientation</label>
+                                    <select class="form-select" id="defaultOrientation" name="default_orientation">
+                                        <option value="portrait">Portrait</option>
+                                        <option value="landscape">Landscape</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="text-center">
+                        <button type="button" class="btn btn-outline-secondary me-3" onclick="resetForm()">
+                            <i class="bi bi-arrow-clockwise me-2"></i>Reset
+                        </button>
+                        <button type="submit" class="btn btn-primary btn-lg px-4">
+                            <i class="bi bi-check-circle me-2"></i>Save Settings
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+    <script>
+        // Handle profile image upload preview
+        function handleProfileImageUpload(input) {
+            if (input.files && input.files[0]) {
+                const file = input.files[0];
+                
+                // Validate file size (2MB)
+                if (file.size > 2 * 1024 * 1024) {
+                    alert('File size must be less than 2MB');
+                    input.value = '';
+                    return;
+                }
+                
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    document.getElementById('profilePreview').src = e.target.result;
+                    document.getElementById('profilePreview').style.display = 'block';
+                    document.getElementById('profilePlaceholder').style.display = 'none';
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        // Add custom clinic
+        function addCustomClinic() {
+            const container = document.getElementById('customClinics');
+            const clinicCount = container.children.length;
+            const clinicDiv = document.createElement('div');
+            clinicDiv.className = 'mb-3 custom-clinic-item';
+            clinicDiv.innerHTML = `
+                <div class="input-group">
+                    <input type="text" class="form-control" name="custom_clinics" placeholder="Enter clinic name...">
+                    <button type="button" class="btn btn-outline-danger" onclick="removeCustomClinic(this)">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                </div>
+            `;
+            container.appendChild(clinicDiv);
+        }
+
+        // Remove custom clinic
+        function removeCustomClinic(button) {
+            button.closest('.custom-clinic-item').remove();
+        }
+
+        // Reset form
+        function resetForm() {
+            if (confirm('Are you sure you want to reset all changes?')) {
+                document.getElementById('settingsForm').reset();
+                document.getElementById('profilePreview').style.display = 'none';
+                document.getElementById('profilePlaceholder').style.display = 'block';
+            }
+        }
+
+        // Form submission with success feedback
+        document.getElementById('settingsForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(this);
+            
+            fetch('/save-settings', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showSuccessMessage('Settings saved successfully!');
+                } else {
+                    showErrorMessage('Error saving settings: ' + data.message);
+                }
+            })
+            .catch(error => {
+                showErrorMessage('Error saving settings');
+            });
+        });
+
+        function showSuccessMessage(message) {
+            const alert = document.createElement('div');
+            alert.className = 'alert alert-success alert-dismissible fade show position-fixed';
+            alert.style.cssText = 'top: 20px; right: 20px; z-index: 9999;';
+            alert.innerHTML = `${message}<button type="button" class="btn-close" data-bs-dismiss="alert"></button>`;
+            document.body.appendChild(alert);
+            setTimeout(() => alert.remove(), 3000);
+        }
+
+        function showErrorMessage(message) {
+            const alert = document.createElement('div');
+            alert.className = 'alert alert-danger alert-dismissible fade show position-fixed';
+            alert.style.cssText = 'top: 20px; right: 20px; z-index: 9999;';
+            alert.innerHTML = `${message}<button type="button" class="btn-close" data-bs-dismiss="alert"></button>`;
+            document.body.appendChild(alert);
+            setTimeout(() => alert.remove(), 3000);
+        }
+    </script>
+</body>
+</html>

@@ -19,6 +19,36 @@ document.addEventListener('DOMContentLoaded', function() {
     });
     
     // Handle individual image upload
+    // Add image upload box function
+    function addImageUpload() {
+        const container = document.getElementById('imageUploads');
+        if (!container) return;
+        
+        const uploadCount = container.children.length;
+        const uploadDiv = document.createElement('div');
+        uploadDiv.className = 'col-md-4 mb-3';
+        uploadDiv.innerHTML = `
+            <div class="image-upload-container">
+                <div class="upload-placeholder text-center p-4 border border-2 border-dashed rounded">
+                    <i class="bi bi-cloud-upload fs-2 text-muted"></i>
+                    <p class="mb-2">Click to upload image ${uploadCount + 1}</p>
+                    <input type="file" name="image_${uploadCount}" accept="image/*" class="form-control image-input">
+                </div>
+                <div class="image-preview" style="display: none;">
+                    <img src="" alt="Preview" class="preview-img img-fluid rounded">
+                    <button type="button" class="btn btn-sm btn-danger btn-remove-image mt-2">Remove</button>
+                </div>
+            </div>
+        `;
+        container.appendChild(uploadDiv);
+        
+        // Add event listeners to the new input
+        const newInput = uploadDiv.querySelector('.image-input');
+        newInput.addEventListener('change', function(e) {
+            handleImageUpload(this, e.target.files[0]);
+        });
+    }
+
     function handleImageUpload(input, file) {
         if (!file) return;
         

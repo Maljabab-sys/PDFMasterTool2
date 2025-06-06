@@ -862,6 +862,12 @@ def save_draft():
     except Exception as e:
         return jsonify({'success': False, 'message': f'Error saving draft: {str(e)}'})
 
+@app.route('/settings')
+@login_required
+def settings():
+    """Display user settings page"""
+    return render_template('settings.html')
+
 def send_reset_email(email, first_name, reset_url):
     """Send password reset email (simplified version)"""
     # In production, you would use a proper email service like SendGrid, AWS SES, etc.
