@@ -775,6 +775,93 @@ def reset_password(token):
     
     return render_template('reset_password.html', token=token)
 
+@app.route('/save-draft', methods=['POST'])
+@login_required
+def save_draft():
+    """Save case as draft"""
+    try:
+        case_title = request.form.get('case_title', '').strip()
+        notes = request.form.get('notes', '').strip()
+        visit_type = request.form.get('visit_type', '').strip()
+        
+        if not case_title:
+            return jsonify({'success': False, 'message': 'Case title is required'})
+        
+        # Get additional case information
+        priority = request.form.get('priority', 'normal')
+        category = request.form.get('category', 'orthodontics')
+        chief_complaint = request.form.get('chief_complaint', '').strip()
+        treatment_plan = request.form.get('treatment_plan', '').strip()
+        diagnosis = request.form.get('diagnosis', '').strip()
+        visit_description = request.form.get('visit_description', '').strip()
+        
+        # Handle image categories
+        image_categories = request.form.getlist('image_categories')
+        image_categories_json = ','.join(image_categories) if image_categories else ''
+        
+        # Get template and layout settings
+        template = request.form.get('template', 'medical')
+        orientation = request.form.get('orientation', 'portrait')
+        images_per_slide = int(request.form.get('images_per_slide', 1))
+        
+        # Handle patient info for drafts
+        patient_id = None
+        if visit_type == 'registration':
+            mrn = request.form.get('mrn', '').strip()
+            clinic = request.form.get('clinic', '').strip()
+            first_name = request.form.get('first_name', '').strip()
+            last_name = request.form.get('last_name', '').strip()
+            
+            if all([mrn, clinic, first_name, last_name]):
+                # Check if patient exists
+                existing_patient = Patient.query.filter_by(mrn=mrn, user_id=current_user.id).first()
+                if not existing_patient:
+                    new_patient = Patient(
+                        mrn=mrn,
+                        first_name=first_name,
+                        last_name=last_name,
+                        clinic=clinic,
+                        user_id=current_user.id
+                    )
+                    db.session.add(new_patient)
+                    db.session.flush()
+                    patient_id = new_patient.id
+                else:
+                    patient_id = existing_patient.id
+        else:
+            patient_id = request.form.get('patient_id', '').strip()
+            if patient_id:
+                patient_id = int(patient_id)
+        
+        # Save draft case (without PDF generation)
+        draft_case = Case(
+            title=f"[DRAFT] {case_title}",
+            notes=notes,
+            template=template,
+            orientation=orientation,
+            images_per_slide=images_per_slide,
+            image_count=0,  # No PDF for drafts
+            pdf_filename=None,
+            visit_type=visit_type,
+            patient_id=patient_id,
+            visit_description=visit_description,
+            user_id=current_user.id,
+            priority=priority,
+            category=category,
+            chief_complaint=chief_complaint,
+            treatment_plan=treatment_plan,
+            diagnosis=diagnosis,
+            image_categories=image_categories_json
+        )
+        
+        db.session.add(draft_case)
+        db.session.commit()
+        
+        return jsonify({'success': True, 'message': 'Draft saved successfully', 'draft_id': draft_case.id})
+        
+    except Exception as e:
+        return jsonify({'success': False, 'message': f'Error saving draft: {str(e)}'})
+
 def send_reset_email(email, first_name, reset_url):
     """Send password reset email (simplified version)"""
     # In production, you would use a proper email service like SendGrid, AWS SES, etc.
@@ -868,27 +955,44 @@ def search_patients():
 @app.route('/cases')
 @login_required
 def cases():
-    """Display all submitted cases with search functionality"""
+    """Display all submitted cases with search and filter functionality"""
     search_query = request.args.get('search', '').strip()
+    filter_param = request.args.get('filter', '').strip()
+    
+    # Base query for current user
+    query = Case.query.filter_by(user_id=current_user.id)
+    
+    # Apply filters
+    if filter_param:
+        if filter_param.startswith('priority:'):
+            priority = filter_param.split(':')[1]
+            query = query.filter(Case.priority == priority)
+        elif filter_param.startswith('category:'):
+            category = filter_param.split(':')[1]
+            query = query.filter(Case.category == category)
+        elif filter_param == 'type:draft':
+            query = query.filter(Case.title.ilike('[DRAFT]%'))
+        elif filter_param == 'type:completed':
+            query = query.filter(~Case.title.ilike('[DRAFT]%'))
     
     if search_query:
         # Search in case title, notes, visit type, patient name, and MRN for current user only
-        cases = Case.query.join(Patient, Case.patient_id == Patient.id, isouter=True).filter(
-            Case.user_id == current_user.id,
+        query = query.join(Patient, Case.patient_id == Patient.id, isouter=True).filter(
             db.or_(
                 Case.title.ilike(f'%{search_query}%'),
                 Case.notes.ilike(f'%{search_query}%'),
                 Case.visit_type.ilike(f'%{search_query}%'),
                 Case.visit_description.ilike(f'%{search_query}%'),
+                Case.chief_complaint.ilike(f'%{search_query}%'),
+                Case.diagnosis.ilike(f'%{search_query}%'),
                 Patient.mrn.ilike(f'%{search_query}%'),
                 Patient.first_name.ilike(f'%{search_query}%'),
                 Patient.last_name.ilike(f'%{search_query}%')
             )
-        ).order_by(Case.created_at.desc()).all()
-    else:
-        cases = Case.query.filter_by(user_id=current_user.id).order_by(Case.created_at.desc()).all()
+        )
     
-    return render_template('cases.html', cases=cases, search_query=search_query)
+    cases = query.order_by(Case.created_at.desc()).all()
+    return render_template('cases.html', cases=cases, search_query=search_query, current_filter=filter_param)
 
 @app.route('/case/<int:case_id>')
 @login_required

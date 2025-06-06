@@ -282,11 +282,26 @@
                         </div>
                     </div>
 
-                    <!-- Submit Button -->
-                    <div class="text-center">
-                        <button type="submit" class="btn btn-primary btn-lg px-5">
-                            <i class="bi bi-file-earmark-pdf me-2"></i>Generate Case PDF
-                        </button>
+                    <!-- Action Buttons -->
+                    <div class="row justify-content-center">
+                        <div class="col-md-6 text-center">
+                            <button type="button" class="btn btn-outline-secondary me-3" onclick="saveDraft()">
+                                <i class="bi bi-save me-2"></i>Save as Draft
+                            </button>
+                            <button type="submit" class="btn btn-primary btn-lg px-4">
+                                <i class="bi bi-file-earmark-pdf me-2"></i>Generate Case PDF
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Progress Indicator -->
+                    <div id="uploadProgress" class="mt-4" style="display: none;">
+                        <div class="text-center mb-2">
+                            <strong>Processing your case...</strong>
+                        </div>
+                        <div class="progress">
+                            <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 100%"></div>
+                        </div>
                     </div>
                 </form>
             </div>
@@ -304,7 +319,53 @@
             
             // Set initial state
             handleVisitTypeChange();
+            
+            // Add form submission handler for progress indicator
+            document.querySelector('form').addEventListener('submit', function() {
+                document.getElementById('uploadProgress').style.display = 'block';
+                document.querySelector('button[type="submit"]').disabled = true;
+            });
         });
+        
+        // Save draft functionality
+        function saveDraft() {
+            const formData = new FormData(document.querySelector('form'));
+            formData.append('save_as_draft', 'true');
+            
+            fetch('/save-draft', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showSuccessMessage('Draft saved successfully!');
+                } else {
+                    showErrorMessage('Error saving draft: ' + data.message);
+                }
+            })
+            .catch(error => {
+                showErrorMessage('Error saving draft');
+            });
+        }
+        
+        function showSuccessMessage(message) {
+            const alert = document.createElement('div');
+            alert.className = 'alert alert-success alert-dismissible fade show position-fixed';
+            alert.style.cssText = 'top: 20px; right: 20px; z-index: 9999;';
+            alert.innerHTML = `${message}<button type="button" class="btn-close" data-bs-dismiss="alert"></button>`;
+            document.body.appendChild(alert);
+            setTimeout(() => alert.remove(), 3000);
+        }
+        
+        function showErrorMessage(message) {
+            const alert = document.createElement('div');
+            alert.className = 'alert alert-danger alert-dismissible fade show position-fixed';
+            alert.style.cssText = 'top: 20px; right: 20px; z-index: 9999;';
+            alert.innerHTML = `${message}<button type="button" class="btn-close" data-bs-dismiss="alert"></button>`;
+            document.body.appendChild(alert);
+            setTimeout(() => alert.remove(), 3000);
+        }
     </script>
 </body>
 </html>
