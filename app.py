@@ -4,6 +4,7 @@ from flask import Flask, render_template, request, redirect, url_for, flash, sen
 from werkzeug.utils import secure_filename
 from werkzeug.middleware.proxy_fix import ProxyFix
 from flask_sqlalchemy import SQLAlchemy
+from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 from sqlalchemy.orm import DeclarativeBase
 from PIL import Image
 from reportlab.lib.pagesizes import letter, A4
@@ -35,6 +36,18 @@ app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
     "pool_pre_ping": True,
 }
 db.init_app(app)
+
+# Initialize Flask-Login
+login_manager = LoginManager()
+login_manager.init_app(app)
+login_manager.login_view = 'login'
+login_manager.login_message = 'Please log in to access this page.'
+login_manager.login_message_category = 'info'
+
+@login_manager.user_loader
+def load_user(user_id):
+    from models import User
+    return User.query.get(int(user_id))
 
 # Patient model
 class Patient(db.Model):
@@ -625,7 +638,108 @@ def create_pdf(images, case_title, notes, output_path, template='classic', orien
 
 @app.route('/')
 def index():
+    if current_user.is_authenticated:
+        return redirect(url_for('dashboard'))
+    return redirect(url_for('login'))
+
+@app.route('/dashboard')
+@login_required
+def dashboard():
     return render_template('index.html')
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if current_user.is_authenticated:
+        return redirect(url_for('dashboard'))
+    
+    if request.method == 'POST':
+        email = request.form.get('email')
+        password = request.form.get('password')
+        remember = bool(request.form.get('remember'))
+        
+        if not email or not password:
+            flash('Please provide both email and password.', 'error')
+            return render_template('login.html')
+        
+        from models import User
+        user = User.query.filter_by(email=email.lower()).first()
+        
+        if user and user.check_password(password):
+            login_user(user, remember=remember)
+            user.last_login = datetime.utcnow()
+            db.session.commit()
+            
+            next_page = request.args.get('next')
+            if next_page:
+                return redirect(next_page)
+            return redirect(url_for('dashboard'))
+        else:
+            flash('Invalid email or password.', 'error')
+    
+    return render_template('login.html')
+
+@app.route('/register', methods=['GET', 'POST'])
+def register():
+    if current_user.is_authenticated:
+        return redirect(url_for('dashboard'))
+    
+    if request.method == 'POST':
+        first_name = request.form.get('first_name', '').strip()
+        last_name = request.form.get('last_name', '').strip()
+        email = request.form.get('email', '').strip().lower()
+        department = request.form.get('department', '').strip()
+        position = request.form.get('position', '').strip()
+        password = request.form.get('password', '')
+        confirm_password = request.form.get('confirm_password', '')
+        
+        # Validation
+        if not all([first_name, last_name, email, department, position, password]):
+            flash('Please fill in all required fields.', 'error')
+            return render_template('register.html')
+        
+        if password != confirm_password:
+            flash('Passwords do not match.', 'error')
+            return render_template('register.html')
+        
+        if len(password) < 8:
+            flash('Password must be at least 8 characters long.', 'error')
+            return render_template('register.html')
+        
+        from models import User
+        # Check if user already exists
+        if User.query.filter_by(email=email).first():
+            flash('An account with this email already exists.', 'error')
+            return render_template('register.html')
+        
+        # Create new user
+        user = User(
+            first_name=first_name,
+            last_name=last_name,
+            email=email,
+            department=department,
+            position=position
+        )
+        user.set_password(password)
+        
+        try:
+            db.session.add(user)
+            db.session.commit()
+            
+            flash('Registration successful! Please log in.', 'success')
+            return redirect(url_for('login'))
+        except Exception as e:
+            db.session.rollback()
+            flash('Registration failed. Please try again.', 'error')
+            logging.error(f"Registration error: {e}")
+    
+    return render_template('register.html')
+
+@app.route('/logout')
+@login_required
+def logout():
+    logout_user()
+    flash('You have been logged out successfully.', 'info')
+    return redirect(url_for('login'))
 
 @app.route('/success')
 def success():
