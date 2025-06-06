@@ -705,6 +705,117 @@ def logout():
     flash('You have been logged out successfully.', 'info')
     return redirect(url_for('login'))
 
+@app.route('/forgot-password', methods=['GET', 'POST'])
+def forgot_password():
+    """Handle forgot password requests"""
+    if request.method == 'POST':
+        email = request.form.get('email', '').strip().lower()
+        
+        if not email:
+            flash('Please provide an email address.', 'error')
+            return render_template('forgot_password.html')
+        
+        user = User.query.filter_by(email=email).first()
+        
+        if user:
+            # Generate reset token
+            token = user.generate_reset_token()
+            db.session.commit()
+            
+            # Create reset URL
+            reset_url = url_for('reset_password', token=token, _external=True)
+            
+            # Send email (simplified version - in production you'd use a proper email service)
+            try:
+                send_reset_email(user.email, user.first_name, reset_url)
+                flash('A password reset link has been sent to your email address.', 'success')
+            except Exception as e:
+                flash('There was an error sending the reset email. Please try again later.', 'error')
+                print(f"Email error: {e}")  # Log for debugging
+        else:
+            # Don't reveal whether email exists or not for security
+            flash('If an account with that email exists, a password reset link has been sent.', 'info')
+        
+        return redirect(url_for('login'))
+    
+    return render_template('forgot_password.html')
+
+@app.route('/reset-password/<token>', methods=['GET', 'POST'])
+def reset_password(token):
+    """Handle password reset with token"""
+    user = User.query.filter_by(reset_token=token).first()
+    
+    if not user or not user.verify_reset_token(token):
+        flash('The password reset link is invalid or has expired.', 'error')
+        return redirect(url_for('forgot_password'))
+    
+    if request.method == 'POST':
+        password = request.form.get('password', '')
+        confirm_password = request.form.get('confirm_password', '')
+        
+        if not password or not confirm_password:
+            flash('Please provide both password fields.', 'error')
+            return render_template('reset_password.html', token=token)
+        
+        if password != confirm_password:
+            flash('Passwords do not match.', 'error')
+            return render_template('reset_password.html', token=token)
+        
+        if len(password) < 8:
+            flash('Password must be at least 8 characters long.', 'error')
+            return render_template('reset_password.html', token=token)
+        
+        # Update password and clear reset token
+        user.set_password(password)
+        user.clear_reset_token()
+        db.session.commit()
+        
+        flash('Your password has been reset successfully. Please log in.', 'success')
+        return redirect(url_for('login'))
+    
+    return render_template('reset_password.html', token=token)
+
+def send_reset_email(email, first_name, reset_url):
+    """Send password reset email (simplified version)"""
+    # In production, you would use a proper email service like SendGrid, AWS SES, etc.
+    # For now, this is a placeholder that logs the reset URL
+    print(f"Password reset email would be sent to {email}")
+    print(f"Reset URL: {reset_url}")
+    
+    # You can uncomment and configure this for actual email sending:
+    """
+    smtp_server = "smtp.gmail.com"
+    smtp_port = 587
+    sender_email = "your-app@example.com"
+    sender_password = "your-app-password"
+    
+    message = MIMEMultipart("alternative")
+    message["Subject"] = "Password Reset - Medical Case Manager"
+    message["From"] = sender_email
+    message["To"] = email
+    
+    html = f'''
+    <html>
+      <body>
+        <h2>Password Reset Request</h2>
+        <p>Hello {first_name},</p>
+        <p>You have requested to reset your password for Medical Case Manager.</p>
+        <p><a href="{reset_url}">Click here to reset your password</a></p>
+        <p>This link will expire in 1 hour.</p>
+        <p>If you didn't request this reset, please ignore this email.</p>
+      </body>
+    </html>
+    '''
+    
+    part = MIMEText(html, "html")
+    message.attach(part)
+    
+    with smtplib.SMTP(smtp_server, smtp_port) as server:
+        server.starttls()
+        server.login(sender_email, sender_password)
+        server.sendmail(sender_email, email, message.as_string())
+    """
+
 @app.route('/success')
 def success():
     success_info = session.get('success_info', {})
