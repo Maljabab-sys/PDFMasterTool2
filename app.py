@@ -1013,6 +1013,7 @@ def not_found(e):
     return render_template('index.html'), 404
 
 @app.route('/api/cases')
+@login_required
 def api_cases():
     """API endpoint for case history"""
     cases = Case.query.order_by(Case.created_at.desc()).all()
@@ -1045,6 +1046,7 @@ def api_cases():
     return jsonify({'cases': cases_data})
 
 @app.route('/api/patients')
+@login_required
 def api_patients():
     """API endpoint for patient list with cases"""
     patients = Patient.query.order_by(Patient.created_at.desc()).all()
@@ -1101,6 +1103,7 @@ def api_user_settings():
     return jsonify({'settings': settings})
 
 @app.route('/uploads/profiles/<filename>')
+@login_required
 def serve_profile_image(filename):
     """Serve profile images"""
     return send_from_directory(os.path.join('uploads', 'profiles'), filename)
