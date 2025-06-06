@@ -105,6 +105,14 @@ class Case(db.Model):
     patient_id = db.Column(db.Integer, db.ForeignKey('patient.id'), nullable=True)  # Link to patient
     visit_description = db.Column(db.Text)  # For Orthodontic Visit and Debond
     
+    # Additional case information fields
+    priority = db.Column(db.String(20), default='normal')  # normal, urgent, emergency
+    category = db.Column(db.String(50), default='orthodontics')  # medical specialty
+    chief_complaint = db.Column(db.String(255))  # Patient's main concern
+    treatment_plan = db.Column(db.Text)  # Proposed treatment
+    diagnosis = db.Column(db.Text)  # Clinical diagnosis and findings
+    image_categories = db.Column(db.Text)  # JSON string of selected image categories
+    
     def __repr__(self):
         return f'<Case {self.title} - {self.visit_type}>'
 

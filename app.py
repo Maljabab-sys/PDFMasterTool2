@@ -917,13 +917,26 @@ def download_case(case_id):
 def upload_files():
     try:
         # Get basic form data
-        case_title = request.form.get('title', '').strip()
+        case_title = request.form.get('case_title', '').strip()
         notes = request.form.get('notes', '').strip()
         visit_type = request.form.get('visit_type', '').strip()
+        visit_description = request.form.get('visit_description', '').strip()
         
-        template = 'medical'  # Only medical template
-        orientation = 'portrait'  # Fixed to portrait
-        images_per_slide = 1  # Not used in medical template
+        # Get additional case information
+        priority = request.form.get('priority', 'normal')
+        category = request.form.get('category', 'orthodontics')
+        chief_complaint = request.form.get('chief_complaint', '').strip()
+        treatment_plan = request.form.get('treatment_plan', '').strip()
+        diagnosis = request.form.get('diagnosis', '').strip()
+        
+        # Handle image categories
+        image_categories = request.form.getlist('image_categories')
+        image_categories_json = ','.join(image_categories) if image_categories else ''
+        
+        # Get template and layout settings from form
+        template = request.form.get('template', 'medical')
+        orientation = request.form.get('orientation', 'portrait')
+        images_per_slide = int(request.form.get('images_per_slide', 1))
         
         if not case_title:
             flash('Please provide a case title.', 'error')
@@ -938,7 +951,7 @@ def upload_files():
         patient_id = None
         
         # Handle visit-specific data
-        if visit_type == 'Registration':
+        if visit_type == 'registration':
             # Registration: Create new patient
             mrn = request.form.get('mrn', '').strip()
             clinic = request.form.get('clinic', '').strip()
@@ -967,7 +980,7 @@ def upload_files():
             db.session.commit()
             patient_id = new_patient.id
             
-        elif visit_type in ['Orthodontic Visit', 'Debond']:
+        elif visit_type in ['orthodontic_visit', 'debond']:
             # Follow-up visit: Find existing patient
             patient_id = request.form.get('patient_id', '').strip()
             
@@ -1041,7 +1054,13 @@ def upload_files():
                 visit_type=visit_type,
                 patient_id=patient_id,
                 visit_description=visit_description,
-                user_id=current_user.id
+                user_id=current_user.id,
+                priority=priority,
+                category=category,
+                chief_complaint=chief_complaint,
+                treatment_plan=treatment_plan,
+                diagnosis=diagnosis,
+                image_categories=image_categories_json
             )
             db.session.add(case)
             db.session.commit()

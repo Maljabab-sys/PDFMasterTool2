@@ -194,12 +194,85 @@
                         </div>
                     </div>
 
+                    <!-- Additional Case Information -->
+                    <div class="card border-0 bg-dark mb-4">
+                        <div class="card-body">
+                            <h5 class="card-title mb-3">
+                                <i class="bi bi-info-circle me-2"></i>Additional Information
+                            </h5>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="priority" class="form-label">Case Priority</label>
+                                    <select class="form-select" id="priority" name="priority">
+                                        <option value="normal">Normal</option>
+                                        <option value="urgent">Urgent</option>
+                                        <option value="emergency">Emergency</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="category" class="form-label">Case Category</label>
+                                    <select class="form-select" id="category" name="category">
+                                        <option value="orthodontics">Orthodontics</option>
+                                        <option value="oral_surgery">Oral Surgery</option>
+                                        <option value="periodontics">Periodontics</option>
+                                        <option value="endodontics">Endodontics</option>
+                                        <option value="prosthodontics">Prosthodontics</option>
+                                        <option value="pediatric">Pediatric Dentistry</option>
+                                        <option value="oral_medicine">Oral Medicine</option>
+                                        <option value="other">Other</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="chief_complaint" class="form-label">Chief Complaint</label>
+                                    <input type="text" class="form-control" id="chief_complaint" name="chief_complaint" placeholder="Patient's main concern...">
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="treatment_plan" class="form-label">Treatment Plan</label>
+                                    <input type="text" class="form-control" id="treatment_plan" name="treatment_plan" placeholder="Proposed treatment...">
+                                </div>
+                                <div class="col-12 mb-3">
+                                    <label for="diagnosis" class="form-label">Diagnosis</label>
+                                    <textarea class="form-control" id="diagnosis" name="diagnosis" rows="2" placeholder="Clinical diagnosis and findings..."></textarea>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- Image Upload -->
                     <div class="card border-0 bg-dark mb-4">
                         <div class="card-body">
                             <h5 class="card-title mb-3">
                                 <i class="bi bi-images me-2"></i>Upload Images
                             </h5>
+                            <div class="mb-3">
+                                <label class="form-label">Image Categories</label>
+                                <div class="row">
+                                    <div class="col-md-3 mb-2">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" id="intraoral" name="image_categories" value="intraoral">
+                                            <label class="form-check-label" for="intraoral">Intraoral</label>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3 mb-2">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" id="extraoral" name="image_categories" value="extraoral">
+                                            <label class="form-check-label" for="extraoral">Extraoral</label>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3 mb-2">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" id="radiographs" name="image_categories" value="radiographs">
+                                            <label class="form-check-label" for="radiographs">Radiographs</label>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3 mb-2">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" id="models" name="image_categories" value="models">
+                                            <label class="form-check-label" for="models">Study Models</label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                             <div id="imageUploads" class="row">
                                 <!-- Initial upload boxes will be added by JavaScript -->
                             </div>
