@@ -46,12 +46,13 @@ login_manager.login_message_category = 'info'
 
 @login_manager.user_loader
 def load_user(user_id):
-    from models import User
     return User.query.get(int(user_id))
+
+# Import models to ensure they're registered with SQLAlchemy
+from models import User, Patient, Case, UserSettings, UserClinic
 
 # Initialize database with models
 with app.app_context():
-    import models  # Import all models
     db.create_all()
 
 # Configuration
@@ -626,7 +627,6 @@ def login():
             flash('Please provide both email and password.', 'error')
             return render_template('login.html')
         
-        from models import User
         user = User.query.filter_by(email=email.lower()).first()
         
         if user and user.check_password(password):
@@ -670,7 +670,6 @@ def register():
             flash('Password must be at least 8 characters long.', 'error')
             return render_template('register.html')
         
-        from models import User
         # Check if user already exists
         if User.query.filter_by(email=email).first():
             flash('An account with this email already exists.', 'error')
@@ -733,7 +732,6 @@ def search_patients():
         return jsonify({'patients': []})
     
     # Search patients by MRN or name (partial match)
-    from models import Patient
     patients = Patient.query.filter(
         db.or_(
             Patient.mrn.ilike(f'%{mrn_search}%'),
@@ -775,7 +773,6 @@ def cases():
             )
         ).order_by(Case.created_at.desc()).all()
     else:
-        from models import Case
         cases = Case.query.order_by(Case.created_at.desc()).all()
     
     return render_template('cases.html', cases=cases, search_query=search_query)
@@ -784,7 +781,6 @@ def cases():
 @login_required
 def case_detail(case_id):
     """Display details of a specific case"""
-    from models import Case
     case = Case.query.get_or_404(case_id)
     return render_template('case_detail.html', case=case)
 
@@ -792,7 +788,6 @@ def case_detail(case_id):
 @login_required
 def download_case(case_id):
     """Download PDF for a specific case"""
-    from models import Case
     case = Case.query.get_or_404(case_id)
     pdf_path = os.path.join(app.config['UPLOAD_FOLDER'], case.pdf_filename)
     
@@ -842,7 +837,6 @@ def upload_files():
                 return redirect(url_for('new_case'))
             
             # Check if MRN already exists
-            from models import Patient
             existing_patient = Patient.query.filter_by(mrn=mrn).first()
             if existing_patient:
                 flash(f'Patient with MRN {mrn} already exists.', 'error')
@@ -868,7 +862,6 @@ def upload_files():
                 return redirect(url_for('new_case'))
             
             # Verify patient exists
-            from models import Patient
             patient = Patient.query.get(patient_id)
             if not patient:
                 flash('Selected patient not found.', 'error')
@@ -923,7 +916,6 @@ def upload_files():
         
         if create_pdf(uploaded_files, case_title, notes, pdf_path, template, orientation, images_per_slide, patient_info):
             # Save case to database with visit information
-            from models import Case
             case = Case(
                 title=case_title,
                 notes=notes,
@@ -978,7 +970,6 @@ def not_found(e):
 @login_required
 def api_cases():
     """API endpoint for case history"""
-    from models import Case
     cases = Case.query.order_by(Case.created_at.desc()).all()
     cases_data = []
     
@@ -1012,7 +1003,6 @@ def api_cases():
 @login_required
 def api_patients():
     """API endpoint for patient list with cases"""
-    from models import Patient
     patients = Patient.query.order_by(Patient.created_at.desc()).all()
     patients_data = []
     
