@@ -6,652 +6,1023 @@
     <title>Patient Data Organizer</title>
     <link href="https://cdn.replit.com/agent/bootstrap-agent-dark-theme.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <style>
-        .section-hidden {
-            display: none;
-            opacity: 0;
-            transform: translateY(20px);
+        /* Mobile-first responsive design */
+        * {
+            box-sizing: border-box;
+        }
+        
+        body {
+            overflow-x: hidden;
+        }
+        
+        .container {
+            max-width: 100%;
+            padding-left: 15px;
+            padding-right: 15px;
+        }
+        
+        /* Upload box responsive styling */
+        .upload-box {
+            width: 100%;
+            min-height: 200px;
+            margin-bottom: 1rem;
+        }
+        
+        .image-upload-container {
+            width: 100%;
+            height: 180px;
+            position: relative;
+        }
+        
+        .upload-placeholder {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        /* Mobile responsive grid fixes */
+        @media (max-width: 576px) {
+            .col-lg-4, .col-md-4, .col-sm-4 {
+                flex: 0 0 33.333333%;
+                max-width: 33.333333%;
+            }
+            
+            .col-lg-4.col-md-6.col-sm-6 {
+                flex: 0 0 50%;
+                max-width: 50%;
+            }
+            
+            .upload-box {
+                min-height: 150px;
+            }
+            
+            .image-upload-container {
+                height: 130px;
+            }
+            
+            .display-6 {
+                font-size: 2rem !important;
+            }
+            
+            .form-label {
+                font-size: 0.9rem;
+            }
+            
+            .container {
+                padding-left: 10px;
+                padding-right: 10px;
+            }
+            
+            .nav-pills .nav-link {
+                padding: 0.5rem 0.75rem;
+                font-size: 0.9rem;
+            }
+            
+            .display-5 {
+                font-size: 2rem !important;
+            }
+            
+            .lead {
+                font-size: 1rem;
+            }
+        }
+        
+        /* Tablet responsive adjustments */
+        @media (min-width: 577px) and (max-width: 768px) {
+            .col-lg-4, .col-md-4 {
+                flex: 0 0 33.333333%;
+                max-width: 33.333333%;
+            }
+            
+            .col-lg-4.col-md-6 {
+                flex: 0 0 50%;
+                max-width: 50%;
+            }
+        }
+        
+        /* Custom animations and styling */
+        .animated-select {
             transition: all 0.3s ease;
         }
         
-        .section-visible {
-            display: block;
-            opacity: 1;
-            transform: translateY(0);
-            animation: slideIn 0.4s ease;
+        .animated-select:focus {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,123,255,0.3);
         }
         
-        @keyframes slideIn {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
+        .animated-button {
+            transition: all 0.2s ease;
         }
         
-        .visit-type-card {
-            cursor: pointer;
+        .animated-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0,123,255,0.4);
+        }
+        
+        .visit-fields {
+            animation: fadeInUp 0.5s ease-out;
+        }
+        
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        /* Image upload styling */
+        .upload-box {
+            margin-bottom: 1rem;
+        }
+        
+        .image-upload-container {
+            position: relative;
+            border: 2px dashed #dee2e6;
+            border-radius: 8px;
+            padding: 1rem;
+            text-align: center;
             transition: all 0.3s ease;
-            border: 2px solid transparent;
+            min-height: 180px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
         
-        .visit-type-card:hover {
+        .image-upload-container:hover {
             border-color: #0d6efd;
+            background-color: rgba(13, 110, 253, 0.05);
+        }
+        
+        .image-input {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            cursor: pointer;
+        }
+        
+        .upload-placeholder {
+            pointer-events: none;
+        }
+        
+        .image-preview {
+            position: relative;
+            width: 100%;
+            height: 100%;
+        }
+        
+        .preview-img {
+            width: 100%;
+            height: 150px;
+            object-fit: cover;
+            border-radius: 6px;
+        }
+        
+        .btn-remove-image {
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            background: #dc3545;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .btn-remove-image:hover {
+            background: #bb2d3b;
+            transform: scale(1.1);
+        }
+        
+        /* Navigation animations */
+        .navbar-nav .nav-link {
+            transition: all 0.3s ease;
+            position: relative;
+        }
+        
+        .navbar-nav .nav-link::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            width: 0;
+            height: 2px;
+            background: #0d6efd;
+            transition: all 0.3s ease;
+            transform: translateX(-50%);
+        }
+        
+        .navbar-nav .nav-link:hover::after,
+        .navbar-nav .nav-link.active::after {
+            width: 80%;
+        }
+        
+        .navbar-nav .nav-link:hover {
             transform: translateY(-2px);
         }
         
-        .visit-type-card.selected {
-            border-color: #0d6efd;
-            background: linear-gradient(135deg, rgba(13, 110, 253, 0.1), rgba(13, 110, 253, 0.05));
+        /* Card animations */
+        .card {
+            transition: all 0.3s ease;
         }
         
-        .image-upload-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 1rem;
-            margin-top: 1rem;
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
         }
         
-        .image-upload-item {
-            position: relative;
+        /* Success popup notification */
+        .success-popup {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: linear-gradient(135deg, #28a745, #20c997);
+            color: white;
+            padding: 16px 24px;
+            border-radius: 12px;
+            box-shadow: 0 8px 32px rgba(40, 167, 69, 0.3);
+            z-index: 9999;
+            transform: translateX(400px);
+            opacity: 0;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            min-width: 280px;
+        }
+        
+        .success-popup.show {
+            transform: translateX(0);
+            opacity: 1;
+        }
+        
+        .success-popup.hide {
+            transform: translateX(400px);
+            opacity: 0;
+        }
+        
+        .success-icon {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            animation: checkmark 0.6s ease-in-out;
+        }
+        
+        @keyframes checkmark {
+            0% { transform: scale(0) rotate(45deg); }
+            50% { transform: scale(1.2) rotate(45deg); }
+            100% { transform: scale(1) rotate(45deg); }
+        }
+        
+        .success-text {
+            font-weight: 600;
+            font-size: 15px;
+        }
+        
+        /* Profile dropdown animations */
+        .dropdown-menu {
+            border: none;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            border-radius: 12px;
+            overflow: hidden;
+            transform: translateY(-10px);
+            opacity: 0;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            pointer-events: none;
+        }
+        
+        .dropdown-menu.show {
+            transform: translateY(0);
+            opacity: 1;
+            pointer-events: auto;
+        }
+        
+        /* Mobile responsive dropdown */
+        @media (max-width: 768px) {
+            .dropdown-menu {
+                transform: translateY(-5px);
+                min-width: 200px;
+            }
+            
+            .dropdown-item {
+                padding: 10px 16px;
+                font-size: 14px;
+            }
+            
+            .dropdown-header {
+                padding: 12px 16px;
+                font-size: 14px;
+            }
+        }
+        
+        /* Profile icon styling */
+        #navProfileImage {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        #navProfileIcon {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        /* Profile upload area styling */
+        .profile-upload-area {
+            width: 150px;
+            height: 150px;
             border: 2px dashed #6c757d;
-            border-radius: 8px;
-            min-height: 120px;
+            border-radius: 50%;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
             cursor: pointer;
             transition: all 0.3s ease;
-            background: rgba(108, 117, 125, 0.1);
+            margin: 0 auto;
+            background: var(--bs-dark);
         }
         
-        .image-upload-item:hover {
-            border-color: #0d6efd;
-            background: rgba(13, 110, 253, 0.1);
+        .profile-upload-area:hover {
+            border-color: #007bff;
+            background: #1a1d29;
         }
         
-        .image-upload-item.has-image {
-            border-color: #198754;
-            background: rgba(25, 135, 84, 0.1);
+        .profile-preview {
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid #dee2e6;
         }
         
-        .image-preview {
-            max-width: 100%;
-            max-height: 80px;
-            border-radius: 4px;
-            margin-bottom: 0.5rem;
+        .dropdown-item {
+            padding: 12px 20px;
+            transition: all 0.2s ease;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
         }
         
-        .step-indicator {
-            display: flex;
-            justify-content: center;
-            margin-bottom: 2rem;
+        .dropdown-item:hover {
+            background: linear-gradient(135deg, #6f42c1, #5a2c91);
+            color: white;
+            transform: translateX(5px);
         }
         
-        .step {
-            display: flex;
-            align-items: center;
-            color: #6c757d;
+        .dropdown-item:focus {
+            background: linear-gradient(135deg, #6f42c1, #5a2c91);
+            color: white;
+            outline: none;
         }
         
-        .step.active {
-            color: #0d6efd;
+        .dropdown-header {
+            background: linear-gradient(135deg, #6c757d, #495057);
+            color: white;
+            border-bottom: none;
+            padding: 15px 20px;
+            margin: 0;
         }
         
-        .step.completed {
-            color: #198754;
-        }
-        
-        .step-number {
+        /* Profile image styling */
+        .profile-image {
             width: 32px;
             height: 32px;
             border-radius: 50%;
-            border: 2px solid currentColor;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: bold;
-            margin-right: 0.5rem;
+            object-fit: cover;
+            border: 2px solid rgba(255, 255, 255, 0.3);
         }
         
-        .step.active .step-number,
-        .step.completed .step-number {
-            background: currentColor;
-            color: white;
+        .profile-upload-area {
+            border: 2px dashed #dee2e6;
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            margin-bottom: 20px;
         }
         
-        .step-connector {
-            width: 60px;
-            height: 2px;
-            background: #6c757d;
-            margin: 0 1rem;
+        .profile-upload-area:hover {
+            border-color: #007bff;
+            background: rgba(0, 123, 255, 0.05);
         }
         
-        .step.completed + .step .step-connector {
-            background: #198754;
+        .profile-preview {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            object-fit: cover;
+            margin: 0 auto 10px;
+            border: 3px solid #dee2e6;
+        }
+        
+        /* Tooltip styling */
+        .tooltip {
+            font-size: 0.875rem;
         }
     </style>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
     <!-- Navigation -->
     <nav class="navbar navbar-expand-lg navbar-dark border-bottom">
         <div class="container">
-            <a class="navbar-brand fw-bold" href="{{ url_for('index') }}">
-                <i class="bi bi-file-medical me-2"></i>Patient Data Organizer
+            <a class="navbar-brand fw-bold" href="#">
+                <i class="bi bi-file-earmark-slides me-2"></i>Patient Data Organizer
             </a>
-            <div class="navbar-nav ms-auto">
-                <a class="nav-link active" href="{{ url_for('index') }}">
-                    <i class="bi bi-plus-circle me-1"></i>New Case
-                </a>
-                <a class="nav-link" href="{{ url_for('patient_list') }}">
-                    <i class="bi bi-people me-1"></i>Patients
-                </a>
-                <a class="nav-link" href="{{ url_for('cases') }}">
-                    <i class="bi bi-folder me-1"></i>Case History
-                </a>
+            
+            <!-- Profile Dropdown -->
+            <div class="dropdown">
+                <button class="btn btn-outline-light rounded-circle p-1" type="button" 
+                        id="profileDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                    <img id="navProfileImage" src="" alt="Profile" class="profile-image" style="display: none;">
+                    <i id="navProfileIcon" class="bi bi-person-circle" style="font-size: 1.2rem;"></i>
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="profileDropdown">
+                    <li>
+                        <h6 class="dropdown-header">
+                            <i class="bi bi-person me-2"></i>User Profile
+                        </h6>
+                    </li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li>
+                        <a class="dropdown-item" href="#" onclick="showSection('settings')">
+                            <i class="bi bi-gear me-2"></i>Settings
+                        </a>
+                    </li>
+                    <li>
+                        <a class="dropdown-item" href="#" onclick="showAbout()">
+                            <i class="bi bi-info-circle me-2"></i>About
+                        </a>
+                    </li>
+                </ul>
             </div>
         </div>
     </nav>
-
-    <div class="container my-5">
-        <!-- Header -->
-        <div class="text-center mb-5">
-            <h1 class="display-4 fw-bold mb-3">Patient Data Organizer</h1>
-            <p class="lead text-muted">Create professional medical case presentations</p>
-        </div>
-
-        <!-- Step Indicator -->
-        <div class="step-indicator">
-            <div class="step active" id="step1">
-                <div class="step-number">1</div>
-                <span>Visit Type</span>
-            </div>
-            <div class="step-connector"></div>
-            <div class="step" id="step2">
-                <div class="step-number">2</div>
-                <span>Patient Info</span>
-            </div>
-            <div class="step-connector"></div>
-            <div class="step" id="step3">
-                <div class="step-number">3</div>
-                <span>Case Details</span>
-            </div>
-            <div class="step-connector"></div>
-            <div class="step" id="step4">
-                <div class="step-number">4</div>
-                <span>Images</span>
+    
+    <!-- Centered Navigation Menu -->
+    <div class="container">
+        <div class="d-flex justify-content-center py-3 border-bottom">
+            <div class="nav nav-pills">
+                <a class="nav-link active me-3" href="#" onclick="showSection('new-case')">
+                    <i class="bi bi-plus-circle me-1"></i>New Case
+                </a>
+                <a class="nav-link me-3" href="#" onclick="showSection('patient-list')">
+                    <i class="bi bi-people me-1"></i>Patient List
+                </a>
+                <a class="nav-link" href="#" onclick="showSection('case-history')">
+                    <i class="bi bi-folder me-1"></i>Log
+                </a>
             </div>
         </div>
-
-        <!-- Main Form -->
-        <form action="{{ url_for('upload_files') }}" method="post" enctype="multipart/form-data" id="mainForm">
-            <div class="row justify-content-center">
-                <div class="col-lg-10">
-                    
-                    <!-- Step 1: Visit Type Selection -->
-                    <div class="card border-0 bg-dark mb-4" id="visitTypeSection">
-                        <div class="card-body">
-                            <h4 class="card-title mb-4 text-center">
-                                <i class="bi bi-clipboard-check me-2"></i>Select Visit Type
-                            </h4>
-                            <div class="row g-3">
-                                <div class="col-md-4">
-                                    <div class="visit-type-card card h-100 text-center p-4" onclick="selectVisitType('registration')">
-                                        <div class="card-body">
-                                            <i class="bi bi-person-plus display-4 text-primary mb-3"></i>
-                                            <h5 class="card-title">Registration</h5>
-                                            <p class="card-text text-muted">New patient registration with complete documentation</p>
-                                            <input type="radio" name="visit_type" value="registration" class="d-none" id="registration">
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="col-md-4">
-                                    <div class="visit-type-card card h-100 text-center p-4" onclick="selectVisitType('orthodontic_visit')">
-                                        <div class="card-body">
-                                            <i class="bi bi-calendar-check display-4 text-success mb-3"></i>
-                                            <h5 class="card-title">Orthodontic Visit</h5>
-                                            <p class="card-text text-muted">Follow-up visit progress documentation</p>
-                                            <input type="radio" name="visit_type" value="orthodontic_visit" class="d-none" id="orthodontic_visit">
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="col-md-4">
-                                    <div class="visit-type-card card h-100 text-center p-4" onclick="selectVisitType('debond')">
-                                        <div class="card-body">
-                                            <i class="bi bi-check-circle display-4 text-warning mb-3"></i>
-                                            <h5 class="card-title">Debond</h5>
-                                            <p class="card-text text-muted">Treatment completion and final results</p>
-                                            <input type="radio" name="visit_type" value="debond" class="d-none" id="debond">
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Step 2: Patient Information -->
-                    <div class="section-hidden" id="patientSection">
-                        <!-- Registration Fields -->
-                        <div class="card border-0 bg-dark mb-4" id="registrationFields">
-                            <div class="card-body">
-                                <h4 class="card-title mb-4">
-                                    <i class="bi bi-person-plus me-2"></i>New Patient Registration
-                                </h4>
-                                <div class="row">
-                                    <div class="col-md-6 mb-3">
-                                        <label for="mrn" class="form-label">Medical Record Number (MRN) *</label>
-                                        <input type="text" class="form-control" id="mrn" name="mrn" placeholder="Enter MRN...">
-                                    </div>
-                                    <div class="col-md-6 mb-3">
-                                        <label for="clinic" class="form-label">Clinic *</label>
-                                        <select class="form-select" id="clinic" name="clinic">
-                                            <option value="">Select clinic...</option>
-                                            <option value="KFMC">KFMC</option>
-                                            <option value="DC">DC</option>
-                                        </select>
-                                    </div>
-                                    <div class="col-md-6 mb-3">
-                                        <label for="firstName" class="form-label">First Name *</label>
-                                        <input type="text" class="form-control" id="firstName" name="first_name" placeholder="Enter first name...">
-                                    </div>
-                                    <div class="col-md-6 mb-3">
-                                        <label for="lastName" class="form-label">Last Name *</label>
-                                        <input type="text" class="form-control" id="lastName" name="last_name" placeholder="Enter last name...">
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Follow-up Visit Fields -->
-                        <div class="card border-0 bg-dark mb-4" id="followupFields" style="display: none;">
-                            <div class="card-body">
-                                <h4 class="card-title mb-4">
-                                    <i class="bi bi-search me-2"></i>Find Existing Patient
-                                </h4>
-                                <div class="row">
-                                    <div class="col-md-8 mb-3">
-                                        <label for="mrnSearch" class="form-label">Search by MRN *</label>
-                                        <input type="text" class="form-control" id="mrnSearch" name="mrn_search" placeholder="Enter MRN to search..." oninput="searchPatients()">
-                                        <div id="searchResults" class="mt-2"></div>
-                                    </div>
-                                    <div class="col-md-4 mb-3">
-                                        <label class="form-label">&nbsp;</label>
-                                        <button type="button" class="btn btn-outline-secondary w-100" onclick="clearSearch()">
-                                            <i class="bi bi-x-circle me-1"></i>Clear Search
-                                        </button>
-                                    </div>
-                                </div>
-                                <input type="hidden" id="selectedPatientId" name="patient_id">
-                                <div id="selectedPatientInfo" class="mt-3" style="display: none;">
-                                    <div class="alert alert-info">
-                                        <i class="bi bi-person-check me-2"></i>
-                                        <strong>Selected Patient:</strong> <span id="selectedPatientDetails"></span>
-                                    </div>
-                                </div>
-                                <div class="mb-3">
-                                    <label for="visitDescription" class="form-label">Visit Description</label>
-                                    <textarea class="form-control" id="visitDescription" name="visit_description" rows="3" placeholder="Describe the visit details..."></textarea>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Step 3: Case Details -->
-                    <div class="section-hidden" id="caseDetailsSection">
-                        <div class="card border-0 bg-dark mb-4">
-                            <div class="card-body">
-                                <h4 class="card-title mb-4">
-                                    <i class="bi bi-file-text me-2"></i>Case Information
-                                </h4>
-                                <div class="row">
-                                    <div class="col-12 mb-3">
-                                        <label for="title" class="form-label">Case Title *</label>
-                                        <input type="text" class="form-control" id="title" name="title" placeholder="Enter descriptive case title..." required>
-                                    </div>
-                                    <div class="col-12 mb-3">
-                                        <label for="notes" class="form-label">Case Notes</label>
-                                        <textarea class="form-control" id="notes" name="notes" rows="4" placeholder="Enter detailed case notes, observations, and treatment plan..."></textarea>
-                                        <div class="form-text">
-                                            <span id="noteCount">0</span>/500 characters
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Step 4: Image Upload -->
-                    <div class="section-hidden" id="imageUploadSection">
-                        <!-- Extra-oral Images -->
-                        <div class="card border-0 bg-dark mb-4">
-                            <div class="card-body">
-                                <h4 class="card-title mb-4">
-                                    <i class="bi bi-camera me-2"></i>Extra-oral Images
-                                </h4>
-                                <div class="image-upload-grid">
-                                    <div class="image-upload-item" onclick="triggerFileInput('eofv')">
-                                        <i class="bi bi-camera display-6 text-muted mb-2"></i>
-                                        <div class="text-center">
-                                            <strong>Front View</strong>
-                                            <div class="text-muted small">Extra-oral Front</div>
-                                        </div>
-                                        <input type="file" id="eofv" name="eofv" accept="image/*" class="d-none" onchange="handleImageUpload(this, 'eofv')">
-                                    </div>
-                                    <div class="image-upload-item" onclick="triggerFileInput('eosv')">
-                                        <i class="bi bi-camera display-6 text-muted mb-2"></i>
-                                        <div class="text-center">
-                                            <strong>Side View</strong>
-                                            <div class="text-muted small">Extra-oral Side</div>
-                                        </div>
-                                        <input type="file" id="eosv" name="eosv" accept="image/*" class="d-none" onchange="handleImageUpload(this, 'eosv')">
-                                    </div>
-                                    <div class="image-upload-item" onclick="triggerFileInput('eomv')">
-                                        <i class="bi bi-camera display-6 text-muted mb-2"></i>
-                                        <div class="text-center">
-                                            <strong>Smile View</strong>
-                                            <div class="text-muted small">Extra-oral Smile</div>
-                                        </div>
-                                        <input type="file" id="eomv" name="eomv" accept="image/*" class="d-none" onchange="handleImageUpload(this, 'eomv')">
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Intra-oral Images -->
-                        <div class="card border-0 bg-dark mb-4">
-                            <div class="card-body">
-                                <h4 class="card-title mb-4">
-                                    <i class="bi bi-camera-fill me-2"></i>Intra-oral Images
-                                </h4>
-                                <div class="image-upload-grid">
-                                    <div class="image-upload-item" onclick="triggerFileInput('iorv')">
-                                        <i class="bi bi-camera display-6 text-muted mb-2"></i>
-                                        <div class="text-center">
-                                            <strong>Right View</strong>
-                                            <div class="text-muted small">Intra-oral Right</div>
-                                        </div>
-                                        <input type="file" id="iorv" name="iorv" accept="image/*" class="d-none" onchange="handleImageUpload(this, 'iorv')">
-                                    </div>
-                                    <div class="image-upload-item" onclick="triggerFileInput('iofv')">
-                                        <i class="bi bi-camera display-6 text-muted mb-2"></i>
-                                        <div class="text-center">
-                                            <strong>Front View</strong>
-                                            <div class="text-muted small">Intra-oral Front</div>
-                                        </div>
-                                        <input type="file" id="iofv" name="iofv" accept="image/*" class="d-none" onchange="handleImageUpload(this, 'iofv')">
-                                    </div>
-                                    <div class="image-upload-item" onclick="triggerFileInput('iolv')">
-                                        <i class="bi bi-camera display-6 text-muted mb-2"></i>
-                                        <div class="text-center">
-                                            <strong>Left View</strong>
-                                            <div class="text-muted small">Intra-oral Left</div>
-                                        </div>
-                                        <input type="file" id="iolv" name="iolv" accept="image/*" class="d-none" onchange="handleImageUpload(this, 'iolv')">
-                                    </div>
-                                    <div class="image-upload-item" onclick="triggerFileInput('iouv')">
-                                        <i class="bi bi-camera display-6 text-muted mb-2"></i>
-                                        <div class="text-center">
-                                            <strong>Upper View</strong>
-                                            <div class="text-muted small">Intra-oral Upper</div>
-                                        </div>
-                                        <input type="file" id="iouv" name="iouv" accept="image/*" class="d-none" onchange="handleImageUpload(this, 'iouv')">
-                                    </div>
-                                    <div class="image-upload-item" onclick="triggerFileInput('iolowerv')">
-                                        <i class="bi bi-camera display-6 text-muted mb-2"></i>
-                                        <div class="text-center">
-                                            <strong>Lower View</strong>
-                                            <div class="text-muted small">Intra-oral Lower</div>
-                                        </div>
-                                        <input type="file" id="iolowerv" name="iolowerv" accept="image/*" class="d-none" onchange="handleImageUpload(this, 'iolowerv')">
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Submit Section -->
-                        <div class="text-center">
-                            <button type="button" class="btn btn-outline-secondary btn-lg me-3" onclick="previousStep()">
-                                <i class="bi bi-arrow-left me-2"></i>Previous
-                            </button>
-                            <button type="submit" class="btn btn-primary btn-lg px-5">
-                                <i class="bi bi-file-earmark-pdf me-2"></i>Generate Case Report
-                            </button>
-                        </div>
-                    </div>
-
-                    <!-- Navigation Buttons -->
-                    <div class="text-center mt-4" id="navigationButtons">
-                        <button type="button" class="btn btn-primary btn-lg px-5" onclick="nextStep()" id="nextButton">
-                            Next Step <i class="bi bi-arrow-right ms-2"></i>
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </form>
     </div>
 
-    <script src="{{ url_for('static', filename='script.js') }}"></script>
-    <script>
-        let currentStep = 1;
-        let selectedVisitType = null;
+    <div class="container my-4">
+        <!-- New Case Section -->
+        <div id="new-case-section" class="section">
+            <!-- Header -->
+            <div class="text-center mb-4">
+                <h1 class="display-5 fw-bold mb-2">
+                    <i class="bi bi-diagram-3 text-primary me-2"></i>
+                    Patient Data Organizer
+                </h1>
+                <p class="lead text-muted">All your cases extremely well presented 😉</p>
+            </div>
 
-        function selectVisitType(type) {
-            selectedVisitType = type;
-            
-            // Remove selected class from all cards
-            document.querySelectorAll('.visit-type-card').forEach(card => {
-                card.classList.remove('selected');
-            });
-            
-            // Add selected class to clicked card
-            event.currentTarget.classList.add('selected');
-            
-            // Check the radio button
-            document.getElementById(type).checked = true;
-            
-            // Update step indicator
-            updateStepIndicator(1, 'completed');
-            
-            // Enable next button
-            document.getElementById('nextButton').disabled = false;
-        }
+        <!-- Flash Messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div class="row justify-content-center mb-4">
+                    <div class="col-lg-8">
+                        {% for category, message in messages %}
+                            <div class="alert alert-{{ 'danger' if category == 'error' else 'success' }} alert-dismissible fade show" role="alert">
+                                <i class="bi bi-{{ 'exclamation-triangle' if category == 'error' else 'check-circle' }} me-2"></i>
+                                {{ message }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            {% endif %}
+        {% endwith %}
 
-        function nextStep() {
-            if (currentStep === 1 && !selectedVisitType) {
-                alert('Please select a visit type first.');
-                return;
-            }
+        <!-- Main Form -->
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <div class="card shadow-sm">
+                    <div class="card-body p-4">
+                        <form id="slideForm" method="POST" action="{{ url_for('upload_files') }}" enctype="multipart/form-data">
+                            <!-- Visit Type Selection -->
+                            <div class="mb-4">
+                                <label for="visitType" class="form-label fw-semibold">
+                                    <i class="bi bi-calendar-check me-2"></i>Visit Type *
+                                </label>
+                                <select class="form-select form-select-lg animated-select" id="visitType" name="visit_type" required onchange="handleVisitTypeChange()">
+                                    <option value="">Select visit type...</option>
+                                    <option value="Registration">Registration (First Visit)</option>
+                                    <option value="Orthodontic Visit">Orthodontic Visit</option>
+                                    <option value="Debond">Debond</option>
+                                </select>
+                            </div>
+
+                            <!-- Registration Fields -->
+                            <div id="registrationFields" class="visit-fields mb-4" style="display: none;">
+                                <div class="card border-0 bg-dark">
+                                    <div class="card-body">
+                                        <h6 class="card-title mb-3 text-light">
+                                            <i class="bi bi-person-plus me-2"></i>Patient Registration
+                                        </h6>
+                                        <div class="row">
+                                            <div class="col-md-6 mb-3">
+                                                <label for="mrn" class="form-label">MRN (File Number) *</label>
+                                                <input type="text" class="form-control" id="mrn" name="mrn" placeholder="Enter MRN...">
+                                            </div>
+                                            <div class="col-md-6 mb-3">
+                                                <label for="clinic" class="form-label">Clinic *</label>
+                                                <select class="form-select" id="clinic" name="clinic">
+                                                    <option value="">Select clinic...</option>
+                                                    <option value="KFMC">KFMC</option>
+                                                    <option value="DC">DC</option>
+                                                </select>
+                                            </div>
+                                            <div class="col-md-6 mb-3">
+                                                <label for="firstName" class="form-label">First Name *</label>
+                                                <input type="text" class="form-control" id="firstName" name="first_name" placeholder="Enter first name...">
+                                            </div>
+                                            <div class="col-md-6 mb-3">
+                                                <label for="lastName" class="form-label">Last Name *</label>
+                                                <input type="text" class="form-control" id="lastName" name="last_name" placeholder="Enter last name...">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Follow-up Visit Fields -->
+                            <div id="followupFields" class="visit-fields mb-4" style="display: none;">
+                                <div class="card border-0 bg-dark">
+                                    <div class="card-body">
+                                        <h6 class="card-title mb-3 text-light">
+                                            <i class="bi bi-search me-2"></i>Patient Search
+                                        </h6>
+                                        <div class="mb-3">
+                                            <label for="mrnSearch" class="form-label">Search Patient *</label>
+                                            <div class="input-group">
+                                                <input type="text" class="form-control" id="mrnSearch" name="mrn_search" placeholder="Enter MRN or patient name..." onkeyup="searchPatients()">
+                                                <button class="btn btn-outline-secondary" type="button" onclick="searchPatients()">
+                                                    <i class="bi bi-search"></i>
+                                                </button>
+                                            </div>
+                                            <div class="form-text text-muted">Search by MRN, first name, last name, or full name</div>
+                                            <div id="patientResults" class="mt-2"></div>
+                                        </div>
+                                        <div id="selectedPatientInfo" class="mb-3" style="display: none;">
+                                            <div class="alert alert-success">
+                                                <strong>Selected Patient:</strong>
+                                                <span id="selectedPatientDetails"></span>
+                                            </div>
+                                            <input type="hidden" id="selectedPatientId" name="patient_id">
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="visitDescription" class="form-label">Visit Description</label>
+                                            <textarea class="form-control" id="visitDescription" name="visit_description" rows="3" maxlength="500" placeholder="Describe what happened in this visit..."></textarea>
+                                            <div class="form-text">
+                                                <span id="visitDescCount">0</span>/500 characters
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+
+
+                            <!-- Extra-oral Images Section -->
+                            <div class="mb-5">
+                                <h5 class="fw-bold mb-3 text-primary">
+                                    <i class="bi bi-person-square me-2"></i>Extra-oral Images
+                                </h5>
+                                <div class="row g-3 justify-content-center">
+                                    <div class="col-lg-4 col-md-4 col-sm-4">
+                                        <div class="upload-box">
+                                            <label for="eofv" class="form-label fw-semibold d-flex align-items-center">
+                                                EOFV 
+                                                <i class="bi bi-info-circle ms-2 text-muted" 
+                                                   data-bs-toggle="tooltip" 
+                                                   data-bs-placement="top" 
+                                                   title="Extra-oral Frontal View"></i>
+                                            </label>
+                                            <div class="image-upload-container">
+                                                <input type="file" class="form-control image-input" id="eofv" name="eofv" 
+                                                       accept="image/*">
+                                                <div class="upload-placeholder">
+                                                    <i class="bi bi-camera display-6 text-muted mb-2"></i>
+                                                    <p class="text-muted mb-0">Frontal View</p>
+                                                </div>
+                                                <div class="image-preview" style="display: none;">
+                                                    <img src="" alt="Preview" class="preview-img">
+                                                    <button type="button" class="btn-remove-image">
+                                                        <i class="bi bi-x"></i>
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-lg-4 col-md-4 col-sm-4">
+                                        <div class="upload-box">
+                                            <label for="eosv" class="form-label fw-semibold d-flex align-items-center">
+                                                EOSV 
+                                                <i class="bi bi-info-circle ms-2 text-muted" 
+                                                   data-bs-toggle="tooltip" 
+                                                   data-bs-placement="top" 
+                                                   title="Extra-oral Side View"></i>
+                                            </label>
+                                            <div class="image-upload-container">
+                                                <input type="file" class="form-control image-input" id="eosv" name="eosv" 
+                                                       accept="image/*">
+                                                <div class="upload-placeholder">
+                                                    <i class="bi bi-camera display-6 text-muted mb-2"></i>
+                                                    <p class="text-muted mb-0">Side View</p>
+                                                </div>
+                                                <div class="image-preview" style="display: none;">
+                                                    <img src="" alt="Preview" class="preview-img">
+                                                    <button type="button" class="btn-remove-image">
+                                                        <i class="bi bi-x"></i>
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-lg-4 col-md-4 col-sm-4">
+                                        <div class="upload-box">
+                                            <label for="eomv" class="form-label fw-semibold d-flex align-items-center">
+                                                EOMV 
+                                                <i class="bi bi-info-circle ms-2 text-muted" 
+                                                   data-bs-toggle="tooltip" 
+                                                   data-bs-placement="top" 
+                                                   title="Extra-oral Smile View"></i>
+                                            </label>
+                                            <div class="image-upload-container">
+                                                <input type="file" class="form-control image-input" id="eomv" name="eomv" 
+                                                       accept="image/*">
+                                                <div class="upload-placeholder">
+                                                    <i class="bi bi-camera display-6 text-muted mb-2"></i>
+                                                    <p class="text-muted mb-0">Smile View</p>
+                                                </div>
+                                                <div class="image-preview" style="display: none;">
+                                                    <img src="" alt="Preview" class="preview-img">
+                                                    <button type="button" class="btn-remove-image">
+                                                        <i class="bi bi-x"></i>
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Intra-oral Images Section -->
+                            <div class="mb-5">
+                                <h5 class="fw-bold mb-3 text-success">
+                                    <i class="bi bi-person-square me-2"></i>Intra-oral Images
+                                </h5>
+                                
+                                <!-- Top row: 3 images -->
+                                <div class="row g-3 mb-3 justify-content-center">
+                                    <div class="col-lg-4 col-md-4 col-sm-4">
+                                        <div class="upload-box">
+                                            <label for="iorv" class="form-label fw-semibold d-flex align-items-center">
+                                                IORV 
+                                                <i class="bi bi-info-circle ms-2 text-muted" 
+                                                   data-bs-toggle="tooltip" 
+                                                   data-bs-placement="top" 
+                                                   title="Intra-oral Right View"></i>
+                                            </label>
+                                            <div class="image-upload-container">
+                                                <input type="file" class="form-control image-input" id="iorv" name="iorv" 
+                                                       accept="image/*">
+                                                <div class="upload-placeholder">
+                                                    <i class="bi bi-camera display-6 text-muted mb-2"></i>
+                                                    <p class="text-muted mb-0">Right View</p>
+                                                </div>
+                                                <div class="image-preview" style="display: none;">
+                                                    <img src="" alt="Preview" class="preview-img">
+                                                    <button type="button" class="btn-remove-image">
+                                                        <i class="bi bi-x"></i>
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-lg-4 col-md-4 col-sm-4">
+                                        <div class="upload-box">
+                                            <label for="iofv" class="form-label fw-semibold d-flex align-items-center">
+                                                IOFV 
+                                                <i class="bi bi-info-circle ms-2 text-muted" 
+                                                   data-bs-toggle="tooltip" 
+                                                   data-bs-placement="top" 
+                                                   title="Intra-oral Frontal View"></i>
+                                            </label>
+                                            <div class="image-upload-container">
+                                                <input type="file" class="form-control image-input" id="iofv" name="iofv" 
+                                                       accept="image/*">
+                                                <div class="upload-placeholder">
+                                                    <i class="bi bi-camera display-6 text-muted mb-2"></i>
+                                                    <p class="text-muted mb-0">Frontal View</p>
+                                                </div>
+                                                <div class="image-preview" style="display: none;">
+                                                    <img src="" alt="Preview" class="preview-img">
+                                                    <button type="button" class="btn-remove-image">
+                                                        <i class="bi bi-x"></i>
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-lg-4 col-md-4 col-sm-4">
+                                        <div class="upload-box">
+                                            <label for="iolv" class="form-label fw-semibold d-flex align-items-center">
+                                                IOLV 
+                                                <i class="bi bi-info-circle ms-2 text-muted" 
+                                                   data-bs-toggle="tooltip" 
+                                                   data-bs-placement="top" 
+                                                   title="Intra-oral Left View"></i>
+                                            </label>
+                                            <div class="image-upload-container">
+                                                <input type="file" class="form-control image-input" id="iolv" name="iolv" 
+                                                       accept="image/*">
+                                                <div class="upload-placeholder">
+                                                    <i class="bi bi-camera display-6 text-muted mb-2"></i>
+                                                    <p class="text-muted mb-0">Left View</p>
+                                                </div>
+                                                <div class="image-preview" style="display: none;">
+                                                    <img src="" alt="Preview" class="preview-img">
+                                                    <button type="button" class="btn-remove-image">
+                                                        <i class="bi bi-x"></i>
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Bottom row: 2 images centered -->
+                                <div class="row g-3 justify-content-center">
+                                    <div class="col-lg-4 col-md-6 col-sm-6">
+                                        <div class="upload-box">
+                                            <label for="iouv" class="form-label fw-semibold d-flex align-items-center">
+                                                IOUV 
+                                                <i class="bi bi-info-circle ms-2 text-muted" 
+                                                   data-bs-toggle="tooltip" 
+                                                   data-bs-placement="top" 
+                                                   title="Intra-oral Upper View"></i>
+                                            </label>
+                                            <div class="image-upload-container">
+                                                <input type="file" class="form-control image-input" id="iouv" name="iouv" 
+                                                       accept="image/*">
+                                                <div class="upload-placeholder">
+                                                    <i class="bi bi-camera display-6 text-muted mb-2"></i>
+                                                    <p class="text-muted mb-0">Upper View</p>
+                                                </div>
+                                                <div class="image-preview" style="display: none;">
+                                                    <img src="" alt="Preview" class="preview-img">
+                                                    <button type="button" class="btn-remove-image">
+                                                        <i class="bi bi-x"></i>
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-lg-4 col-md-6 col-sm-6">
+                                        <div class="upload-box">
+                                            <label for="iolowerv" class="form-label fw-semibold d-flex align-items-center">
+                                                IOLV 
+                                                <i class="bi bi-info-circle ms-2 text-muted" 
+                                                   data-bs-toggle="tooltip" 
+                                                   data-bs-placement="top" 
+                                                   title="Intra-oral Lower View"></i>
+                                            </label>
+                                            <div class="image-upload-container">
+                                                <input type="file" class="form-control image-input" id="iolowerv" name="iolowerv" 
+                                                       accept="image/*">
+                                                <div class="upload-placeholder">
+                                                    <i class="bi bi-camera display-6 text-muted mb-2"></i>
+                                                    <p class="text-muted mb-0">Lower View</p>
+                                                </div>
+                                                <div class="image-preview" style="display: none;">
+                                                    <img src="" alt="Preview" class="preview-img">
+                                                    <button type="button" class="btn-remove-image">
+                                                        <i class="bi bi-x"></i>
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Hidden Case Title Field -->
+                            <input type="hidden" id="title" name="title" value="Medical Case">
+                            <input type="hidden" id="notes" name="notes" value="">
+
+                            <!-- Submit Button -->
+                            <div class="d-grid gap-2">
+                                <button type="submit" class="btn btn-primary btn-lg animated-button" id="submitBtn">
+                                    <span id="submitText">
+                                        <i class="bi bi-check-circle me-2"></i>Submit
+                                    </span>
+                                    <span id="loadingText" class="d-none">
+                                        <span class="spinner-border spinner-border-sm me-2" role="status"></span>
+                                        Generating PDF...
+                                    </span>
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+        </div>
+        
+        <!-- Case History Section -->
+        <div id="case-history-section" class="section" style="display: none;">
+            <div class="text-center mb-4">
+                <h1 class="display-5 fw-bold mb-2">
+                    <i class="bi bi-folder text-primary me-2"></i>
+                    Log
+                </h1>
+                <p class="lead text-muted">View and manage all submitted slides</p>
+            </div>
+            <div id="case-history-content">
+                <!-- Case history will be loaded here -->
+            </div>
+        </div>
+        
+        <!-- Patient List Section -->
+        <div id="patient-list-section" class="section" style="display: none;">
+            <div class="text-center mb-4">
+                <h1 class="display-5 fw-bold mb-2">
+                    <i class="bi bi-people text-success me-2"></i>
+                    Patient List
+                </h1>
+                <p class="lead text-muted">Browse patients and their medical records</p>
+            </div>
             
-            if (currentStep < 4) {
-                currentStep++;
-                showCurrentStep();
-                updateStepIndicator(currentStep, 'active');
-                
-                if (currentStep > 1) {
-                    updateStepIndicator(currentStep - 1, 'completed');
-                }
-            }
-        }
-
-        function previousStep() {
-            if (currentStep > 1) {
-                currentStep--;
-                showCurrentStep();
-                updateStepIndicator(currentStep, 'active');
-                
-                for (let i = currentStep + 1; i <= 4; i++) {
-                    updateStepIndicator(i, '');
-                }
-            }
-        }
-
-        function showCurrentStep() {
-            // Hide all sections
-            document.querySelectorAll('.section-hidden, #visitTypeSection').forEach(section => {
-                section.classList.remove('section-visible');
-                section.classList.add('section-hidden');
-            });
-            
-            // Show current step section
-            let sectionToShow;
-            switch(currentStep) {
-                case 1:
-                    sectionToShow = document.getElementById('visitTypeSection');
-                    break;
-                case 2:
-                    sectionToShow = document.getElementById('patientSection');
-                    
-                    // Show appropriate patient fields based on visit type
-                    if (selectedVisitType === 'registration') {
-                        document.getElementById('registrationFields').style.display = 'block';
-                        document.getElementById('followupFields').style.display = 'none';
-                    } else {
-                        document.getElementById('registrationFields').style.display = 'none';
-                        document.getElementById('followupFields').style.display = 'block';
-                    }
-                    break;
-                case 3:
-                    sectionToShow = document.getElementById('caseDetailsSection');
-                    break;
-                case 4:
-                    sectionToShow = document.getElementById('imageUploadSection');
-                    document.getElementById('navigationButtons').style.display = 'none';
-                    break;
-            }
-            
-            if (sectionToShow) {
-                sectionToShow.classList.remove('section-hidden');
-                sectionToShow.classList.add('section-visible');
-            }
-        }
-
-        function updateStepIndicator(stepNumber, status) {
-            const step = document.getElementById(`step${stepNumber}`);
-            step.className = `step ${status}`;
-        }
-
-        function triggerFileInput(inputId) {
-            document.getElementById(inputId).click();
-        }
-
-        function handleImageUpload(input, containerId) {
-            const container = input.parentElement;
-            const file = input.files[0];
-            
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    container.innerHTML = `
-                        <img src="${e.target.result}" class="image-preview" alt="Preview">
-                        <div class="text-center">
-                            <strong>${container.querySelector('strong').textContent}</strong>
-                            <div class="text-success small">✓ Image uploaded</div>
-                        </div>
-                        <button type="button" class="btn btn-sm btn-outline-danger position-absolute top-0 end-0 m-1" onclick="removeImage('${inputId}')">
+            <!-- Search Bar for Patient List -->
+            <div class="row justify-content-center mb-4">
+                <div class="col-lg-6">
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="bi bi-search"></i></span>
+                        <input type="text" class="form-control" id="patientSearchInput" 
+                               placeholder="Search patients by name, MRN, or clinic..." 
+                               onkeyup="filterPatients()">
+                        <button class="btn btn-outline-secondary" type="button" onclick="clearPatientSearch()">
                             <i class="bi bi-x"></i>
                         </button>
-                    `;
-                    container.classList.add('has-image');
-                };
-                reader.readAsDataURL(file);
-            }
-        }
-
-        function removeImage(inputId) {
-            const input = document.getElementById(inputId);
-            const container = input.parentElement;
-            
-            input.value = '';
-            container.classList.remove('has-image');
-            
-            // Reset container content
-            const label = container.querySelector('strong').textContent;
-            const subtitle = container.querySelector('.text-muted').textContent;
-            
-            container.innerHTML = `
-                <i class="bi bi-camera display-6 text-muted mb-2"></i>
-                <div class="text-center">
-                    <strong>${label}</strong>
-                    <div class="text-muted small">${subtitle}</div>
+                    </div>
                 </div>
-                <input type="file" id="${inputId}" name="${inputId}" accept="image/*" class="d-none" onchange="handleImageUpload(this, '${inputId}')">
-            `;
+            </div>
             
-            container.onclick = () => triggerFileInput(inputId);
-        }
+            <div id="patient-list-content">
+                <!-- Patient list will be loaded here -->
+            </div>
+        </div>
 
-        // Character counter for notes
-        document.addEventListener('DOMContentLoaded', function() {
-            const notesTextarea = document.getElementById('notes');
-            const noteCount = document.getElementById('noteCount');
-            
-            if (notesTextarea && noteCount) {
-                notesTextarea.addEventListener('input', function() {
-                    noteCount.textContent = this.value.length;
-                });
-            }
-        });
+        <!-- Settings Section -->
+        <div id="settings-section" class="section" style="display: none;">
+            <div class="text-center mb-4">
+                <h2 class="display-6 fw-bold mb-2">
+                    <i class="bi bi-gear text-primary me-2"></i>Settings
+                </h2>
+                <p class="lead text-muted">Manage your profile and clinic preferences</p>
+            </div>
 
-        // Search patients function
-        function searchPatients() {
-            const searchValue = document.getElementById('mrnSearch').value.trim();
-            
-            if (searchValue.length < 2) {
-                document.getElementById('searchResults').innerHTML = '';
-                return;
-            }
-            
-            fetch('/search_patients', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ mrn: searchValue })
-            })
-            .then(response => response.json())
-            .then(data => {
-                displaySearchResults(data.patients || []);
-            })
-            .catch(error => {
-                console.error('Search error:', error);
-            });
-        }
+            <div class="row justify-content-center">
+                <div class="col-lg-8">
+                    <div class="card shadow-sm">
+                        <div class="card-header bg-primary text-white">
+                            <h5 class="card-title mb-0">
+                                <i class="bi bi-person-circle me-2"></i>Personal Information
+                            </h5>
+                        </div>
+                        <div class="card-body p-4">
+                            <form id="settingsForm" method="POST" action="{{ url_for('save_settings') }}" enctype="multipart/form-data">
+                                <!-- Profile Image Upload -->
+                                <div class="mb-4">
+                                    <label class="form-label fw-bold">Profile Picture</label>
+                                    <div class="profile-upload-area" onclick="document.getElementById('profileImageInput').click()">
+                                        <img id="profilePreview" class="profile-preview" style="display: none;">
+                                        <div id="uploadPlaceholder">
+                                            <i class="bi bi-camera display-6 text-muted mb-2"></i>
+                                            <p class="text-muted mb-0">Click to upload profile picture</p>
+                                            <small class="text-muted">JPG, PNG up to 2MB</small>
+                                        </div>
+                                    </div>
+                                    <input type="file" id="profileImageInput" name="profile_image" 
+                                           accept="image/*" style="display: none;" onchange="handleProfileImageUpload(this)">
+                                </div>
+                                
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label for="fullName" class="form-label">Full Name</label>
+                                        <input type="text" class="form-control" id="fullName" name="full_name" 
+                                               value="{{ user_settings.full_name if user_settings else '' }}" 
+                                               placeholder="Enter your full name...">
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label for="email" class="form-label">Email Address</label>
+                                        <input type="email" class="form-control" id="email" name="email" 
+                                               value="{{ user_settings.email if user_settings else '' }}" 
+                                               placeholder="Enter your email...">
+                                    </div>
+                                </div>
+                                
+                                <div class="row">
+                                    <div class="col-md-6 mb-4">
+                                        <label for="position" class="form-label">Position/Title</label>
+                                        <input type="text" class="form-control" id="position" name="position" 
+                                               value="{{ user_settings.position if user_settings else '' }}" 
+                                               placeholder="e.g., Orthodontist, Dental Resident...">
+                                    </div>
+                                    <div class="col-md-6 mb-4">
+                                        <label for="gender" class="form-label">Gender</label>
+                                        <select class="form-select" id="gender" name="gender" onchange="updateDefaultProfileIcon()">
+                                            <option value="">Select gender...</option>
+                                            <option value="male">Male</option>
+                                            <option value="female">Female</option>
+                                        </select>
+                                    </div>
+                                </div>
 
-        function displaySearchResults(patients) {
-            const resultsContainer = document.getElementById('searchResults');
-            
-            if (patients.length === 0) {
-                resultsContainer.innerHTML = '<div class="alert alert-warning">No patients found</div>';
-                return;
-            }
-            
-            let html = '<div class="list-group">';
-            patients.forEach(patient => {
-                html += `
-                    <button type="button" class="list-group-item list-group-item-action" onclick="selectPatient(${patient.id}, '${patient.mrn}', '${patient.first_name}', '${patient.last_name}', '${patient.clinic}')">
-                        <div class="fw-bold">${patient.first_name} ${patient.last_name}</div>
-                        <small class="text-muted">MRN: ${patient.mrn} | Clinic: ${patient.clinic}</small>
-                    </button>
-                `;
-            });
-            html += '</div>';
-            
-            resultsContainer.innerHTML = html;
-        }
+                                <hr class="my-4">
 
-        function selectPatient(id, mrn, firstName, lastName, clinic) {
-            document.getElementById('selectedPatientId').value = id;
-            document.getElementById('selectedPatientDetails').textContent = `${firstName} ${lastName} (MRN: ${mrn}, Clinic: ${clinic})`;
-            document.getElementById('selectedPatientInfo').style.display = 'block';
-            document.getElementById('searchResults').innerHTML = '';
-            document.getElementById('mrnSearch').value = mrn;
-        }
+                                <h6 class="fw-bold mb-3">
+                                    <i class="bi bi-building me-2"></i>Clinic Management
+                                </h6>
+                                
+                                <div id="clinicsContainer">
+                                    <div class="clinic-entry mb-3">
+                                        <div class="row">
+                                            <div class="col-md-8">
+                                                <label class="form-label">Clinic Name</label>
+                                                <input type="text" class="form-control clinic-input" name="clinics[]" 
+                                                       placeholder="Enter clinic name...">
+                                            </div>
+                                            <div class="col-md-4 d-flex align-items-end">
+                                                <button type="button" class="btn btn-outline-danger btn-sm remove-clinic" 
+                                                        onclick="removeClinic(this)" style="display: none;">
+                                                    <i class="bi bi-trash"></i> Remove
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <button type="button" class="btn btn-outline-primary btn-sm mb-4" onclick="addClinic()">
+                                    <i class="bi bi-plus-circle me-1"></i>Add Another Clinic
+                                </button>
 
-        function clearSearch() {
-            document.getElementById('mrnSearch').value = '';
-            document.getElementById('searchResults').innerHTML = '';
-            document.getElementById('selectedPatientInfo').style.display = 'none';
-            document.getElementById('selectedPatientId').value = '';
-        }
-    </script>
+                                <div class="d-grid">
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="bi bi-save me-2"></i>Save Settings
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
 </body>
 </html>
