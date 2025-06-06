@@ -627,6 +627,14 @@ def create_pdf(images, case_title, notes, output_path, template='classic', orien
 def index():
     return render_template('index.html')
 
+@app.route('/new-case')
+def new_case():
+    return render_template('new_case.html')
+
+@app.route('/patient-list') 
+def patient_list():
+    return render_template('patient_list.html')
+
 @app.route('/success')
 def success():
     success_info = session.get('success_info', {})
