@@ -509,6 +509,9 @@
 
         // Check if we should show success animation
         document.addEventListener('DOMContentLoaded', function() {
+            // Load clinic options from user settings
+            loadClinicOptions();
+            
             // Check URL parameters or session data for success
             const urlParams = new URLSearchParams(window.location.search);
             if (urlParams.get('success') === 'true' || window.location.hash === '#success') {

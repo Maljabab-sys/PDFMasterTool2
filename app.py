@@ -1393,7 +1393,6 @@ def api_user_settings():
     
     if user_settings:
         # Parse clinics from JSON
-        import json
         try:
             clinics = json.loads(user_settings.clinics_data) if user_settings.clinics_data else ['KFMC', 'DC']
         except (json.JSONDecodeError, TypeError):
