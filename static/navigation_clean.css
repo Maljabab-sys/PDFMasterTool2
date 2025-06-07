@@ -24,25 +24,18 @@
 
 /* Brand Styling */
 .navbar-brand {
-    font-weight: 700;
-    font-size: 1.3rem;
-    color: var(--purple-light) !important;
-    text-shadow: 0 0 20px var(--purple-glow);
+    font-weight: 600;
+    font-size: 1.2rem;
+    color: rgba(255, 255, 255, 0.9) !important;
     transition: all 0.3s ease;
 }
 
 .navbar-brand:hover {
     color: white !important;
-    transform: scale(1.05);
-    text-shadow: 0 0 30px var(--purple-glow);
 }
 
 .navbar-brand i {
-    background: linear-gradient(45deg, var(--purple-primary), var(--purple-light));
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-    filter: drop-shadow(0 0 10px var(--purple-glow));
+    color: var(--purple-light);
 }
 
 /* Navigation Links */
