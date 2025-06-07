@@ -611,7 +611,8 @@ def index():
         db.session.add(demo_user)
         db.session.commit()
     
-    login_user(demo_user)
+    login_user(demo_user, remember=True)
+    session.permanent = True
     
     # Create demo data if none exists
     existing_patients = Patient.query.filter_by(user_id=demo_user.id).count()
