@@ -98,7 +98,7 @@
                 <a href="{{ url_for('download_case', case_id=case_id) }}" class="btn btn-success btn-sm me-2">
                     <i class="bi bi-download me-1"></i>Download PDF
                 </a>
-                <a href="{{ url_for('cases') }}" class="btn btn-outline-light btn-sm">
+                <a href="{{ url_for('log') }}" class="btn btn-outline-light btn-sm">
                     <i class="bi bi-list me-1"></i>Case History
                 </a>
             </div>
@@ -151,14 +151,14 @@
             
             if (countdown <= 0) {
                 clearInterval(countdownInterval);
-                window.location.href = "{{ url_for('cases') }}";
+                window.location.href = "{{ url_for('log') }}";
             }
         }, 1000);
         
         // Allow manual navigation by clicking anywhere
         document.addEventListener('click', function() {
             clearInterval(countdownInterval);
-            window.location.href = "{{ url_for('cases') }}";
+            window.location.href = "{{ url_for('log') }}";
         });
     </script>
 </body>
