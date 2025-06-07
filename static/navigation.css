@@ -54,25 +54,51 @@
         border-radius: 8px;
         margin-top: 1rem;
         padding: 1rem;
-        box-shadow: -10px 0 30px rgba(0, 0, 0, 0.3);
-        display: block !important;
-        visibility: visible !important;
-    }
-    
-    .navbar-collapse.show {
-        right: 0;
+        border: 1px solid rgba(255, 255, 255, 0.1);
     }
     
     .navbar-nav .nav-link {
-        padding: 1rem 0;
+        padding: 0.75rem 1rem;
         border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-        border-radius: 0;
-        margin: 0;
-        font-size: 1.1rem;
+        border-radius: 6px;
+        margin-bottom: 0.25rem;
+        font-size: 1rem;
+        color: rgba(255, 255, 255, 0.8);
+        transition: all 0.3s ease;
     }
     
     .navbar-nav .nav-link:last-child {
         border-bottom: none;
+        margin-bottom: 0;
+    }
+    
+    .navbar-nav .nav-link:hover {
+        background: rgba(255, 255, 255, 0.1);
+        color: white;
+        transform: translateX(5px);
+    }
+    
+    .navbar-nav .nav-link.active {
+        background: var(--bs-primary);
+        color: white;
+        border-color: var(--bs-primary);
+    }
+}
+
+/* Extra small mobile devices */
+@media (max-width: 576px) {
+    .navbar-collapse {
+        margin-top: 0.5rem;
+        padding: 0.75rem;
+    }
+    
+    .navbar-nav .nav-link {
+        padding: 0.5rem 0.75rem;
+        font-size: 0.9rem;
+    }
+    
+    .navbar-brand {
+        font-size: 1.1rem;
     }
 }
 

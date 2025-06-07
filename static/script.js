@@ -400,7 +400,19 @@ function checkUrlFragment() {
 // Initialize on page load
 document.addEventListener('DOMContentLoaded', function() {
     checkUrlFragment();
-    // Bootstrap handles navigation automatically - no custom initialization needed
+    
+    // Mobile navigation: auto-close when clicking nav links
+    document.querySelectorAll('.navbar-nav .nav-link').forEach(link => {
+        link.addEventListener('click', function() {
+            const navbarCollapse = document.querySelector('.navbar-collapse');
+            const navbarToggler = document.querySelector('.navbar-toggler');
+            
+            // Only close on mobile
+            if (window.innerWidth < 992 && navbarCollapse.classList.contains('show')) {
+                navbarToggler.click(); // Let Bootstrap handle the closing
+            }
+        });
+    });
 });
 
 // Load case history via AJAX
