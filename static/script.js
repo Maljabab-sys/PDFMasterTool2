@@ -1649,6 +1649,9 @@ function updateLayoutWithResults(data) {
     };
     
     // Update each classified image in its designated position with staggered timing
+    const isMobile = window.innerWidth <= 768;
+    const staggerDelay = isMobile ? 200 : 300; // Faster animations on mobile
+    
     files.forEach((file, index) => {
         const placeholderId = classificationMap[file.classification];
         if (placeholderId) {
@@ -1657,7 +1660,7 @@ function updateLayoutWithResults(data) {
                 // Update progress as images are placed
                 const progressPercentage = 80 + ((index + 1) / files.length) * 15;
                 updateProgressBar(Math.round(progressPercentage));
-            }, index * 300); // Stagger by 300ms per image
+            }, index * staggerDelay);
         }
     });
     
@@ -1667,7 +1670,7 @@ function updateLayoutWithResults(data) {
         setTimeout(() => {
             showCompletionMessage();
         }, 200);
-    }, files.length * 300 + 500);
+    }, files.length * staggerDelay + 500);
 }
 
 function updatePlaceholderWithImage(placeholderId, file, index) {
@@ -1676,9 +1679,11 @@ function updatePlaceholderWithImage(placeholderId, file, index) {
     
     const confidenceColor = getConfidenceColor(file.confidence);
     const isExtraoral = file.classification.startsWith('extraoral');
+    const isMobile = window.innerWidth <= 768;
+    
     const imageStyle = isExtraoral 
-        ? "height: 150px; width: 100px; object-fit: cover; cursor: pointer; margin: 0 auto; display: block; transform: rotate(-90deg);" 
-        : "height: 120px; width: 100%; object-fit: cover; cursor: pointer;";
+        ? `height: ${isMobile ? '100px' : '150px'}; width: ${isMobile ? '80px' : '100px'}; object-fit: cover; cursor: pointer; margin: 0 auto; display: block; transform: rotate(-90deg);` 
+        : `height: ${isMobile ? '80px' : '120px'}; width: 100%; object-fit: cover; cursor: pointer;`;
     
     // Animate the transition
     placeholder.style.transition = 'all 0.3s ease';
@@ -1738,6 +1743,8 @@ function showCompletionMessage() {
 function simulateProgressiveLoading(totalFiles) {
     let progress = 0;
     const increment = 80 / totalFiles; // Reserve 20% for final processing
+    const isMobile = window.innerWidth <= 768;
+    const interval = isMobile ? 150 : 200; // Faster on mobile for better UX
     
     const progressInterval = setInterval(() => {
         progress += increment / 4; // Smooth incremental progress
@@ -1746,7 +1753,7 @@ function simulateProgressiveLoading(totalFiles) {
             clearInterval(progressInterval);
         }
         updateProgressBar(Math.round(progress));
-    }, 200);
+    }, interval);
 }
 
 function updateProgressBar(percentage) {
