@@ -601,7 +601,7 @@ def index():
 @app.route('/dashboard')
 @login_required
 def dashboard():
-    return redirect(url_for('new_case'))
+    return render_template('index.html')
 
 @app.route('/new_case')
 @login_required

@@ -536,7 +536,7 @@ function renderCaseHistory(cases) {
 }
 
 // Store patients data globally for search
-let allPatients = [];
+var allPatients = [];
 
 // Render patient list HTML
 function renderPatientList(patients) {
