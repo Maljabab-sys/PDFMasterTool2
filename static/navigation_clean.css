@@ -282,7 +282,7 @@
         position: fixed;
         top: 0;
         right: -100%;
-        width: 280px;
+        width: 320px;
         height: 100vh;
         background: rgba(33, 37, 41, 0.92);
         backdrop-filter: blur(20px);
@@ -313,7 +313,7 @@
     }
     
     .navbar-collapse.show::before {
-        left: -280px;
+        left: -320px;
         opacity: 1;
         pointer-events: all;
     }
