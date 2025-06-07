@@ -1752,10 +1752,10 @@ function updatePlaceholderWithImage(placeholderId, file, index) {
     const isExtraoral = file.classification.startsWith('extraoral');
     const isMobile = window.innerWidth <= 768;
     
-    // Apply CSS classes for rotation instead of inline styles
+    // Apply CSS classes for rotation and portrait display
     const imageClasses = isExtraoral ? 'layout-img extraoral' : 'layout-img';
     const imageStyle = isExtraoral 
-        ? `height: ${isMobile ? '100px' : '150px'}; width: ${isMobile ? '80px' : '100px'}; object-fit: cover; cursor: pointer; margin: 0 auto; display: block;` 
+        ? `cursor: pointer; margin: 0 auto; display: block;` 
         : `height: ${isMobile ? '80px' : '120px'}; width: 100%; object-fit: cover; cursor: pointer;`;
     
     // Animate the transition
@@ -2213,9 +2213,11 @@ function updatePlaceholderWithDirectImage(placeholderId, file) {
     const isExtraoral = file.classification.startsWith('extraoral');
     const isMobile = window.innerWidth <= 768;
     
-    // Apply counter-clockwise rotation for extraoral images
+    // Apply counter-clockwise rotation for extraoral images with portrait display
     const imageClasses = isExtraoral ? 'layout-img extraoral' : 'layout-img';
-    const imageStyle = `height: 100%; width: 100%; object-fit: cover; cursor: pointer; border-radius: 0.375rem;`;
+    const imageStyle = isExtraoral 
+        ? `cursor: pointer; border-radius: 0.375rem;`
+        : `height: 100%; width: 100%; object-fit: cover; cursor: pointer; border-radius: 0.375rem;`;
     
     // Animate the transition
     placeholder.style.transition = 'all 0.3s ease';

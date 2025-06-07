@@ -118,21 +118,54 @@
     animation: fadeInScale 0.5s ease forwards;
 }
 
-/* Extraoral image rotation - counter-clockwise 90 degrees */
+/* Extraoral image rotation - counter-clockwise 90 degrees for portrait display */
 .layout-img.extraoral {
     transform: rotate(-90deg);
+    transform-origin: center center;
+    width: 90px !important;
+    height: 130px !important;
+    object-fit: cover;
+    margin: 20px auto;
+    display: block;
 }
 
 .layout-img.extraoral-right {
     transform: rotate(-90deg);
+    transform-origin: center center;
+    width: 90px !important;
+    height: 130px !important;
+    object-fit: cover;
+    margin: 20px auto;
+    display: block;
 }
 
 .layout-img.extraoral-front {
     transform: rotate(-90deg);
+    transform-origin: center center;
+    width: 90px !important;
+    height: 130px !important;
+    object-fit: cover;
+    margin: 20px auto;
+    display: block;
 }
 
 .layout-img.extraoral-smile {
     transform: rotate(-90deg);
+    transform-origin: center center;
+    width: 90px !important;
+    height: 130px !important;
+    object-fit: cover;
+    margin: 20px auto;
+    display: block;
+}
+
+/* Container adjustments for extraoral images */
+.layout-placeholder-box:has(.extraoral) {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 150px;
 }
 
 @keyframes fadeInScale {
