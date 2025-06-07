@@ -599,8 +599,24 @@
     
     <!-- Load Dashboard Data -->
     <script>
+        let visitTypeChartInstance = null;
+        let clinicChartInstance = null;
+        
         document.addEventListener('DOMContentLoaded', function() {
             loadDashboardData();
+            
+            // Handle window resize for responsive charts
+            window.addEventListener('resize', function() {
+                if (visitTypeChartInstance) {
+                    visitTypeChartInstance.destroy();
+                }
+                if (clinicChartInstance) {
+                    clinicChartInstance.destroy();
+                }
+                setTimeout(() => {
+                    loadDashboardData();
+                }, 100);
+            });
         });
         
         function loadDashboardData() {
@@ -641,7 +657,7 @@
                 visitTypes[case_.visit_type] = (visitTypes[case_.visit_type] || 0) + 1;
             });
             
-            new Chart(ctx, {
+            visitTypeChartInstance = new Chart(ctx, {
                 type: 'bar',
                 data: {
                     labels: Object.keys(visitTypes),
@@ -688,7 +704,7 @@
                 clinics[patient.clinic] = (clinics[patient.clinic] || 0) + 1;
             });
             
-            new Chart(ctx, {
+            clinicChartInstance = new Chart(ctx, {
                 type: 'doughnut',
                 data: {
                     labels: Object.keys(clinics),
