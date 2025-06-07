@@ -277,6 +277,20 @@
 
 /* Mobile Navigation Sidebar */
 @media (max-width: 991.98px) {
+    /* Ensure main navbar stays visible */
+    .navbar {
+        position: fixed !important;
+        top: 0;
+        left: 0;
+        right: 0;
+        z-index: 1050;
+    }
+    
+    /* Add top padding to body to prevent content overlap */
+    body {
+        padding-top: 80px;
+    }
+    
     /* Overlay for mobile nav */
     .navbar-collapse {
         position: fixed;
