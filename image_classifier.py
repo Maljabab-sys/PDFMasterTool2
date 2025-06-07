@@ -40,35 +40,26 @@ def classify_dental_image(image_path):
         
         # Create prompt for dental image classification
         prompt = """
-        Analyze this dental/orthodontic image and classify the view type. Pay careful attention to perspective and anatomical orientation.
+        You are a dental AI assistant. Categorize the input image into one of the following classes. Use facial orientation, expression, and intraoral visibility to determine the correct category. Only choose one label.
 
-        Classification criteria:
-        - EXTRAORAL_LEFT: Patient's left side profile view (extraoral) - portrait orientation showing patient's left facial profile with visible smile/teeth from the side
-        - EXTRAORAL_RIGHT: Patient's right side profile view (extraoral) - portrait orientation showing patient's right facial profile with visible smile/teeth from the side  
-        - EXTRAORAL_FRONT: Frontal facial view (extraoral) - portrait orientation showing patient's face from front with clear smile displaying teeth, both sides visible
-        - INTRAORAL_LEFT: Intraoral view of patient's LEFT side - molars appear on the LEFT side of the image (not mirrored)
-        - INTRAORAL_RIGHT: Intraoral view of patient's RIGHT side - molars appear on the RIGHT side of the image (not mirrored)
-        - INTRAORAL_FRONT: Intraoral frontal view - direct view of front teeth from inside the mouth, showing anterior teeth
-        - INTRAORAL_OCCLUSAL: Intraoral top-down or bottom-up view of the bite surface/occlusal plane, showing tooth surfaces
-        - OTHER: Individual teeth, X-rays, instruments, or unclear views
+        Categories:
+        1. Extraoral_frontal_view — Full face from the front, not smiling.
+        2. Extraoral_right_view — Full face from the right side, not smiling.
+        3. Extraoral_smiling_view — Full face from the front, smiling.
+        4. Extraoral_teeth_smile_view — Close-up of mouth/teeth while smiling (no full face).
+        5. Intraoral_frontal_view — Teeth from the front inside the mouth.
+        6. Intraoral_right_view — Right-side teeth view (no mirror used).
+        7. Intraoral_left_view — Left-side teeth view (no mirror used).
+        8. Intraoral_upper_occlusal_view — Occlusal (biting surface) view of the upper teeth (maxilla).
+        9. Intraoral_lower_occlusal_view — Occlusal (biting surface) view of the lower teeth (mandible).
 
-        Important distinctions:
-        - EXTRAORAL: Shows face/facial features in portrait orientation with VISIBLE SMILE/TEETH, taken from outside the mouth, patient is smiling to display teeth
-        - INTRAORAL: Shows teeth/gums directly, taken from inside the mouth with dental instruments, closer view of oral structures without facial features
-        - CRITICAL RULE FOR LEFT/RIGHT: Intraoral photos are NOT mirrored - they show the actual anatomical view
-          * If molars (large back teeth) appear on the LEFT side of the image = INTRAORAL_LEFT
-          * If molars (large back teeth) appear on the RIGHT side of the image = INTRAORAL_RIGHT
-        - Molars are large, broad back teeth; Incisors are small, narrow front teeth
-        - Only classify ONE image as left and ONE as right per batch
-        - Extraoral photos are portrait orientation (taller than wide) and show the patient SMILING with teeth visible
-        - Look for facial features (nose, lips, cheeks) in extraoral images vs just teeth/gums in intraoral
-        - Focus on direct molar positioning in the image frame (not mirrored)
+        Carefully analyze the image and assign the most accurate label from the list above.
 
         Respond with JSON in this exact format:
         {
-            "classification": "extraoral_left|extraoral_right|extraoral_front|intraoral_left|intraoral_right|intraoral_front|intraoral_occlusal|other",
+            "classification": "extraoral_frontal_view|extraoral_right_view|extraoral_smiling_view|extraoral_teeth_smile_view|intraoral_frontal_view|intraoral_right_view|intraoral_left_view|intraoral_upper_occlusal_view|intraoral_lower_occlusal_view",
             "confidence": 0.85,
-            "reasoning": "Brief explanation focusing on direct molar positioning in image frame (not mirrored), portrait/landscape orientation, and intraoral vs extraoral distinction"
+            "reasoning": "Brief explanation of the view type and key visual features that led to this classification"
         }
         """
 
