@@ -284,8 +284,9 @@
         right: -100%;
         width: 240px;
         height: 100vh;
-        background: rgba(0, 0, 0, 0.85);
-        backdrop-filter: blur(20px);
+        background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+        border-left: 1px solid rgba(255, 255, 255, 0.1);
+        box-shadow: -10px 0 25px rgba(0, 0, 0, 0.3);
         padding: 2rem 1.5rem;
         transition: right 0.25s cubic-bezier(0.4, 0.0, 0.2, 1);
         z-index: 1040;
