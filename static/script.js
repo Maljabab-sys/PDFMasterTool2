@@ -2233,7 +2233,7 @@ function updatePlaceholderWithDirectImage(placeholderId, file) {
                 <button class="btn btn-sm btn-danger" onclick="event.stopPropagation(); removeDirectImage('${placeholderId}')" style="padding: 0.25rem 0.4rem; border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center;">
                     <i class="bi bi-x" style="font-size: 0.8rem;"></i>
                 </button>
-                <button class="btn btn-sm btn-warning" onclick="replaceDirectImage('${placeholderId}')" style="padding: 0.25rem 0.4rem; border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center;" title="Replace image">
+                <button class="btn btn-sm btn-warning" onclick="event.stopPropagation(); replaceDirectImage('${placeholderId}')" style="padding: 0.25rem 0.4rem; border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center;" title="Replace image">
                     <i class="bi bi-arrow-repeat" style="font-size: 0.7rem;"></i>
                 </button>
             </div>
