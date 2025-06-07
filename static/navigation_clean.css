@@ -287,7 +287,6 @@
         background: rgba(33, 37, 41, 0.92);
         backdrop-filter: blur(20px);
         padding: 2rem 1.5rem;
-        box-shadow: -10px 0 30px rgba(0, 0, 0, 0.5);
         transition: right 0.3s ease-in-out;
         z-index: 1040;
         overflow-y: auto;
