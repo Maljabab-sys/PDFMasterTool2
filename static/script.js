@@ -901,6 +901,91 @@ function addCustomClinic() {
     customClinics.insertAdjacentHTML('beforeend', clinicHtml);
 }
 
+// Add new clinic from input field
+function addNewClinic() {
+    const newClinicInput = document.getElementById('newClinicName');
+    const clinicName = newClinicInput.value.trim();
+    
+    if (!clinicName) {
+        alert('Please enter a clinic name');
+        return;
+    }
+    
+    // Check if clinic already exists
+    const existingClinics = document.querySelectorAll('#customClinics input[type="text"]');
+    for (let input of existingClinics) {
+        if (input.value.toLowerCase() === clinicName.toLowerCase()) {
+            alert('This clinic already exists');
+            return;
+        }
+    }
+    
+    const customClinics = document.getElementById('customClinics');
+    const clinicHtml = `
+        <div class="custom-clinic-entry mb-3">
+            <div class="d-flex align-items-center justify-content-between p-3 bg-secondary bg-opacity-25 rounded">
+                <div class="form-check flex-grow-1">
+                    <input class="form-check-input" type="checkbox" id="clinic_${Date.now()}" name="clinics" value="${clinicName}" checked>
+                    <label class="form-check-label" for="clinic_${Date.now()}">
+                        ${clinicName}
+                    </label>
+                </div>
+                <button type="button" class="btn btn-outline-danger btn-sm" 
+                        onclick="removeClinic(this)" title="Remove clinic">
+                    <i class="bi bi-trash"></i>
+                </button>
+            </div>
+        </div>
+    `;
+    
+    customClinics.insertAdjacentHTML('beforeend', clinicHtml);
+    newClinicInput.value = '';
+    updateClinicDropdowns();
+}
+
+// Filter patients based on search input
+function filterPatients() {
+    const searchTerm = document.getElementById('patientSearch').value.toLowerCase();
+    const patientItems = document.querySelectorAll('.patient-item');
+    let visibleCount = 0;
+    
+    patientItems.forEach(item => {
+        const name = item.getAttribute('data-patient-name');
+        const mrn = item.getAttribute('data-patient-mrn');
+        const clinic = item.getAttribute('data-patient-clinic');
+        
+        if (name.includes(searchTerm) || mrn.includes(searchTerm) || clinic.includes(searchTerm)) {
+            item.style.display = 'block';
+            visibleCount++;
+        } else {
+            item.style.display = 'none';
+        }
+    });
+    
+    // Show/hide no results message
+    const accordion = document.getElementById('patientAccordion');
+    let noResultsMsg = document.getElementById('no-search-results');
+    
+    if (visibleCount === 0 && searchTerm.length > 0) {
+        if (!noResultsMsg) {
+            noResultsMsg = document.createElement('div');
+            noResultsMsg.id = 'no-search-results';
+            noResultsMsg.className = 'text-center text-muted py-4';
+            noResultsMsg.innerHTML = '<i class="bi bi-search display-4 mb-3"></i><h5>No patients found</h5><p>Try adjusting your search terms</p>';
+            accordion.parentNode.appendChild(noResultsMsg);
+        }
+        noResultsMsg.style.display = 'block';
+    } else if (noResultsMsg) {
+        noResultsMsg.style.display = 'none';
+    }
+}
+
+// Clear patient search
+function clearPatientSearch() {
+    document.getElementById('patientSearch').value = '';
+    filterPatients();
+}
+
 // Update patient statistics
 
 

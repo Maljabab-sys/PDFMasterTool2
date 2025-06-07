@@ -24,7 +24,26 @@
             </a>
         </div>
 
-
+        <!-- Search Box -->
+        <div class="card border-0 bg-dark mb-4">
+            <div class="card-body">
+                <div class="row align-items-center">
+                    <div class="col-md-8">
+                        <label for="patientSearch" class="form-label">Search Patients</label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="bi bi-search"></i></span>
+                            <input type="text" class="form-control" id="patientSearch" 
+                                   placeholder="Search by name, MRN, or clinic..." oninput="filterPatients()">
+                        </div>
+                    </div>
+                    <div class="col-md-4 d-flex align-items-end">
+                        <button type="button" class="btn btn-outline-secondary" onclick="clearPatientSearch()">
+                            <i class="bi bi-x-circle me-1"></i>Clear
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
 
         <!-- Patient List -->
         <div class="card border-0 bg-dark">
