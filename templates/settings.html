@@ -8,16 +8,17 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=3.1">
     <link rel="stylesheet" href="{{ url_for('static', filename='navigation_clean.css') }}?v=1.1">
+    <link rel="stylesheet" href="{{ url_for('static', filename='dashboard.css') }}?v=1.0">
 </head>
 <body>
     {% include 'navigation_clean.html' %}
 
-    <div class="container my-5">
+    <div class="container my-3 my-md-5">
         <div class="row justify-content-center">
-            <div class="col-lg-8">
+            <div class="col-12 col-lg-8">
                 <!-- Header -->
-                <div class="text-center mb-5">
-                    <h1 class="display-5 fw-bold mb-3">Personal Settings</h1>
+                <div class="text-center mb-4 mb-md-5">
+                    <h1 class="display-6 display-md-5 fw-bold mb-2 mb-md-3">Personal Settings</h1>
                     <p class="lead text-muted">Manage your profile and clinic preferences</p>
                 </div>
 
@@ -30,17 +31,17 @@
                                 <i class="bi bi-person-circle me-2"></i>Profile Information
                             </h5>
                             <div class="row">
-                                <div class="col-md-6 mb-3">
+                                <div class="col-12 col-md-6 mb-3">
                                     <label for="fullName" class="form-label">Full Name *</label>
                                     <input type="text" class="form-control" id="fullName" name="full_name" 
                                            value="{{ current_user.first_name }} {{ current_user.last_name }}" required>
                                 </div>
-                                <div class="col-md-6 mb-3">
+                                <div class="col-12 col-md-6 mb-3">
                                     <label for="email" class="form-label">Email Address *</label>
                                     <input type="email" class="form-control" id="email" name="email" 
                                            value="{{ current_user.email }}" required>
                                 </div>
-                                <div class="col-md-6 mb-3">
+                                <div class="col-12 col-md-6 mb-3">
                                     <label for="position" class="form-label">Position *</label>
                                     <select class="form-select" id="position" name="position" required>
                                         <option value="">Select your position...</option>
@@ -56,7 +57,7 @@
                                         <option value="Other" {{ 'selected' if current_user.position == 'Other' else '' }}>Other</option>
                                     </select>
                                 </div>
-                                <div class="col-md-6 mb-3">
+                                <div class="col-12 col-md-6 mb-3">
                                     <label for="gender" class="form-label">Gender</label>
                                     <select class="form-select" id="gender" name="gender">
                                         <option value="">Select gender...</option>
@@ -75,17 +76,17 @@
                                 <i class="bi bi-image me-2"></i>Profile Image
                             </h5>
                             <div class="row align-items-center">
-                                <div class="col-md-3 text-center">
-                                    <div class="profile-image-preview mb-3">
+                                <div class="col-12 col-md-3 text-center mb-3 mb-md-0">
+                                    <div class="profile-image-preview">
                                         <img id="profilePreview" src="#" alt="Profile Preview" 
-                                             class="rounded-circle" style="width: 100px; height: 100px; object-fit: cover; display: none;">
-                                        <div id="profilePlaceholder" class="rounded-circle bg-secondary d-flex align-items-center justify-content-center" 
-                                             style="width: 100px; height: 100px; margin: 0 auto;">
-                                            <i class="bi bi-person-fill fs-1 text-muted"></i>
+                                             class="rounded-circle" style="width: 80px; height: 80px; object-fit: cover; display: none;">
+                                        <div id="profilePlaceholder" class="rounded-circle bg-secondary d-flex align-items-center justify-content-center mx-auto" 
+                                             style="width: 80px; height: 80px;">
+                                            <i class="bi bi-person-fill fs-2 text-muted"></i>
                                         </div>
                                     </div>
                                 </div>
-                                <div class="col-md-9">
+                                <div class="col-12 col-md-9">
                                     <div class="mb-3">
                                         <label for="profileImage" class="form-label">Upload Profile Image</label>
                                         <input type="file" class="form-control" id="profileImage" name="profile_image" 
@@ -108,14 +109,20 @@
                                 <div id="clinicsList" class="mb-3">
                                     <!-- Clinics will be loaded here -->
                                 </div>
-                                <div class="d-flex gap-2 align-items-center">
-                                    <input type="text" id="newClinicName" class="form-control" placeholder="Enter clinic name" style="max-width: 250px;">
-                                    <button type="button" class="btn btn-primary" onclick="addNewClinic()">
-                                        <i class="bi bi-plus-circle me-1"></i>Add Clinic
-                                    </button>
-                                    <button type="button" class="btn btn-secondary" onclick="loadUserSettings()">
-                                        <i class="bi bi-arrow-clockwise me-1"></i>Reload
-                                    </button>
+                                <div class="row g-2">
+                                    <div class="col-12 col-md-8">
+                                        <input type="text" id="newClinicName" class="form-control" placeholder="Enter clinic name">
+                                    </div>
+                                    <div class="col-6 col-md-2">
+                                        <button type="button" class="btn btn-primary w-100" onclick="addNewClinic()">
+                                            <i class="bi bi-plus-circle me-1"></i><span class="d-none d-md-inline">Add</span>
+                                        </button>
+                                    </div>
+                                    <div class="col-6 col-md-2">
+                                        <button type="button" class="btn btn-secondary w-100" onclick="loadUserSettings()">
+                                            <i class="bi bi-arrow-clockwise me-1"></i><span class="d-none d-md-inline">Reload</span>
+                                        </button>
+                                    </div>
                                 </div>
                                 <div class="form-text">Add the clinics where you work. You can delete them after adding if needed.</div>
                             </div>
@@ -129,7 +136,7 @@
                                 <i class="bi bi-sliders me-2"></i>Preferences
                             </h5>
                             <div class="row">
-                                <div class="col-md-6 mb-3">
+                                <div class="col-12 col-md-6 mb-3">
                                     <label for="defaultTemplate" class="form-label">Default Template</label>
                                     <select class="form-select" id="defaultTemplate" name="default_template">
                                         <option value="medical">Medical Case</option>
@@ -138,7 +145,7 @@
                                         <option value="grid">Grid</option>
                                     </select>
                                 </div>
-                                <div class="col-md-6 mb-3">
+                                <div class="col-12 col-md-6 mb-3">
                                     <label for="defaultOrientation" class="form-label">Default Orientation</label>
                                     <select class="form-select" id="defaultOrientation" name="default_orientation">
                                         <option value="portrait">Portrait</option>
@@ -150,11 +157,11 @@
                     </div>
 
                     <!-- Action Buttons -->
-                    <div class="text-center">
-                        <button type="button" class="btn btn-outline-secondary me-3" onclick="resetForm()">
+                    <div class="d-grid d-md-flex justify-content-md-center gap-2">
+                        <button type="button" class="btn btn-outline-secondary" onclick="resetForm()">
                             <i class="bi bi-arrow-clockwise me-2"></i>Reset
                         </button>
-                        <button type="submit" class="btn btn-primary btn-lg px-4">
+                        <button type="submit" class="btn btn-primary modern-btn px-4">
                             <i class="bi bi-check-circle me-2"></i>Save Settings
                         </button>
                     </div>
