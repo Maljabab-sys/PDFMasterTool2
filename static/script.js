@@ -2211,10 +2211,8 @@ function updatePlaceholderWithDirectImage(placeholderId, file) {
     const isExtraoral = file.classification.startsWith('extraoral');
     const isMobile = window.innerWidth <= 768;
     
-    // Improved image sizing to fit the container properly
-    const imageStyle = isExtraoral 
-        ? `height: 100%; width: 100%; object-fit: cover; cursor: pointer; border-radius: 0.375rem;` 
-        : `height: 100%; width: 100%; object-fit: cover; cursor: pointer; border-radius: 0.375rem;`;
+    // Improved image sizing to fit the container properly (no rotation for extraoral)
+    const imageStyle = `height: 100%; width: 100%; object-fit: cover; cursor: pointer; border-radius: 0.375rem;`;
     
     // Animate the transition
     placeholder.style.transition = 'all 0.3s ease';
