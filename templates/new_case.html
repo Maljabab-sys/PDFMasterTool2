@@ -161,6 +161,20 @@
                                 <p class="text-muted small mt-2">Upload multiple images and AI will automatically organize them in the guide below</p>
                             </div>
                             
+                            <!-- Upload Progress -->
+                            <div id="bulkUploadProgress" class="mt-3" style="display: none;">
+                                <div class="d-flex align-items-center justify-content-between mb-2">
+                                    <div class="d-flex align-items-center">
+                                        <div class="spinner-border spinner-border-sm text-info me-2" role="status"></div>
+                                        <span class="text-info">Analyzing images with AI...</span>
+                                    </div>
+                                    <span class="badge bg-info" id="progressPercentage">0%</span>
+                                </div>
+                                <div class="progress" style="height: 8px;">
+                                    <div class="progress-bar bg-info progress-bar-striped progress-bar-animated" role="progressbar" style="width: 0%" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+                                </div>
+                            </div>
+                            
                             <!-- Layout Template Guide -->
                             <div class="alert alert-light border mb-4" id="layoutGuide">
                                 <h6 class="text-primary mb-3">
@@ -270,20 +284,6 @@
                                             </div>
                                         </div>
                                     </div>
-                                </div>
-                            </div>
-                            
-                            <!-- Upload Progress -->
-                            <div id="bulkUploadProgress" class="mt-3" style="display: none;">
-                                <div class="d-flex align-items-center justify-content-between mb-2">
-                                    <div class="d-flex align-items-center">
-                                        <div class="spinner-border spinner-border-sm text-info me-2" role="status"></div>
-                                        <span class="text-info">Analyzing images with AI...</span>
-                                    </div>
-                                    <span class="badge bg-info" id="progressPercentage">0%</span>
-                                </div>
-                                <div class="progress" style="height: 8px;">
-                                    <div class="progress-bar bg-info progress-bar-striped progress-bar-animated" role="progressbar" style="width: 0%" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
                                 </div>
                             </div>
                             
