@@ -1420,11 +1420,17 @@ function displayBulkUploadResults(data) {
         const confidenceColor = getConfidenceColor(file.confidence);
         const classificationIcon = getClassificationIcon(file.classification);
         
+        // Determine image display style based on classification
+        const isExtraoral = file.classification.startsWith('extraoral');
+        const imageStyle = isExtraoral 
+            ? "height: 180px; width: 120px; object-fit: cover; cursor: pointer; margin: 0 auto; display: block;" 
+            : "height: 120px; width: 100%; object-fit: cover; cursor: pointer;";
+        
         const imageHTML = `
             <div class="col-md-4 col-lg-3">
                 <div class="card h-100">
-                    <div class="position-relative">
-                        <img src="/uploads/${file.filename}" alt="${file.original_name}" class="card-img-top" style="height: 120px; object-fit: cover; cursor: pointer;" onclick="showImageModal('/uploads/${file.filename}', '${file.original_name}')">
+                    <div class="position-relative d-flex justify-content-center">
+                        <img src="/uploads/${file.filename}" alt="${file.original_name}" class="card-img-top" style="${imageStyle}" onclick="showImageModal('/uploads/${file.filename}', '${file.original_name}')">
                         <span class="badge ${confidenceColor} position-absolute top-0 end-0 m-1" id="badge_${index}">
                             ${classificationIcon} ${file.classification.toUpperCase()}
                         </span>
