@@ -175,16 +175,25 @@
                                 </div>
                             </div>
                             
-                            <!-- Layout Template Guide -->
-                            <div class="alert alert-light border mb-4" id="layoutGuide">
-                                <h6 class="text-primary mb-3">
-                                    <i class="bi bi-layout-wtf me-2"></i>Image Layout Guide
+                            <!-- Results Display -->
+                            <div id="bulkUploadResults" class="mt-3" style="display: none;">
+                                <h6 class="text-success mb-3">
+                                    <i class="bi bi-check-circle me-2"></i>Images Uploaded & Organized
                                 </h6>
-                                <p class="small text-muted mb-3">Upload your dental images and AI will organize them in this layout:</p>
+                                <div id="classificationSummary" class="alert alert-success" style="display: none;"></div>
+                            </div>
+                            
+                            <!-- Layout Template Guide -->
+                            <div class="card border-dark bg-dark text-white mb-4" id="layoutGuide">
+                                <div class="card-body">
+                                    <h6 class="text-info mb-3">
+                                        <i class="bi bi-layout-wtf me-2"></i>Image Layout Guide
+                                    </h6>
+                                    <p class="small text-light mb-3">Upload your dental images and AI will organize them in this layout:</p>
                                 
-                                <!-- Extraoral Section -->
-                                <div class="mb-4">
-                                    <h6 class="text-primary small mb-2">📸 Extraoral Views</h6>
+                                    <!-- Extraoral Section -->
+                                    <div class="mb-4">
+                                        <h6 class="text-info small mb-2">📸 Extraoral Views</h6>
                                     <div class="row g-2">
                                         <div class="col-4">
                                             <div id="placeholder_extraoral_right" class="layout-placeholder-box text-center p-3 border border-dashed rounded bg-light position-relative" style="min-height: 120px; cursor: pointer;" onclick="triggerFileUpload('extraoral_right')">
@@ -222,9 +231,9 @@
                                     </div>
                                 </div>
                                 
-                                <!-- Intraoral Section -->
-                                <div class="mb-3">
-                                    <h6 class="text-success small mb-2">🦷 Intraoral Views</h6>
+                                    <!-- Intraoral Section -->
+                                    <div class="mb-3">
+                                        <h6 class="text-success small mb-2">🦷 Intraoral Views</h6>
                                     <div class="row g-2 mb-2">
                                         <div class="col-4">
                                             <div id="placeholder_intraoral_right" class="layout-placeholder-box text-center p-3 border border-dashed rounded bg-light position-relative" style="min-height: 120px; cursor: pointer;" onclick="triggerFileUpload('intraoral_right')">
@@ -284,15 +293,8 @@
                                             </div>
                                         </div>
                                     </div>
+                                    </div>
                                 </div>
-                            </div>
-                            
-                            <!-- Results Display -->
-                            <div id="bulkUploadResults" class="mt-3" style="display: none;">
-                                <h6 class="text-success mb-3">
-                                    <i class="bi bi-check-circle me-2"></i>Images Uploaded & Organized
-                                </h6>
-                                <div id="classificationSummary" class="alert alert-success" style="display: none;"></div>
                             </div>
                         </div>
                     </div>
