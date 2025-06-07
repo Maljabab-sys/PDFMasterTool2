@@ -118,43 +118,69 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="{{ url_for('static', filename='script.js') }}"></script>
     <script>
+        let searchTimeout;
+        
         function filterCases() {
-            const searchInput = document.getElementById('caseSearch');
-            const searchValue = searchInput.value.toLowerCase().trim();
-            const clearButton = document.getElementById('clearSearch');
-            const searchInfo = document.getElementById('searchInfo');
-            const searchResults = document.getElementById('searchResults');
-            const caseCards = document.querySelectorAll('.minimal-case-card');
+            // Clear existing timeout to debounce rapid typing
+            clearTimeout(searchTimeout);
             
-            // Show/hide clear button
-            clearButton.style.display = searchValue ? 'block' : 'none';
-            
-            let visibleCount = 0;
-            
-            caseCards.forEach(card => {
-                const title = card.querySelector('.case-title').textContent.toLowerCase();
-                const details = card.querySelector('.case-details').textContent.toLowerCase();
-                const patientInfo = card.getAttribute('data-patient') || '';
+            searchTimeout = setTimeout(() => {
+                const searchInput = document.getElementById('caseSearch');
+                const searchValue = searchInput.value.toLowerCase().trim();
+                const clearButton = document.getElementById('clearSearch');
+                const searchInfo = document.getElementById('searchInfo');
+                const searchResults = document.getElementById('searchResults');
+                const caseCards = document.querySelectorAll('.minimal-case-card');
                 
-                const isVisible = title.includes(searchValue) || 
-                                details.includes(searchValue) || 
-                                patientInfo.toLowerCase().includes(searchValue);
+                // Show/hide clear button with animation
+                clearButton.style.display = searchValue ? 'block' : 'none';
                 
-                if (isVisible) {
-                    card.style.display = 'flex';
-                    visibleCount++;
-                } else {
-                    card.style.display = 'none';
-                }
-            });
-            
-            // Show/hide search info
-            if (searchValue) {
-                searchInfo.style.display = 'block';
-                searchResults.textContent = `Showing ${visibleCount} result${visibleCount !== 1 ? 's' : ''} for "${searchValue}"`;
-            } else {
-                searchInfo.style.display = 'none';
-            }
+                let visibleCount = 0;
+                
+                caseCards.forEach((card, index) => {
+                    const title = card.querySelector('.case-title').textContent.toLowerCase();
+                    const details = card.querySelector('.case-details').textContent.toLowerCase();
+                    const patientInfo = card.getAttribute('data-patient') || '';
+                    
+                    const isVisible = searchValue === '' || 
+                                    title.includes(searchValue) || 
+                                    details.includes(searchValue) || 
+                                    patientInfo.toLowerCase().includes(searchValue);
+                    
+                    // Animate visibility changes
+                    setTimeout(() => {
+                        if (isVisible) {
+                            card.style.display = 'flex';
+                            card.style.opacity = '1';
+                            card.style.transform = 'translateY(0)';
+                            visibleCount++;
+                        } else {
+                            card.style.opacity = '0';
+                            card.style.transform = 'translateY(-10px)';
+                            setTimeout(() => {
+                                if (card.style.opacity === '0') {
+                                    card.style.display = 'none';
+                                }
+                            }, 300);
+                        }
+                    }, index * 50); // Stagger animation
+                });
+                
+                // Show/hide search info with animation
+                setTimeout(() => {
+                    if (searchValue) {
+                        searchInfo.style.display = 'block';
+                        searchInfo.classList.add('show');
+                        searchResults.textContent = `Showing ${visibleCount} result${visibleCount !== 1 ? 's' : ''} for "${searchValue}"`;
+                    } else {
+                        searchInfo.classList.remove('show');
+                        setTimeout(() => {
+                            searchInfo.style.display = 'none';
+                        }, 300);
+                    }
+                }, 100);
+                
+            }, 300); // 300ms debounce delay
         }
         
         function clearCaseSearch() {
@@ -165,13 +191,35 @@
             
             searchInput.value = '';
             clearButton.style.display = 'none';
-            searchInfo.style.display = 'none';
+            searchInfo.classList.remove('show');
             
-            // Show all cases
-            caseCards.forEach(card => {
-                card.style.display = 'flex';
+            setTimeout(() => {
+                searchInfo.style.display = 'none';
+            }, 300);
+            
+            // Show all cases with staggered animation
+            caseCards.forEach((card, index) => {
+                setTimeout(() => {
+                    card.style.display = 'flex';
+                    card.style.opacity = '1';
+                    card.style.transform = 'translateY(0)';
+                }, index * 30);
             });
         }
+        
+        // Add touch feedback for mobile
+        document.addEventListener('DOMContentLoaded', function() {
+            const searchInput = document.getElementById('caseSearch');
+            if (searchInput) {
+                searchInput.addEventListener('focus', function() {
+                    this.parentElement.parentElement.style.borderColor = 'rgba(124, 58, 237, 0.5)';
+                });
+                
+                searchInput.addEventListener('blur', function() {
+                    this.parentElement.parentElement.style.borderColor = 'rgba(255, 255, 255, 0.1)';
+                });
+            }
+        });
     </script>
 </body>
 </html>
