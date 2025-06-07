@@ -8,6 +8,7 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=3.1">
     <link rel="stylesheet" href="{{ url_for('static', filename='navigation_clean.css') }}?v=1.1">
+    <link rel="stylesheet" href="{{ url_for('static', filename='dashboard.css') }}?v=1.0">
 </head>
 <body>
     {% include 'navigation_clean.html' %}
@@ -54,86 +55,50 @@
                 {% endif %}
 
                 {% if cases %}
-                    <div class="row g-4">
+                    <div class="minimal-cases-list">
                         {% for case in cases %}
-                        <div class="col-lg-6 col-xl-4">
-                            <div class="card h-100 shadow-sm">
-                                <div class="card-body">
-                                    <div class="d-flex justify-content-between align-items-start mb-3">
-                                        <h5 class="card-title fw-bold mb-0">{{ case.title }}</h5>
-                                        {% if case.visit_type == 'registration' %}
-                                            <span class="badge bg-success">Registration</span>
-                                        {% elif case.visit_type == 'orthodontic_visit' %}
-                                            <span class="badge bg-primary">Orthodontic Visit</span>
-                                        {% elif case.visit_type == 'debond' %}
-                                            <span class="badge bg-warning">Debond</span>
-                                        {% else %}
-                                            <span class="badge bg-secondary">{{ case.visit_type.replace('_', ' ').title() }}</span>
-                                        {% endif %}
-                                    </div>
-                                    
+                        <div class="minimal-case-card" onclick="window.location.href='{{ url_for('case_detail', case_id=case.id) }}'">
+                            <div class="case-content">
+                                <div class="case-header">
+                                    {% if case.visit_type == 'registration' %}
+                                        <div class="case-indicator" style="background-color: #28a745"></div>
+                                    {% elif case.visit_type == 'orthodontic_visit' %}
+                                        <div class="case-indicator" style="background-color: #007bff"></div>
+                                    {% elif case.visit_type == 'debond' %}
+                                        <div class="case-indicator" style="background-color: #ffc107"></div>
+                                    {% else %}
+                                        <div class="case-indicator" style="background-color: #6c757d"></div>
+                                    {% endif %}
+                                    <h6 class="case-title">{{ case.title }}</h6>
+                                    <span class="case-time">
+                                        {{ case.created_at.strftime('%m/%d/%y') }}
+                                    </span>
+                                </div>
+                                <div class="case-details">
+                                    {% if case.visit_type == 'registration' %}
+                                        <span class="case-type">Registration</span>
+                                    {% elif case.visit_type == 'orthodontic_visit' %}
+                                        <span class="case-type">Orthodontic Visit</span>
+                                    {% elif case.visit_type == 'debond' %}
+                                        <span class="case-type">Debond</span>
+                                    {% else %}
+                                        <span class="case-type">{{ case.visit_type.replace('_', ' ').title() }}</span>
+                                    {% endif %}
                                     {% if case.patient %}
-                                    <div class="mb-2">
-                                        <strong>Patient:</strong> {{ case.patient.first_name }} {{ case.patient.last_name }}<br>
-                                        <small class="text-muted">MRN: {{ case.patient.mrn }} | {{ case.patient.clinic }}</small>
-                                    </div>
-                                    {% endif %}
-                                    
-                                    {% if case.visit_description %}
-                                    <div class="mb-2">
-                                        <small><strong>Visit Notes:</strong> {{ case.visit_description[:100] }}{% if case.visit_description|length > 100 %}...{% endif %}</small>
-                                    </div>
-                                    {% endif %}
-                                    
-                                    <div class="mb-3">
-                                        <small class="text-muted">
-                                            <i class="bi bi-calendar me-1"></i>
-                                            {{ case.created_at.strftime('%B %d, %Y at %I:%M %p') }}
-                                        </small>
-                                    </div>
-                                    
-                                    <div class="mb-3">
-                                        <div class="row g-2 text-center">
-                                            <div class="col-4">
-                                                <div class="border rounded p-2">
-                                                    <div class="fw-semibold">{{ case.image_count }}</div>
-                                                    <small class="text-muted">Images</small>
-                                                </div>
-                                            </div>
-                                            <div class="col-4">
-                                                <div class="border rounded p-2">
-                                                    <div class="fw-semibold">{{ case.orientation|title }}</div>
-                                                    <small class="text-muted">Layout</small>
-                                                </div>
-                                            </div>
-                                            <div class="col-4">
-                                                <div class="border rounded p-2">
-                                                    <div class="fw-semibold">{{ case.images_per_slide }}</div>
-                                                    <small class="text-muted">Per Slide</small>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    
-                                    {% if case.notes %}
-                                    <p class="card-text text-muted small">
-                                        {{ case.notes[:100] }}{% if case.notes|length > 100 %}...{% endif %}
-                                    </p>
+                                        <span class="case-dot">•</span>
+                                        <span class="case-date">{{ case.patient.first_name }} {{ case.patient.last_name }}</span>
+                                        <span class="case-dot">•</span>
+                                        <span class="case-date">{{ case.patient.mrn }}</span>
+                                    {% else %}
+                                        <span class="case-dot">•</span>
+                                        <span class="case-date">{{ case.created_at.strftime('%b %d, %Y') }}</span>
                                     {% endif %}
                                 </div>
-                                
-                                <div class="card-footer bg-transparent border-0 pt-0">
-                                    <div class="d-grid gap-2">
-                                        <a href="{{ url_for('download_case', case_id=case.id) }}" 
-                                           class="btn btn-primary">
-                                            <i class="bi bi-download me-2"></i>Download PDF
-                                        </a>
-                                        <a href="{{ url_for('case_detail', case_id=case.id) }}" 
-                                           class="btn btn-outline-secondary btn-sm">
-                                            <i class="bi bi-eye me-2"></i>View Details
-                                        </a>
-                                    </div>
-                                </div>
+                            </div>
+                            <div class="case-arrow">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <polyline points="9,18 15,12 9,6"></polyline>
+                                </svg>
                             </div>
                         </div>
                         {% endfor %}
