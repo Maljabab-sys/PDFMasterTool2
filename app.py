@@ -1,5 +1,6 @@
 import os
 import logging
+import json
 from flask import Flask, render_template, request, redirect, url_for, flash, send_file, jsonify, session, send_from_directory
 from werkzeug.utils import secure_filename
 from werkzeug.middleware.proxy_fix import ProxyFix
@@ -52,7 +53,7 @@ def load_user(user_id):
     return User.query.get(int(user_id))
 
 # Import models to ensure they're registered with SQLAlchemy
-from models import User, Patient, Case, UserSettings, UserClinic
+from models import User, Patient, Case, UserSettings
 
 # Initialize database with models
 with app.app_context():
@@ -1384,21 +1385,42 @@ def api_patients():
 @app.route('/api/user-settings', methods=['GET'])
 def api_user_settings():
     """API endpoint for user settings"""
+    if not current_user.is_authenticated:
+        return jsonify({'error': 'Not authenticated'}), 401
     
-    # For demo, use session to store settings
-    settings = session.get('user_settings', {
-        'full_name': '',
-        'email': '',
-        'position': '',
-        'gender': '',
-        'clinics': ['KFMC', 'DC']
-    })
+    # Get settings from database
+    user_settings = UserSettings.query.filter_by(user_id=current_user.id).first()
     
-    # Convert profile image path to URL if exists
-    if settings.get('profile_image') and isinstance(settings['profile_image'], str):
-        settings['profile_image'] = url_for('serve_profile_image', filename=os.path.basename(settings['profile_image']))
+    if user_settings:
+        # Parse clinics from JSON
+        import json
+        try:
+            clinics = json.loads(user_settings.clinics_data) if user_settings.clinics_data else ['KFMC', 'DC']
+        except (json.JSONDecodeError, TypeError):
+            clinics = ['KFMC', 'DC']
+        
+        settings = {
+            'full_name': user_settings.full_name or '',
+            'email': user_settings.email or '',
+            'position': user_settings.position or '',
+            'gender': user_settings.gender or '',
+            'clinics': clinics
+        }
+        
+        # Convert profile image path to URL if exists
+        if user_settings.profile_image:
+            settings['profile_image'] = url_for('serve_profile_image', filename=os.path.basename(user_settings.profile_image))
+    else:
+        # Default settings for new users
+        settings = {
+            'full_name': '',
+            'email': '',
+            'position': '',
+            'gender': '',
+            'clinics': ['KFMC', 'DC']
+        }
     
-    return jsonify({'settings': settings})
+    return jsonify(settings)
 
 @app.route('/uploads/profiles/<filename>')
 @login_required
@@ -1408,7 +1430,10 @@ def serve_profile_image(filename):
 
 @app.route('/save_settings', methods=['POST'])
 def save_settings():
-    """Save user settings using session storage"""
+    """Save user settings to database"""
+    
+    if not current_user.is_authenticated:
+        return jsonify({'success': False, 'message': 'Not authenticated'}), 401
     
     try:
         full_name = request.form.get('full_name', '').strip()
@@ -1443,31 +1468,41 @@ def save_settings():
         if not clinics:
             clinics = ['KFMC', 'DC']
         
-        # Get existing profile image if no new one uploaded
-        existing_settings = session.get('user_settings', {})
-        if not profile_image_path and existing_settings.get('profile_image'):
-            profile_image_path = existing_settings.get('profile_image')
+        # Get or create user settings
+        user_settings = UserSettings.query.filter_by(user_id=current_user.id).first()
         
-        # Store in session
-        settings_data = {
-            'full_name': full_name,
-            'email': email,
-            'position': position,
-            'gender': gender,
-            'clinics': clinics
-        }
+        if user_settings:
+            # Update existing settings
+            user_settings.full_name = full_name
+            user_settings.email = email
+            user_settings.position = position
+            user_settings.gender = gender
+            user_settings.clinics_data = json.dumps(clinics)
+            if profile_image_path:
+                user_settings.profile_image = profile_image_path
+            user_settings.updated_at = datetime.utcnow()
+        else:
+            # Create new settings
+            user_settings = UserSettings(
+                user_id=current_user.id,
+                full_name=full_name,
+                email=email,
+                position=position,
+                gender=gender,
+                clinics_data=json.dumps(clinics),
+                profile_image=profile_image_path
+            )
+            db.session.add(user_settings)
         
-        if profile_image_path:
-            settings_data['profile_image'] = profile_image_path
+        db.session.commit()
         
-        session['user_settings'] = settings_data
-        
-        logging.info(f"Settings saved: {full_name}, {email}, {position}, {gender}, {clinics}")
+        logging.info(f"Settings saved to database: {full_name}, {email}, {position}, {gender}, {clinics}")
         
         # Return JSON response for AJAX
         return jsonify({'success': True, 'message': 'Settings saved successfully!'})
         
     except Exception as e:
+        db.session.rollback()
         logging.error(f"Error saving settings: {str(e)}")
         return jsonify({'success': False, 'message': 'Error saving settings. Please try again.'}), 500
 

@@ -118,25 +118,16 @@ class Case(db.Model):
 
 class UserSettings(db.Model):
     id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False, unique=True)
     full_name = db.Column(db.String(100))
     email = db.Column(db.String(120))
     position = db.Column(db.String(100))
     gender = db.Column(db.String(10))  # 'male' or 'female'
     profile_image = db.Column(db.String(255))  # Path to uploaded profile image
+    clinics_data = db.Column(db.Text)  # JSON string of clinic names
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    
-    # Relationship to clinics
-    clinics = db.relationship('UserClinic', backref='user_settings', lazy=True, cascade='all, delete-orphan')
     
     def __repr__(self):
         return f'<UserSettings {self.full_name} - {self.email}>'
 
-class UserClinic(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(100), nullable=False)
-    settings_id = db.Column(db.Integer, db.ForeignKey('user_settings.id'), nullable=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    
-    def __repr__(self):
-        return f'<UserClinic {self.name}>'
