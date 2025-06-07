@@ -81,17 +81,41 @@
 }
 
 .navbar-nav .nav-link.active {
-    background: linear-gradient(135deg, var(--purple-primary), var(--purple-dark));
+    background: linear-gradient(135deg, var(--purple-primary), var(--purple-dark)) !important;
     color: white !important;
-    border: 1px solid var(--purple-light);
+    border: 2px solid var(--purple-light) !important;
     box-shadow: 
-        0 0 20px var(--purple-glow),
-        inset 0 1px 0 rgba(255, 255, 255, 0.2);
-    transform: translateY(-1px);
+        0 0 25px var(--purple-glow),
+        0 4px 15px rgba(124, 58, 237, 0.3),
+        inset 0 1px 0 rgba(255, 255, 255, 0.3) !important;
+    transform: translateY(-2px) !important;
+    font-weight: 600 !important;
+    position: relative;
 }
 
 .navbar-nav .nav-link.active::before {
-    display: none;
+    content: '';
+    position: absolute;
+    bottom: -2px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 80%;
+    height: 3px;
+    background: linear-gradient(90deg, transparent, var(--purple-light), transparent);
+    border-radius: 2px;
+    box-shadow: 0 0 10px var(--purple-glow);
+}
+
+.navbar-nav .nav-link.active::after {
+    content: '';
+    position: absolute;
+    top: -2px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 80%;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.5), transparent);
+    border-radius: 1px;
 }
 
 /* Icons in Navigation */
