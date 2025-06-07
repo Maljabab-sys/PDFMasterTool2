@@ -1396,12 +1396,15 @@ def api_user_settings():
     
     # Get settings from database
     user_settings = UserSettings.query.filter_by(user_id=current_user.id).first()
+    logging.info(f"Found user settings: {user_settings}")
     
     if user_settings:
         # Parse clinics from JSON
         try:
             clinics = json.loads(user_settings.clinics_data) if user_settings.clinics_data else ['KFMC', 'DC']
-        except (json.JSONDecodeError, TypeError):
+            logging.info(f"Parsed clinics from database: {clinics}")
+        except (json.JSONDecodeError, TypeError) as e:
+            logging.error(f"Error parsing clinics JSON: {e}")
             clinics = ['KFMC', 'DC']
         
         settings = {
@@ -1425,6 +1428,7 @@ def api_user_settings():
             'clinics': ['KFMC', 'DC']
         }
     
+    logging.info(f"Returning settings: {settings}")
     return jsonify(settings)
 
 @app.route('/uploads/profiles/<filename>')
