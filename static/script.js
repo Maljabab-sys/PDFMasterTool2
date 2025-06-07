@@ -2214,9 +2214,9 @@ function updatePlaceholderWithDirectImage(placeholderId, file) {
     const isExtraoral = file.classification.startsWith('extraoral');
     const isMobile = window.innerWidth <= 768;
     
-    // Apply proper sizing - preserve full image without cropping
+    // Apply proper sizing - fit image to container with cropping for tight borders
     const imageClasses = isExtraoral ? 'layout-img extraoral' : 'layout-img';
-    const imageStyle = `height: 100%; width: 100%; object-fit: contain; cursor: pointer; border-radius: 0.375rem;`;
+    const imageStyle = `height: 100%; width: 100%; object-fit: cover; cursor: pointer; border-radius: 0.375rem;`;
     
     // Animate the transition
     placeholder.style.transition = 'all 0.3s ease';
@@ -2234,27 +2234,28 @@ function updatePlaceholderWithDirectImage(placeholderId, file) {
         const containerWidth = placeholder.offsetWidth;
         const imageAspectRatio = this.naturalWidth / this.naturalHeight;
         
-        // For extraoral images (rotated), swap dimensions
-        const effectiveAspectRatio = isExtraoral ? (1 / imageAspectRatio) : imageAspectRatio;
-        let containerHeight = containerWidth / effectiveAspectRatio;
-        
-        // Apply mobile constraints for better mobile experience
+        // Calculate optimal container dimensions for tight border fit
         const isMobile = window.innerWidth <= 768;
         const isUpperLower = file.classification.includes('upper') || file.classification.includes('lower');
         
-        // Set specific constraints for upper/lower jaw images
-        let maxHeight, minHeight;
-        if (isUpperLower) {
-            maxHeight = isMobile ? 120 : 180;
-            minHeight = isMobile ? 60 : 100;
+        let containerHeight;
+        
+        if (isExtraoral) {
+            // For extraoral images (rotated), use consistent portrait dimensions
+            containerHeight = isMobile ? 150 : 200;
+        } else if (isUpperLower) {
+            // Upper/lower jaw images: smaller, more square dimensions
+            containerHeight = isMobile ? 100 : 140;
         } else {
-            maxHeight = isMobile ? 200 : 400;
-            minHeight = isMobile ? 80 : 120;
+            // Regular intraoral: landscape dimensions
+            const effectiveAspectRatio = imageAspectRatio;
+            containerHeight = containerWidth / effectiveAspectRatio;
+            const maxHeight = isMobile ? 120 : 160;
+            const minHeight = isMobile ? 80 : 100;
+            containerHeight = Math.max(minHeight, Math.min(maxHeight, containerHeight));
         }
         
-        containerHeight = Math.max(minHeight, Math.min(maxHeight, containerHeight));
-        
-        // Update placeholder height to match image proportions
+        // Update placeholder to fit image tightly
         placeholder.style.height = `${containerHeight}px`;
         placeholder.style.minHeight = `${containerHeight}px`;
     };
@@ -2500,16 +2501,15 @@ function refreshLayoutResponsiveness() {
                 const isUpperLower = img.src.includes('upper') || img.src.includes('lower') || 
                                    img.classList.contains('upper') || img.classList.contains('lower');
                 
-                let maxHeight, minHeight;
-                if (isUpperLower) {
-                    maxHeight = isMobile ? 120 : 180;
-                    minHeight = isMobile ? 60 : 100;
+                if (isExtraoral) {
+                    containerHeight = isMobile ? 150 : 200;
+                } else if (isUpperLower) {
+                    containerHeight = isMobile ? 100 : 140;
                 } else {
-                    maxHeight = isMobile ? 200 : 400;
-                    minHeight = isMobile ? 80 : 120;
+                    const maxHeight = isMobile ? 120 : 160;
+                    const minHeight = isMobile ? 80 : 100;
+                    containerHeight = Math.max(minHeight, Math.min(maxHeight, containerHeight));
                 }
-                
-                containerHeight = Math.max(minHeight, Math.min(maxHeight, containerHeight));
                 
                 placeholder.style.height = `${containerHeight}px`;
                 placeholder.style.minHeight = `${containerHeight}px`;
