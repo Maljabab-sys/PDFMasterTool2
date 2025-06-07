@@ -272,6 +272,51 @@
 
 
 
+                    <!-- AI Bulk Upload Section -->
+                    <div class="card border-info mb-4">
+                        <div class="card-header bg-info text-white">
+                            <h5 class="mb-0">
+                                <i class="bi bi-robot me-2"></i>AI-Powered Bulk Upload
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <p class="text-muted mb-3">Upload multiple images at once and let AI automatically categorize them as left, right, front, or occlusal views.</p>
+                            
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold">Select Multiple Images</label>
+                                <input type="file" id="bulkUploadInput" multiple accept="image/*" class="form-control">
+                                <small class="text-muted">Hold Ctrl/Cmd to select multiple files</small>
+                            </div>
+                            
+                            <button type="button" id="bulkUploadBtn" class="btn btn-info me-2" disabled>
+                                <i class="bi bi-cloud-upload me-2"></i>Upload & Categorize
+                            </button>
+                            <button type="button" id="clearBulkBtn" class="btn btn-outline-secondary" style="display: none;">
+                                <i class="bi bi-trash me-2"></i>Clear All
+                            </button>
+                            
+                            <!-- Upload Progress -->
+                            <div id="bulkUploadProgress" class="mt-3" style="display: none;">
+                                <div class="d-flex align-items-center mb-2">
+                                    <div class="spinner-border spinner-border-sm text-info me-2" role="status"></div>
+                                    <span class="text-info">Analyzing images with AI...</span>
+                                </div>
+                                <div class="progress">
+                                    <div class="progress-bar bg-info progress-bar-striped progress-bar-animated" role="progressbar" style="width: 100%"></div>
+                                </div>
+                            </div>
+                            
+                            <!-- Results Display -->
+                            <div id="bulkUploadResults" class="mt-3" style="display: none;">
+                                <h6 class="text-success mb-3">
+                                    <i class="bi bi-check-circle me-2"></i>Classification Results
+                                </h6>
+                                <div id="classificationSummary" class="row mb-3"></div>
+                                <div id="imageResults" class="row g-3"></div>
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- Action Buttons -->
                     <div class="row justify-content-center">
                         <div class="col-md-6 text-center">

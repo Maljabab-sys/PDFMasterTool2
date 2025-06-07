@@ -17,6 +17,7 @@ from reportlab.lib import colors
 import tempfile
 import uuid
 from datetime import datetime
+from image_classifier import classify_bulk_images, get_classification_summary
 
 # Configure logging
 logging.basicConfig(level=logging.DEBUG)
@@ -1301,6 +1302,84 @@ def upload_files():
         logging.error(f"Error in upload_files: {str(e)}")
         flash('An error occurred while processing your request.', 'error')
         return redirect(url_for('index'))
+
+@app.route('/bulk_upload_categorize', methods=['POST'])
+@login_required
+def bulk_upload_categorize():
+    """Bulk upload with AI-powered image categorization"""
+    if 'files[]' not in request.files:
+        return jsonify({'success': False, 'error': 'No files selected'})
+    
+    files = request.files.getlist('files[]')
+    if not files or all(f.filename == '' for f in files):
+        return jsonify({'success': False, 'error': 'No files selected'})
+    
+    uploaded_files = []
+    upload_folder = app.config['UPLOAD_FOLDER']
+    
+    # Create upload directory if it doesn't exist
+    if not os.path.exists(upload_folder):
+        os.makedirs(upload_folder)
+    
+    # First, upload all files
+    file_paths = []
+    for file in files:
+        if file and allowed_file(file.filename):
+            filename = secure_filename(file.filename)
+            unique_filename = f"{uuid.uuid4()}_{filename}"
+            filepath = os.path.join(upload_folder, unique_filename)
+            
+            try:
+                file.save(filepath)
+                
+                # Optimize the image
+                optimized_path = optimize_image_for_pdf(filepath)
+                if optimized_path != filepath:
+                    os.remove(filepath)
+                    filepath = optimized_path
+                    unique_filename = os.path.basename(optimized_path)
+                
+                file_paths.append(filepath)
+                uploaded_files.append({
+                    'filename': unique_filename,
+                    'original_name': filename,
+                    'path': filepath
+                })
+            except Exception as e:
+                logging.error(f"Error uploading file {filename}: {str(e)}")
+                return jsonify({'success': False, 'error': f'Error uploading {filename}: {str(e)}'})
+    
+    # Now classify all uploaded images
+    try:
+        classification_results = classify_bulk_images(file_paths)
+        summary = get_classification_summary(classification_results)
+        
+        # Merge classification results with uploaded files
+        for i, result in enumerate(classification_results):
+            if i < len(uploaded_files):
+                uploaded_files[i].update({
+                    'classification': result['classification'],
+                    'confidence': result['confidence'],
+                    'reasoning': result['reasoning'],
+                    'ai_success': result['success']
+                })
+        
+        return jsonify({
+            'success': True,
+            'files': uploaded_files,
+            'classification_summary': summary,
+            'message': f'Successfully uploaded and categorized {len(uploaded_files)} files'
+        })
+        
+    except Exception as e:
+        logging.error(f"Error during AI classification: {str(e)}")
+        # Return files without classification if AI fails
+        return jsonify({
+            'success': True,
+            'files': uploaded_files,
+            'classification_error': str(e),
+            'message': f'Successfully uploaded {len(uploaded_files)} files (classification unavailable)'
+        })
 
 @app.errorhandler(413)
 def too_large(e):
