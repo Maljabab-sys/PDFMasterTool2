@@ -726,36 +726,43 @@ function loadUserSettings() {
     fetch('/api/user-settings')
         .then(response => response.json())
         .then(data => {
-            if (data.settings) {
-                document.getElementById('fullName').value = data.settings.full_name || '';
-                document.getElementById('email').value = data.settings.email || '';
-                document.getElementById('position').value = data.settings.position || '';
-                document.getElementById('gender').value = data.settings.gender || '';
+            // Handle both nested and flat data structure
+            const settings = data.settings || data;
+            
+            // Populate form fields
+            const fullNameField = document.getElementById('fullName');
+            const emailField = document.getElementById('email');
+            const positionField = document.getElementById('position');
+            const genderField = document.getElementById('gender');
+            
+            if (fullNameField) fullNameField.value = settings.full_name || '';
+            if (emailField) emailField.value = settings.email || '';
+            if (positionField) positionField.value = settings.position || '';
+            if (genderField) genderField.value = settings.gender || '';
+            
+            // Load clinic checkboxes
+            loadUserClinics(settings.clinics || ['KFMC', 'DC']);
+            
+            // Load profile image if exists
+            if (settings.profile_image) {
+                const preview = document.getElementById('profilePreview');
+                const placeholder = document.getElementById('profilePlaceholder');
                 
-                // Load clinics
-                loadUserClinics(data.settings.clinics || []);
-                
-                // Load profile image if exists
-                if (data.settings.profile_image) {
-                    const preview = document.getElementById('profilePreview');
-                    const placeholder = document.getElementById('uploadPlaceholder');
-                    
-                    if (preview && placeholder) {
-                        preview.src = data.settings.profile_image;
-                        preview.style.display = 'block';
-                        placeholder.style.display = 'none';
-                    }
-                    
-                    // Update navigation profile image
-                    updateNavProfileImage(data.settings.profile_image, data.settings.gender);
-                } else {
-                    // No image, use gender-based icon
-                    updateNavProfileImage(null, data.settings.gender || '');
+                if (preview && placeholder) {
+                    preview.src = settings.profile_image;
+                    preview.style.display = 'block';
+                    placeholder.style.display = 'none';
                 }
+                
+                // Update navigation profile image
+                updateNavProfileImage(settings.profile_image, settings.gender);
+            } else {
+                // No image, use gender-based icon
+                updateNavProfileImage(null, settings.gender || '');
             }
             
             // Update clinic dropdown in registration form
-            updateClinicDropdown(data.settings?.clinics || []);
+            updateClinicDropdown(settings.clinics || ['KFMC', 'DC']);
         })
         .catch(error => {
             console.error('Error loading settings:', error);
@@ -799,34 +806,40 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 function loadUserClinics(clinics) {
-    const container = document.getElementById('clinicsContainer');
-    container.innerHTML = '';
+    // Handle primary clinics (KFMC and DC)
+    const kfmcCheckbox = document.getElementById('kfmc');
+    const dcCheckbox = document.getElementById('dc');
     
-    if (clinics.length === 0) {
-        addClinic();
-        return;
+    if (kfmcCheckbox) kfmcCheckbox.checked = clinics.includes('KFMC');
+    if (dcCheckbox) dcCheckbox.checked = clinics.includes('DC');
+    
+    // Handle custom clinics
+    const customClinics = document.getElementById('customClinics');
+    if (customClinics) {
+        customClinics.innerHTML = '';
+        
+        clinics.forEach(clinic => {
+            if (clinic !== 'KFMC' && clinic !== 'DC') {
+                const clinicHtml = `
+                    <div class="custom-clinic-entry mb-3">
+                        <div class="d-flex align-items-center justify-content-between p-3 bg-secondary bg-opacity-25 rounded">
+                            <div class="form-check flex-grow-1">
+                                <input class="form-check-input" type="checkbox" id="clinic_${Date.now()}" name="clinics" value="${clinic}" checked>
+                                <label class="form-check-label" for="clinic_${Date.now()}">
+                                    ${clinic}
+                                </label>
+                            </div>
+                            <button type="button" class="btn btn-outline-danger btn-sm" 
+                                    onclick="removeClinic(this)" title="Remove clinic">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                `;
+                customClinics.insertAdjacentHTML('beforeend', clinicHtml);
+            }
+        });
     }
-    
-    clinics.forEach((clinic, index) => {
-        const clinicHtml = `
-            <div class="clinic-entry mb-3">
-                <div class="row">
-                    <div class="col-md-8">
-                        <label class="form-label">Clinic Name</label>
-                        <input type="text" class="form-control clinic-input" name="clinics[]" 
-                               value="${clinic}" placeholder="Enter clinic name...">
-                    </div>
-                    <div class="col-md-4 d-flex align-items-end">
-                        <button type="button" class="btn btn-outline-danger btn-sm remove-clinic" 
-                                onclick="removeClinic(this)" ${clinics.length === 1 ? 'style="display: none;"' : ''}>
-                            <i class="bi bi-trash"></i> Remove
-                        </button>
-                    </div>
-                </div>
-            </div>
-        `;
-        container.insertAdjacentHTML('beforeend', clinicHtml);
-    });
 }
 
 function addClinic() {
@@ -862,12 +875,14 @@ function addClinic() {
 }
 
 function removeClinic(button) {
-    const customClinics = document.getElementById('customClinics');
     const clinicEntry = button.closest('.custom-clinic-entry');
-    const clinicInput = clinicEntry.querySelector('input[type="text"]');
-    const clinicName = clinicInput ? clinicInput.value.trim() : 'this clinic';
+    if (!clinicEntry) return;
     
-    if (clinicName && !confirm(`Are you sure you want to delete "${clinicName}"?`)) {
+    // Get clinic name for confirmation
+    const clinicCheckbox = clinicEntry.querySelector('input[type="checkbox"]');
+    const clinicName = clinicCheckbox ? clinicCheckbox.value : 'this clinic';
+    
+    if (clinicName !== 'this clinic' && !confirm(`Are you sure you want to delete "${clinicName}"?`)) {
         return;
     }
     

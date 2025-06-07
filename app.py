@@ -1415,7 +1415,8 @@ def save_settings():
         email = request.form.get('email', '').strip()
         position = request.form.get('position', '').strip()
         gender = request.form.get('gender', '').strip()
-        clinics = request.form.getlist('clinics[]')
+        # Handle both clinics and clinics[] form field names
+        clinics = request.form.getlist('clinics') or request.form.getlist('clinics[]')
         
         # Handle profile image upload
         profile_image_path = None
