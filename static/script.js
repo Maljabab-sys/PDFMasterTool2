@@ -1752,8 +1752,10 @@ function updatePlaceholderWithImage(placeholderId, file, index) {
     const isExtraoral = file.classification.startsWith('extraoral');
     const isMobile = window.innerWidth <= 768;
     
+    // Apply CSS classes for rotation instead of inline styles
+    const imageClasses = isExtraoral ? 'layout-img extraoral' : 'layout-img';
     const imageStyle = isExtraoral 
-        ? `height: ${isMobile ? '100px' : '150px'}; width: ${isMobile ? '80px' : '100px'}; object-fit: cover; cursor: pointer; margin: 0 auto; display: block; transform: rotate(-90deg);` 
+        ? `height: ${isMobile ? '100px' : '150px'}; width: ${isMobile ? '80px' : '100px'}; object-fit: cover; cursor: pointer; margin: 0 auto; display: block;` 
         : `height: ${isMobile ? '80px' : '120px'}; width: 100%; object-fit: cover; cursor: pointer;`;
     
     // Animate the transition
@@ -1763,7 +1765,7 @@ function updatePlaceholderWithImage(placeholderId, file, index) {
     
     placeholder.innerHTML = `
         <div class="position-relative d-flex justify-content-center">
-            <img src="/uploads/${file.filename}" alt="${file.original_name}" class="layout-img" style="${imageStyle}" onclick="showImageModal('/uploads/${file.filename}', '${file.original_name}', '${file.classification}')">
+            <img src="/uploads/${file.filename}" alt="${file.original_name}" class="${imageClasses}" style="${imageStyle}" onclick="showImageModal('/uploads/${file.filename}', '${file.original_name}', '${file.classification}')">
             <span class="badge ${confidenceColor} position-absolute top-0 end-0 m-1">
                 ${Math.round(file.confidence * 100)}%
             </span>
@@ -2211,7 +2213,8 @@ function updatePlaceholderWithDirectImage(placeholderId, file) {
     const isExtraoral = file.classification.startsWith('extraoral');
     const isMobile = window.innerWidth <= 768;
     
-    // Improved image sizing to fit the container properly (no rotation for extraoral)
+    // Apply counter-clockwise rotation for extraoral images
+    const imageClasses = isExtraoral ? 'layout-img extraoral' : 'layout-img';
     const imageStyle = `height: 100%; width: 100%; object-fit: cover; cursor: pointer; border-radius: 0.375rem;`;
     
     // Animate the transition
@@ -2221,7 +2224,7 @@ function updatePlaceholderWithDirectImage(placeholderId, file) {
     
     placeholder.innerHTML = `
         <div class="position-relative w-100 h-100 d-flex align-items-center justify-content-center">
-            <img src="/uploads/${file.filename}" alt="${file.original_name}" class="layout-img" style="${imageStyle}" onclick="showImageModal('/uploads/${file.filename}', '${file.original_name}', '${file.classification}')">
+            <img src="/uploads/${file.filename}" alt="${file.original_name}" class="${imageClasses}" style="${imageStyle}" onclick="showImageModal('/uploads/${file.filename}', '${file.original_name}', '${file.classification}')">
             <span class="badge ${confidenceColor} position-absolute top-0 end-0 m-1" style="font-size: 0.7rem;">
                 ${Math.round(file.confidence * 100)}%
             </span>

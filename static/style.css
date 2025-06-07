@@ -118,6 +118,23 @@
     animation: fadeInScale 0.5s ease forwards;
 }
 
+/* Extraoral image rotation - counter-clockwise 90 degrees */
+.layout-img.extraoral {
+    transform: rotate(-90deg);
+}
+
+.layout-img.extraoral-right {
+    transform: rotate(-90deg);
+}
+
+.layout-img.extraoral-front {
+    transform: rotate(-90deg);
+}
+
+.layout-img.extraoral-smile {
+    transform: rotate(-90deg);
+}
+
 @keyframes fadeInScale {
     0% {
         opacity: 0;
