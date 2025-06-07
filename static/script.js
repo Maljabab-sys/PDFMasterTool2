@@ -1362,21 +1362,29 @@ document.addEventListener('DOMContentLoaded', function() {
             bulkUploadResults.style.display = 'block';
             bulkUploadBtn.disabled = true;
 
+            // Simulate progressive loading
+            simulateProgressiveLoading(files.length);
+
             fetch('/bulk_upload_categorize', {
                 method: 'POST',
                 body: formData
             })
             .then(response => response.json())
             .then(data => {
-                bulkUploadProgress.style.display = 'none';
-                bulkUploadBtn.disabled = false;
+                // Complete the progress bar
+                updateProgressBar(100);
+                
+                setTimeout(() => {
+                    bulkUploadProgress.style.display = 'none';
+                    bulkUploadBtn.disabled = false;
 
-                if (data.success) {
-                    updateLayoutWithResults(data);
-                    clearBulkBtn.style.display = 'inline-block';
-                } else {
-                    alert('Error: ' + (data.error || 'Upload failed'));
-                }
+                    if (data.success) {
+                        updateLayoutWithResults(data);
+                        clearBulkBtn.style.display = 'inline-block';
+                    } else {
+                        alert('Error: ' + (data.error || 'Upload failed'));
+                    }
+                }, 500);
             })
             .catch(error => {
                 console.error('Error:', error);
@@ -1640,18 +1648,26 @@ function updateLayoutWithResults(data) {
         'intraoral_lower_occlusal_view': 'placeholder_intraoral_lower'
     };
     
-    // Update each classified image in its designated position
+    // Update each classified image in its designated position with staggered timing
     files.forEach((file, index) => {
         const placeholderId = classificationMap[file.classification];
         if (placeholderId) {
-            updatePlaceholderWithImage(placeholderId, file, index);
+            setTimeout(() => {
+                updatePlaceholderWithImage(placeholderId, file, index);
+                // Update progress as images are placed
+                const progressPercentage = 80 + ((index + 1) / files.length) * 15;
+                updateProgressBar(Math.round(progressPercentage));
+            }, index * 300); // Stagger by 300ms per image
         }
     });
     
     // After all updates, show final completion message
     setTimeout(() => {
-        showCompletionMessage();
-    }, 500);
+        updateProgressBar(100);
+        setTimeout(() => {
+            showCompletionMessage();
+        }, 200);
+    }, files.length * 300 + 500);
 }
 
 function updatePlaceholderWithImage(placeholderId, file, index) {
@@ -1717,6 +1733,47 @@ function showCompletionMessage() {
         </div>
     `;
     imageResults.innerHTML += completionAlert;
+}
+
+function simulateProgressiveLoading(totalFiles) {
+    let progress = 0;
+    const increment = 80 / totalFiles; // Reserve 20% for final processing
+    
+    const progressInterval = setInterval(() => {
+        progress += increment / 4; // Smooth incremental progress
+        if (progress >= 80) {
+            progress = 80;
+            clearInterval(progressInterval);
+        }
+        updateProgressBar(Math.round(progress));
+    }, 200);
+}
+
+function updateProgressBar(percentage) {
+    const progressBar = document.querySelector('#bulkUploadProgress .progress-bar');
+    const progressText = document.querySelector('#bulkUploadProgress .text-info');
+    const progressBadge = document.getElementById('progressPercentage');
+    
+    if (progressBar) {
+        progressBar.style.width = percentage + '%';
+        progressBar.setAttribute('aria-valuenow', percentage);
+    }
+    
+    if (progressBadge) {
+        progressBadge.textContent = percentage + '%';
+    }
+    
+    if (progressText) {
+        if (percentage < 30) {
+            progressText.textContent = 'Uploading images...';
+        } else if (percentage < 70) {
+            progressText.textContent = 'Analyzing with AI...';
+        } else if (percentage < 95) {
+            progressText.textContent = 'Categorizing images...';
+        } else {
+            progressText.textContent = 'Finalizing layout...';
+        }
+    }
 }
 
 function createLayoutRow(files, labels, colClass = 'col-md-4') {
