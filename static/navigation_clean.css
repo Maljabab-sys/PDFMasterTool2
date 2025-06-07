@@ -311,7 +311,7 @@
         box-shadow: -10px 0 25px rgba(0, 0, 0, 0.3);
         padding: 2rem 1.5rem;
         transform: translateX(100%);
-        transition: transform 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
+        transition: transform 0.35s cubic-bezier(0.4, 0.0, 0.2, 1);
         z-index: 1040;
         overflow-y: auto;
         will-change: transform;
@@ -319,6 +319,11 @@
     
     .navbar-collapse.show {
         transform: translateX(0);
+    }
+    
+    .navbar-collapse.hiding {
+        transform: translateX(100%);
+        transition: transform 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
     }
     
 
@@ -355,25 +360,12 @@
         color: white;
     }
     
-    /* Mobile nav links with slide animations */
+    /* Mobile nav links */
     .navbar-nav {
         flex-direction: column;
         gap: 0.5rem;
-        opacity: 0;
-        transform: translateX(30px);
-        transition: all 0.4s cubic-bezier(0.4, 0.0, 0.2, 1);
-    }
-    
-    .navbar-collapse.show .navbar-nav {
         opacity: 1;
-        transform: translateX(0);
-        transition-delay: 0.2s;
-    }
-    
-    .navbar-collapse.hiding .navbar-nav {
-        opacity: 0;
-        transform: translateX(30px);
-        transition-delay: 0s;
+        transform: none;
     }
     
     .navbar-nav .nav-link {
