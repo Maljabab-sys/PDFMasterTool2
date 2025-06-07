@@ -6,6 +6,41 @@
     --border-color: hsl(210, 11%, 25%);
 }
 
+/* Category badge colors for dental image classification */
+.bg-purple {
+    background-color: #6f42c1 !important;
+    color: white !important;
+}
+
+.bg-teal {
+    background-color: #20c997 !important;
+    color: white !important;
+}
+
+/* Bulk upload results styling */
+.category-section {
+    border-left: 4px solid #007bff;
+    padding-left: 1rem;
+    margin-bottom: 2rem;
+}
+
+.category-section.extraoral {
+    border-left-color: #28a745;
+}
+
+.category-section.intraoral {
+    border-left-color: #dc3545;
+}
+
+.image-card-hover {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.image-card-hover:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+}
+
 /* Mobile Responsiveness */
 @media (max-width: 768px) {
     .container {

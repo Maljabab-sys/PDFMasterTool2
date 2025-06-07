@@ -1395,85 +1395,135 @@ document.addEventListener('DOMContentLoaded', function() {
 function displayBulkUploadResults(data) {
     const { files, classification_summary } = data;
     
+    // Group files by category
+    const categorizedFiles = {
+        'extraoral_frontal_view': [],
+        'extraoral_right_view': [],
+        'extraoral_smiling_view': [],
+        'extraoral_teeth_smile_view': [],
+        'intraoral_frontal_view': [],
+        'intraoral_right_view': [],
+        'intraoral_left_view': [],
+        'intraoral_upper_occlusal_view': [],
+        'intraoral_lower_occlusal_view': []
+    };
+
+    files.forEach((file, index) => {
+        file.originalIndex = index;
+        if (categorizedFiles[file.classification]) {
+            categorizedFiles[file.classification].push(file);
+        } else {
+            // Handle any unknown classifications
+            if (!categorizedFiles['other']) categorizedFiles['other'] = [];
+            categorizedFiles['other'].push(file);
+        }
+    });
+
+    // Display summary
     classificationSummary.innerHTML = '';
     if (classification_summary) {
+        const totalFiles = Object.values(categorizedFiles).reduce((sum, arr) => sum + arr.length, 0);
         const summaryHTML = `
             <div class="col-12">
                 <div class="alert alert-info">
-                    <strong>Classification Summary:</strong> 
-                    ${classification_summary.successful}/${classification_summary.total} images processed
-                    <div class="mt-2">
-                        <span class="badge bg-success me-2">Left: ${classification_summary.categories.left}</span>
-                        <span class="badge bg-primary me-2">Right: ${classification_summary.categories.right}</span>
-                        <span class="badge bg-warning me-2">Front: ${classification_summary.categories.front}</span>
-                        <span class="badge bg-info me-2">Occlusal: ${classification_summary.categories.occlusal}</span>
-                        <span class="badge bg-secondary">Other: ${classification_summary.categories.other}</span>
-                    </div>
+                    <strong>AI Classification Complete:</strong> 
+                    ${totalFiles} images categorized into ${Object.keys(categorizedFiles).filter(key => categorizedFiles[key].length > 0).length} categories
                 </div>
             </div>
         `;
         classificationSummary.innerHTML = summaryHTML;
     }
 
+    // Category display names and colors
+    const categoryInfo = {
+        'extraoral_frontal_view': { name: 'Extraoral Frontal (Not Smiling)', color: 'bg-primary', icon: '👤' },
+        'extraoral_right_view': { name: 'Extraoral Right Side', color: 'bg-info', icon: '👤' },
+        'extraoral_smiling_view': { name: 'Extraoral Frontal (Smiling)', color: 'bg-success', icon: '😊' },
+        'extraoral_teeth_smile_view': { name: 'Extraoral Teeth Smile', color: 'bg-warning', icon: '😁' },
+        'intraoral_frontal_view': { name: 'Intraoral Frontal', color: 'bg-secondary', icon: '🦷' },
+        'intraoral_right_view': { name: 'Intraoral Right', color: 'bg-danger', icon: '🦷' },
+        'intraoral_left_view': { name: 'Intraoral Left', color: 'bg-dark', icon: '🦷' },
+        'intraoral_upper_occlusal_view': { name: 'Upper Occlusal', color: 'bg-purple', icon: '🔝' },
+        'intraoral_lower_occlusal_view': { name: 'Lower Occlusal', color: 'bg-teal', icon: '🔽' },
+        'other': { name: 'Other/Unclear', color: 'bg-light text-dark', icon: '❓' }
+    };
+
     imageResults.innerHTML = '';
-    files.forEach((file, index) => {
-        const confidenceColor = getConfidenceColor(file.confidence);
-        const classificationIcon = getClassificationIcon(file.classification);
+    
+    // Display each category section
+    Object.keys(categorizedFiles).forEach(category => {
+        const categoryFiles = categorizedFiles[category];
+        if (categoryFiles.length === 0) return;
+
+        const categoryData = categoryInfo[category] || categoryInfo['other'];
         
-        // Determine image display style based on classification
-        const isExtraoral = file.classification.startsWith('extraoral');
-        const imageStyle = isExtraoral 
-            ? "height: 180px; width: 120px; object-fit: cover; cursor: pointer; margin: 0 auto; display: block; transform: rotate(-90deg);" 
-            : "height: 120px; width: 100%; object-fit: cover; cursor: pointer;";
-        
-        const imageHTML = `
-            <div class="col-md-4 col-lg-3">
-                <div class="card h-100">
-                    <div class="position-relative d-flex justify-content-center">
-                        <img src="/uploads/${file.filename}" alt="${file.original_name}" class="card-img-top" style="${imageStyle}" onclick="showImageModal('/uploads/${file.filename}', '${file.original_name}', '${file.classification}')">
-                        <span class="badge ${confidenceColor} position-absolute top-0 end-0 m-1" id="badge_${index}">
-                            ${classificationIcon} ${file.classification.toUpperCase()}
-                        </span>
-                    </div>
-                    <div class="card-body p-2">
-                        <div class="d-flex align-items-center justify-content-between mb-2">
-                            <small class="text-muted text-truncate" title="${file.original_name}">
-                                ${file.original_name}
-                            </small>
-                            <button class="btn btn-sm btn-outline-primary" onclick="assignToCategory('${file.filename}', document.getElementById('select_${index}').value)" id="use_btn_${index}">
-                                Use
-                            </button>
-                        </div>
-                        
-                        <div class="text-center mb-2">
-                            <div class="small text-muted">
-                                Confidence: ${Math.round(file.confidence * 100)}%
-                            </div>
-                        </div>
-                        
-                        <div class="mb-2">
-                            <select class="form-select form-select-sm" id="select_${index}" onchange="updateClassificationDisplay(${index}, this.value)">
-                                <option value="${file.classification}" selected>${file.classification.replace('_', ' ').toUpperCase()}</option>
-                                <option value="extraoral_left" ${file.classification === 'extraoral_left' ? 'selected' : ''}>Extraoral Left</option>
-                                <option value="extraoral_right" ${file.classification === 'extraoral_right' ? 'selected' : ''}>Extraoral Right</option>
-                                <option value="extraoral_front" ${file.classification === 'extraoral_front' ? 'selected' : ''}>Extraoral Front</option>
-                                <option value="intraoral_left" ${file.classification === 'intraoral_left' ? 'selected' : ''}>Intraoral Left</option>
-                                <option value="intraoral_right" ${file.classification === 'intraoral_right' ? 'selected' : ''}>Intraoral Right</option>
-                                <option value="intraoral_front" ${file.classification === 'intraoral_front' ? 'selected' : ''}>Intraoral Front</option>
-                                <option value="intraoral_occlusal" ${file.classification === 'intraoral_occlusal' ? 'selected' : ''}>Intraoral Occlusal</option>
-                                <option value="other" ${file.classification === 'other' ? 'selected' : ''}>Other</option>
-                            </select>
-                        </div>
-                        
-                        ${file.reasoning ? `<div class="small text-muted" style="font-size: 0.75rem;">${file.reasoning}</div>` : ''}
-                    </div>
+        // Category header
+        const categoryHTML = `
+            <div class="col-12 mb-3">
+                <div class="d-flex align-items-center mb-3">
+                    <span class="badge ${categoryData.color} me-2 p-2 fs-6">
+                        ${categoryData.icon} ${categoryData.name} (${categoryFiles.length})
+                    </span>
+                </div>
+                <div class="row g-3" id="category_${category}">
+                    ${categoryFiles.map(file => createImageCard(file, category)).join('')}
                 </div>
             </div>
         `;
-        imageResults.innerHTML += imageHTML;
+        
+        imageResults.innerHTML += categoryHTML;
     });
 
     bulkUploadResults.style.display = 'block';
+}
+
+function createImageCard(file, category) {
+    const confidenceColor = getConfidenceColor(file.confidence);
+    const index = file.originalIndex;
+    
+    // Determine image display style based on classification
+    const isExtraoral = file.classification.startsWith('extraoral');
+    const imageStyle = isExtraoral 
+        ? "height: 180px; width: 120px; object-fit: cover; cursor: pointer; margin: 0 auto; display: block; transform: rotate(-90deg);" 
+        : "height: 120px; width: 100%; object-fit: cover; cursor: pointer;";
+    
+    return `
+        <div class="col-md-3 col-lg-2">
+            <div class="card h-100 shadow-sm image-card-hover">
+                <div class="position-relative d-flex justify-content-center">
+                    <img src="/uploads/${file.filename}" alt="${file.original_name}" class="card-img-top" style="${imageStyle}" onclick="showImageModal('/uploads/${file.filename}', '${file.original_name}', '${file.classification}')">
+                    <span class="badge ${confidenceColor} position-absolute top-0 end-0 m-1" id="badge_${index}">
+                        ${Math.round(file.confidence * 100)}%
+                    </span>
+                </div>
+                <div class="card-body p-2">
+                    <div class="mb-2">
+                        <small class="text-muted text-truncate d-block" title="${file.original_name}">
+                            ${file.original_name.length > 15 ? file.original_name.substring(0, 15) + '...' : file.original_name}
+                        </small>
+                    </div>
+                    
+                    <div class="mb-2">
+                        <select class="form-select form-select-sm" id="select_${index}" onchange="updateClassificationDisplay(${index}, this.value)">
+                            <option value="extraoral_frontal_view" ${file.classification === 'extraoral_frontal_view' ? 'selected' : ''}>Extraoral Frontal</option>
+                            <option value="extraoral_right_view" ${file.classification === 'extraoral_right_view' ? 'selected' : ''}>Extraoral Right</option>
+                            <option value="extraoral_smiling_view" ${file.classification === 'extraoral_smiling_view' ? 'selected' : ''}>Extraoral Smiling</option>
+                            <option value="extraoral_teeth_smile_view" ${file.classification === 'extraoral_teeth_smile_view' ? 'selected' : ''}>Extraoral Teeth Smile</option>
+                            <option value="intraoral_frontal_view" ${file.classification === 'intraoral_frontal_view' ? 'selected' : ''}>Intraoral Frontal</option>
+                            <option value="intraoral_right_view" ${file.classification === 'intraoral_right_view' ? 'selected' : ''}>Intraoral Right</option>
+                            <option value="intraoral_left_view" ${file.classification === 'intraoral_left_view' ? 'selected' : ''}>Intraoral Left</option>
+                            <option value="intraoral_upper_occlusal_view" ${file.classification === 'intraoral_upper_occlusal_view' ? 'selected' : ''}>Upper Occlusal</option>
+                            <option value="intraoral_lower_occlusal_view" ${file.classification === 'intraoral_lower_occlusal_view' ? 'selected' : ''}>Lower Occlusal</option>
+                        </select>
+                    </div>
+                    
+                    <button class="btn btn-sm btn-primary w-100" onclick="assignToCategory('${file.filename}', document.getElementById('select_${index}').value)" id="use_btn_${index}">
+                        Add to Case
+                    </button>
+                </div>
+            </div>
+        </div>
+    `;
 }
 
 function getConfidenceColor(confidence) {
