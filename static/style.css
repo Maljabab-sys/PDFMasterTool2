@@ -32,6 +32,19 @@
     border-left-color: #dc3545;
 }
 
+/* Layout grid styling */
+.border-dashed {
+    border-style: dashed !important;
+    background-color: #f8f9fa;
+}
+
+.layout-placeholder {
+    min-height: 200px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
 .image-card-hover {
     transition: transform 0.2s ease, box-shadow 0.2s ease;
 }

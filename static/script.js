@@ -1427,54 +1427,142 @@ function displayBulkUploadResults(data) {
             <div class="col-12">
                 <div class="alert alert-info">
                     <strong>AI Classification Complete:</strong> 
-                    ${totalFiles} images categorized into ${Object.keys(categorizedFiles).filter(key => categorizedFiles[key].length > 0).length} categories
+                    ${totalFiles} images categorized
                 </div>
             </div>
         `;
         classificationSummary.innerHTML = summaryHTML;
     }
 
-    // Category display names and colors
-    const categoryInfo = {
-        'extraoral_frontal_view': { name: 'Extraoral Frontal (Not Smiling)', color: 'bg-primary', icon: '👤' },
-        'extraoral_right_view': { name: 'Extraoral Right Side', color: 'bg-info', icon: '👤' },
-        'extraoral_smiling_view': { name: 'Extraoral Frontal (Smiling)', color: 'bg-success', icon: '😊' },
-        'extraoral_teeth_smile_view': { name: 'Extraoral Teeth Smile', color: 'bg-warning', icon: '😁' },
-        'intraoral_frontal_view': { name: 'Intraoral Frontal', color: 'bg-secondary', icon: '🦷' },
-        'intraoral_right_view': { name: 'Intraoral Right', color: 'bg-danger', icon: '🦷' },
-        'intraoral_left_view': { name: 'Intraoral Left', color: 'bg-dark', icon: '🦷' },
-        'intraoral_upper_occlusal_view': { name: 'Upper Occlusal', color: 'bg-purple', icon: '🔝' },
-        'intraoral_lower_occlusal_view': { name: 'Lower Occlusal', color: 'bg-teal', icon: '🔽' },
-        'other': { name: 'Other/Unclear', color: 'bg-light text-dark', icon: '❓' }
-    };
-
     imageResults.innerHTML = '';
     
-    // Display each category section
-    Object.keys(categorizedFiles).forEach(category => {
-        const categoryFiles = categorizedFiles[category];
-        if (categoryFiles.length === 0) return;
-
-        const categoryData = categoryInfo[category] || categoryInfo['other'];
-        
-        // Category header
-        const categoryHTML = `
-            <div class="col-12 mb-3">
-                <div class="d-flex align-items-center mb-3">
-                    <span class="badge ${categoryData.color} me-2 p-2 fs-6">
-                        ${categoryData.icon} ${categoryData.name} (${categoryFiles.length})
-                    </span>
-                </div>
-                <div class="row g-3" id="category_${category}">
-                    ${categoryFiles.map(file => createImageCard(file, category)).join('')}
+    // Display in specific layout format
+    let layoutHTML = '';
+    
+    // Extraoral section - 3 in a row
+    const extraoralCategories = ['extraoral_right_view', 'extraoral_frontal_view', 'extraoral_smiling_view'];
+    const extraoralFiles = extraoralCategories.map(cat => categorizedFiles[cat][0] || null);
+    
+    if (extraoralFiles.some(file => file !== null)) {
+        layoutHTML += `
+            <div class="col-12 mb-4">
+                <h5 class="text-primary mb-3">📸 Extraoral Views</h5>
+                <div class="row g-3">
+                    ${createLayoutRow(extraoralFiles, ['Right Side', 'Frontal', 'Smiling'])}
                 </div>
             </div>
         `;
-        
-        imageResults.innerHTML += categoryHTML;
+    }
+    
+    // Intraoral section - 3 in first row, 2 in second row
+    const intraoral3Categories = ['intraoral_right_view', 'intraoral_frontal_view', 'intraoral_left_view'];
+    const intraoral2Categories = ['intraoral_upper_occlusal_view', 'intraoral_lower_occlusal_view'];
+    
+    const intraoral3Files = intraoral3Categories.map(cat => categorizedFiles[cat][0] || null);
+    const intraoral2Files = intraoral2Categories.map(cat => categorizedFiles[cat][0] || null);
+    
+    if (intraoral3Files.some(file => file !== null) || intraoral2Files.some(file => file !== null)) {
+        layoutHTML += `
+            <div class="col-12 mb-4">
+                <h5 class="text-success mb-3">🦷 Intraoral Views</h5>
+                <div class="row g-3 mb-3">
+                    ${createLayoutRow(intraoral3Files, ['Right Side', 'Frontal', 'Left Side'])}
+                </div>
+                <div class="row g-3 justify-content-center">
+                    ${createLayoutRow(intraoral2Files, ['Upper Occlusal', 'Lower Occlusal'], 'col-md-4')}
+                </div>
+            </div>
+        `;
+    }
+    
+    // Display remaining files in other categories
+    const otherCategories = ['extraoral_teeth_smile_view'];
+    otherCategories.forEach(category => {
+        const categoryFiles = categorizedFiles[category];
+        if (categoryFiles.length > 0) {
+            layoutHTML += `
+                <div class="col-12 mb-3">
+                    <h6 class="text-warning mb-3">Other: ${category.replace(/_/g, ' ').toUpperCase()}</h6>
+                    <div class="row g-3">
+                        ${categoryFiles.map(file => createLayoutCard(file)).join('')}
+                    </div>
+                </div>
+            `;
+        }
     });
-
+    
+    imageResults.innerHTML = layoutHTML;
     bulkUploadResults.style.display = 'block';
+}
+
+function createLayoutRow(files, labels, colClass = 'col-md-4') {
+    return files.map((file, index) => {
+        if (file) {
+            return createLayoutCard(file, colClass, labels[index]);
+        } else {
+            return `
+                <div class="${colClass}">
+                    <div class="card h-100 border-dashed text-center p-4" style="border: 2px dashed #dee2e6;">
+                        <div class="text-muted">
+                            <i class="bi bi-image" style="font-size: 2rem;"></i>
+                            <p class="mt-2 mb-0">${labels[index]}</p>
+                            <small>No image classified</small>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+    }).join('');
+}
+
+function createLayoutCard(file, colClass = 'col-md-4', label = '') {
+    const confidenceColor = getConfidenceColor(file.confidence);
+    const index = file.originalIndex;
+    
+    // Determine image display style based on classification
+    const isExtraoral = file.classification.startsWith('extraoral');
+    const imageStyle = isExtraoral 
+        ? "height: 200px; width: 150px; object-fit: cover; cursor: pointer; margin: 0 auto; display: block; transform: rotate(-90deg);" 
+        : "height: 150px; width: 100%; object-fit: cover; cursor: pointer;";
+    
+    return `
+        <div class="${colClass}">
+            <div class="card h-100 shadow-sm image-card-hover">
+                <div class="position-relative d-flex justify-content-center">
+                    <img src="/uploads/${file.filename}" alt="${file.original_name}" class="card-img-top" style="${imageStyle}" onclick="showImageModal('/uploads/${file.filename}', '${file.original_name}', '${file.classification}')">
+                    <span class="badge ${confidenceColor} position-absolute top-0 end-0 m-1" id="badge_${index}">
+                        ${Math.round(file.confidence * 100)}%
+                    </span>
+                    ${label ? `<div class="badge bg-dark position-absolute bottom-0 start-0 m-1">${label}</div>` : ''}
+                </div>
+                <div class="card-body p-2">
+                    <div class="mb-2">
+                        <small class="text-muted text-truncate d-block" title="${file.original_name}">
+                            ${file.original_name.length > 20 ? file.original_name.substring(0, 20) + '...' : file.original_name}
+                        </small>
+                    </div>
+                    
+                    <div class="mb-2">
+                        <select class="form-select form-select-sm" id="select_${index}" onchange="updateClassificationDisplay(${index}, this.value)">
+                            <option value="extraoral_frontal_view" ${file.classification === 'extraoral_frontal_view' ? 'selected' : ''}>Extraoral Frontal</option>
+                            <option value="extraoral_right_view" ${file.classification === 'extraoral_right_view' ? 'selected' : ''}>Extraoral Right</option>
+                            <option value="extraoral_smiling_view" ${file.classification === 'extraoral_smiling_view' ? 'selected' : ''}>Extraoral Smiling</option>
+                            <option value="extraoral_teeth_smile_view" ${file.classification === 'extraoral_teeth_smile_view' ? 'selected' : ''}>Extraoral Teeth Smile</option>
+                            <option value="intraoral_frontal_view" ${file.classification === 'intraoral_frontal_view' ? 'selected' : ''}>Intraoral Frontal</option>
+                            <option value="intraoral_right_view" ${file.classification === 'intraoral_right_view' ? 'selected' : ''}>Intraoral Right</option>
+                            <option value="intraoral_left_view" ${file.classification === 'intraoral_left_view' ? 'selected' : ''}>Intraoral Left</option>
+                            <option value="intraoral_upper_occlusal_view" ${file.classification === 'intraoral_upper_occlusal_view' ? 'selected' : ''}>Upper Occlusal</option>
+                            <option value="intraoral_lower_occlusal_view" ${file.classification === 'intraoral_lower_occlusal_view' ? 'selected' : ''}>Lower Occlusal</option>
+                        </select>
+                    </div>
+                    
+                    <button class="btn btn-sm btn-primary w-100" onclick="assignToCategory('${file.filename}', document.getElementById('select_${index}').value)" id="use_btn_${index}">
+                        Add to Case
+                    </button>
+                </div>
+            </div>
+        </div>
+    `;
 }
 
 function createImageCard(file, category) {
