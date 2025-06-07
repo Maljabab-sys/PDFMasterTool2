@@ -1,5 +1,127 @@
 /* Modern Dashboard Styles */
 
+/* Minimal Case Cards */
+.minimal-cases-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 0;
+}
+
+.minimal-case-card {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.minimal-case-card:hover {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.15);
+    transform: translateX(4px);
+}
+
+.case-content {
+    flex: 1;
+    min-width: 0;
+}
+
+.case-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 4px;
+}
+
+.case-indicator {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.case-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.9);
+    margin: 0;
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.case-time {
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.5);
+    font-weight: 500;
+    flex-shrink: 0;
+}
+
+.case-details {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.6);
+}
+
+.case-type {
+    font-weight: 500;
+}
+
+.case-dot {
+    color: rgba(255, 255, 255, 0.3);
+    font-weight: bold;
+}
+
+.case-date {
+    font-weight: 400;
+}
+
+.case-arrow {
+    color: rgba(255, 255, 255, 0.4);
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+}
+
+.minimal-case-card:hover .case-arrow {
+    color: rgba(255, 255, 255, 0.7);
+    transform: translateX(2px);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .minimal-case-card {
+        padding: 10px 14px;
+    }
+    
+    .case-header {
+        gap: 10px;
+    }
+    
+    .case-title {
+        font-size: 13px;
+    }
+    
+    .case-details {
+        font-size: 11px;
+        gap: 6px;
+    }
+    
+    .case-time {
+        font-size: 11px;
+    }
+}
+
 /* Modern Stat Cards */
 .stat-card {
     background: rgba(255, 255, 255, 0.03);

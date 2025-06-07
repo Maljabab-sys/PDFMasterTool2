@@ -451,60 +451,55 @@
                 }
             }
             
-            if (isMobile) {
-                // Mobile card layout
-                let html = '<div class="mobile-cases px-3">';
-                cases.forEach(case_ => {
-                    const date = new Date(case_.created_at).toLocaleDateString();
-                    const formattedVisitType = formatVisitType(case_.visit_type);
-                    const visitTypeColors = {
-                        'Registration': 'bg-success',
-                        'Orthodontic Visit': 'bg-primary', 
-                        'Debond': 'bg-warning'
-                    };
-                    const badgeColor = visitTypeColors[formattedVisitType] || 'bg-secondary';
-                    
-                    html += `
-                        <div class="card mb-3">
-                            <div class="card-body">
-                                <div class="d-flex justify-content-between align-items-start mb-2">
-                                    <h6 class="card-title mb-0">${case_.title}</h6>
-                                    <span class="badge ${badgeColor}">${formattedVisitType}</span>
-                                </div>
-                                <div class="d-flex justify-content-between align-items-center">
-                                    <small class="text-muted">${date}</small>
-                                    <a href="/case/${case_.id}" class="btn btn-sm btn-outline-primary rounded-pill">View</a>
-                                </div>
+            // Minimal linear card design for all screen sizes
+            let html = '<div class="minimal-cases-list">';
+            cases.forEach(case_ => {
+                const date = new Date(case_.created_at);
+                const timeAgo = getTimeAgo(date);
+                const formattedVisitType = formatVisitType(case_.visit_type);
+                const visitTypeColors = {
+                    'Registration': '#28a745',
+                    'Orthodontic Visit': '#007bff', 
+                    'Debond': '#ffc107'
+                };
+                const dotColor = visitTypeColors[formattedVisitType] || '#6c757d';
+                
+                html += `
+                    <div class="minimal-case-card" onclick="window.location.href='/case/${case_.id}'">
+                        <div class="case-content">
+                            <div class="case-header">
+                                <div class="case-indicator" style="background-color: ${dotColor}"></div>
+                                <h6 class="case-title">${case_.title}</h6>
+                                <span class="case-time">${timeAgo}</span>
+                            </div>
+                            <div class="case-details">
+                                <span class="case-type">${formattedVisitType}</span>
+                                <span class="case-dot">•</span>
+                                <span class="case-date">${date.toLocaleDateString()}</span>
                             </div>
                         </div>
-                    `;
-                });
-                html += '</div>';
-                container.innerHTML = html;
-            } else {
-                // Desktop table layout
-                let html = '<div class="table-responsive"><table class="table table-hover"><thead><tr><th>Case Title</th><th>Visit Type</th><th>Created</th><th>Actions</th></tr></thead><tbody>';
-                cases.forEach(case_ => {
-                    const date = new Date(case_.created_at).toLocaleDateString();
-                    const formattedVisitType = formatVisitType(case_.visit_type);
-                    const visitTypeColors = {
-                        'Registration': 'bg-success',
-                        'Orthodontic Visit': 'bg-primary', 
-                        'Debond': 'bg-warning'
-                    };
-                    const badgeColor = visitTypeColors[formattedVisitType] || 'bg-secondary';
-                    
-                    html += `
-                        <tr>
-                            <td class="fw-medium">${case_.title}</td>
-                            <td><span class="badge ${badgeColor}">${formattedVisitType}</span></td>
-                            <td>${date}</td>
-                            <td><a href="/case/${case_.id}" class="btn btn-sm btn-outline-primary rounded-pill">View Case</a></td>
-                        </tr>
-                    `;
-                });
-                html += '</tbody></table></div>';
-                container.innerHTML = html;
+                        <div class="case-arrow">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="9,18 15,12 9,6"></polyline>
+                            </svg>
+                        </div>
+                    </div>
+                `;
+            });
+            html += '</div>';
+            container.innerHTML = html;
+            
+            // Helper function to calculate time ago
+            function getTimeAgo(date) {
+                const now = new Date();
+                const diffInMs = now - date;
+                const diffInHours = Math.floor(diffInMs / (1000 * 60 * 60));
+                const diffInDays = Math.floor(diffInMs / (1000 * 60 * 60 * 24));
+                
+                if (diffInHours < 1) return 'Just now';
+                if (diffInHours < 24) return `${diffInHours}h ago`;
+                if (diffInDays < 7) return `${diffInDays}d ago`;
+                return date.toLocaleDateString();
             }
         }
     </script>
