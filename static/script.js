@@ -400,57 +400,8 @@ function checkUrlFragment() {
 // Initialize on page load
 document.addEventListener('DOMContentLoaded', function() {
     checkUrlFragment();
-    initializeNavigation();
+    // Bootstrap handles navigation automatically - no custom initialization needed
 });
-
-// Initialize navigation functionality
-function initializeNavigation() {
-    const navbarToggler = document.querySelector('.navbar-toggler');
-    const navbarCollapse = document.querySelector('.navbar-collapse');
-    
-    if (navbarToggler && navbarCollapse) {
-        // Ensure initial state is correct
-        navbarToggler.setAttribute('aria-expanded', 'false');
-        navbarToggler.classList.add('collapsed');
-        navbarCollapse.classList.remove('show');
-        
-        // Handle navbar toggle clicks manually
-        navbarToggler.addEventListener('click', function(e) {
-            e.preventDefault();
-            e.stopPropagation();
-            
-            const isExpanded = this.getAttribute('aria-expanded') === 'true';
-            
-            if (!isExpanded) {
-                // Open navigation
-                this.setAttribute('aria-expanded', 'true');
-                this.classList.remove('collapsed');
-                navbarCollapse.classList.add('show');
-                document.body.style.overflow = 'hidden';
-            } else {
-                // Close navigation
-                closeMobileNav();
-            }
-        });
-        
-        // Handle clicks outside the navigation to close it
-        document.addEventListener('click', function(event) {
-            const isClickInsideNav = navbarCollapse.contains(event.target) || navbarToggler.contains(event.target);
-            if (!isClickInsideNav && navbarCollapse.classList.contains('show')) {
-                closeMobileNav();
-            }
-        });
-        
-        // Close navigation when clicking nav links on mobile
-        document.querySelectorAll('.nav-link').forEach(link => {
-            link.addEventListener('click', function() {
-                if (window.innerWidth < 992 && navbarCollapse.classList.contains('show')) {
-                    closeMobileNav();
-                }
-            });
-        });
-    }
-}
 
 // Load case history via AJAX
 function loadCaseHistory() {
@@ -998,21 +949,6 @@ function updatePatientStats(patients) {
 }
 
 // Mobile navigation close function with transition animation
-function closeMobileNav() {
-    const navbarToggler = document.querySelector('.navbar-toggler');
-    const navbarCollapse = document.querySelector('.navbar-collapse');
-    
-    if (navbarCollapse && navbarToggler) {
-        // Immediately update aria-expanded to trigger hamburger animation
-        navbarToggler.setAttribute('aria-expanded', 'false');
-        navbarToggler.classList.add('collapsed');
-        
-        // Remove show class to trigger CSS slide-out animation
-        navbarCollapse.classList.remove('show');
-        document.body.style.overflow = '';
-    }
-}
-
 // Update clinic dropdowns throughout the application
 function updateClinicDropdowns() {
     const clinicSelects = document.querySelectorAll('#clinic, .clinic-dropdown');
