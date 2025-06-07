@@ -478,3 +478,75 @@
         font-size: 16px; /* Prevents zoom on iOS */
     }
 }
+
+/* Dynamic search animations */
+.minimal-case-card,
+.patient-item {
+    transition: all 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.minimal-case-card[style*="display: none"],
+.patient-item[style*="display: none"] {
+    opacity: 0;
+    transform: translateY(-10px);
+    pointer-events: none;
+}
+
+/* Search result counter animation */
+#searchInfo {
+    transition: all 0.3s ease;
+    transform: translateY(-5px);
+}
+
+#searchInfo.show {
+    transform: translateY(0);
+}
+
+/* Clear button animation */
+#clearSearch {
+    transition: all 0.2s ease;
+}
+
+#clearSearch:hover {
+    color: rgba(255, 255, 255, 0.8) !important;
+}
+
+/* Smooth patient list animations */
+.patient-item {
+    transition: opacity 0.3s ease, transform 0.3s ease, max-height 0.3s ease;
+    max-height: 1000px;
+    overflow: hidden;
+}
+
+.patient-item.hiding {
+    opacity: 0;
+    transform: translateX(-20px);
+    max-height: 0;
+    margin-bottom: 0 !important;
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+}
+
+/* Mobile touch improvements */
+@media (max-width: 768px) {
+    .minimal-case-card {
+        padding: 16px;
+        margin-bottom: 12px;
+    }
+    
+    .minimal-case-card:active {
+        transform: scale(0.98);
+        background: rgba(255, 255, 255, 0.08);
+    }
+    
+    .modern-search-container .form-control {
+        padding: 12px 16px;
+        font-size: 16px;
+    }
+    
+    .modern-search-container .input-group-text {
+        padding: 12px 16px;
+    }
+}

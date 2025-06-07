@@ -26,41 +26,33 @@
                 <!-- Search Bar -->
                 <div class="row mb-4">
                     <div class="col-12 col-md-8 col-lg-6">
-                        <form method="GET" action="{{ url_for('log') }}">
-                            <div class="modern-search-container">
-                                <div class="input-group rounded-pill overflow-hidden">
-                                    <span class="input-group-text bg-dark border-0 ps-3">
-                                        <i class="bi bi-search text-muted"></i>
-                                    </span>
-                                    <input type="text" class="form-control border-0 bg-dark text-light" name="search" 
-                                           placeholder="Search cases, patients, MRN, visit types..." 
-                                           value="{{ search_query or '' }}"
-                                           style="box-shadow: none;">
-                                    {% if search_query %}
-                                    <a href="{{ url_for('log') }}" class="input-group-text bg-dark border-0 text-muted pe-3 text-decoration-none">
-                                        <i class="bi bi-x"></i>
-                                    </a>
-                                    {% endif %}
-                                </div>
+                        <div class="modern-search-container">
+                            <div class="input-group rounded-pill overflow-hidden">
+                                <span class="input-group-text bg-dark border-0 ps-3">
+                                    <i class="bi bi-search text-muted"></i>
+                                </span>
+                                <input type="text" class="form-control border-0 bg-dark text-light" id="caseSearch" 
+                                       placeholder="Search cases, patients, MRN, visit types..." 
+                                       oninput="filterCases()"
+                                       style="box-shadow: none;">
+                                <button type="button" class="input-group-text bg-dark border-0 text-muted pe-3" id="clearSearch" onclick="clearCaseSearch()" style="display: none;">
+                                    <i class="bi bi-x"></i>
+                                </button>
                             </div>
-                        </form>
+                        </div>
                     </div>
                 </div>
 
-                {% if search_query %}
-                <div class="alert alert-info">
+                <div class="alert alert-info" id="searchInfo" style="display: none;">
                     <i class="bi bi-search me-2"></i>
-                    Search results for: <strong>{{ search_query }}</strong>
-                    {% if cases|length > 0 %}
-                        ({{ cases|length }} result{{ 's' if cases|length != 1 else '' }} found)
-                    {% endif %}
+                    <span id="searchResults"></span>
                 </div>
-                {% endif %}
 
                 {% if cases %}
                     <div class="minimal-cases-list">
                         {% for case in cases %}
-                        <div class="minimal-case-card" onclick="window.location.href='{{ url_for('case_detail', case_id=case.id) }}'">
+                        <div class="minimal-case-card" onclick="window.location.href='{{ url_for('case_detail', case_id=case.id) }}'" 
+                             data-patient="{% if case.patient %}{{ case.patient.first_name }} {{ case.patient.last_name }} {{ case.patient.mrn }} {{ case.patient.clinic }}{% endif %}">
                             <div class="case-content">
                                 <div class="case-header">
                                     {% if case.visit_type == 'registration' %}
@@ -125,5 +117,61 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="{{ url_for('static', filename='script.js') }}"></script>
+    <script>
+        function filterCases() {
+            const searchInput = document.getElementById('caseSearch');
+            const searchValue = searchInput.value.toLowerCase().trim();
+            const clearButton = document.getElementById('clearSearch');
+            const searchInfo = document.getElementById('searchInfo');
+            const searchResults = document.getElementById('searchResults');
+            const caseCards = document.querySelectorAll('.minimal-case-card');
+            
+            // Show/hide clear button
+            clearButton.style.display = searchValue ? 'block' : 'none';
+            
+            let visibleCount = 0;
+            
+            caseCards.forEach(card => {
+                const title = card.querySelector('.case-title').textContent.toLowerCase();
+                const details = card.querySelector('.case-details').textContent.toLowerCase();
+                const patientInfo = card.getAttribute('data-patient') || '';
+                
+                const isVisible = title.includes(searchValue) || 
+                                details.includes(searchValue) || 
+                                patientInfo.toLowerCase().includes(searchValue);
+                
+                if (isVisible) {
+                    card.style.display = 'flex';
+                    visibleCount++;
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+            
+            // Show/hide search info
+            if (searchValue) {
+                searchInfo.style.display = 'block';
+                searchResults.textContent = `Showing ${visibleCount} result${visibleCount !== 1 ? 's' : ''} for "${searchValue}"`;
+            } else {
+                searchInfo.style.display = 'none';
+            }
+        }
+        
+        function clearCaseSearch() {
+            const searchInput = document.getElementById('caseSearch');
+            const clearButton = document.getElementById('clearSearch');
+            const searchInfo = document.getElementById('searchInfo');
+            const caseCards = document.querySelectorAll('.minimal-case-card');
+            
+            searchInput.value = '';
+            clearButton.style.display = 'none';
+            searchInfo.style.display = 'none';
+            
+            // Show all cases
+            caseCards.forEach(card => {
+                card.style.display = 'flex';
+            });
+        }
+    </script>
 </body>
 </html>
