@@ -1,40 +1,217 @@
-/* Clean Navigation CSS - No Duplicates */
+/* Modern Purple Navigation Design */
+
+/* Custom Purple Color Variables */
+:root {
+    --purple-primary: #7c3aed;
+    --purple-light: #a855f7;
+    --purple-dark: #5b21b6;
+    --purple-glow: rgba(124, 58, 237, 0.4);
+    --purple-bg: rgba(124, 58, 237, 0.1);
+    --purple-border: rgba(124, 58, 237, 0.3);
+}
+
+/* Navigation Bar Styling */
 .navbar {
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    background: linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.95)) !important;
+    backdrop-filter: blur(20px);
+    border-bottom: 2px solid var(--purple-primary);
+    box-shadow: 0 8px 32px rgba(124, 58, 237, 0.2);
+    padding: 1rem 0;
+    position: sticky;
+    top: 0;
+    z-index: 1050;
 }
 
+/* Brand Styling */
 .navbar-brand {
-    font-weight: 600;
-}
-
-.nav-link {
+    font-weight: 700;
+    font-size: 1.3rem;
+    color: var(--purple-light) !important;
+    text-shadow: 0 0 20px var(--purple-glow);
     transition: all 0.3s ease;
 }
 
-.nav-link:hover {
-    background: rgba(255, 255, 255, 0.1);
-    border-radius: 6px;
+.navbar-brand:hover {
+    color: white !important;
+    transform: scale(1.05);
+    text-shadow: 0 0 30px var(--purple-glow);
 }
 
-.nav-link.active {
-    background: var(--bs-primary);
-    border-radius: 6px;
+.navbar-brand i {
+    background: linear-gradient(45deg, var(--purple-primary), var(--purple-light));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    filter: drop-shadow(0 0 10px var(--purple-glow));
+}
+
+/* Navigation Links */
+.navbar-nav .nav-link {
+    color: rgba(255, 255, 255, 0.85) !important;
+    font-weight: 500;
+    padding: 0.75rem 1.5rem;
+    margin: 0 0.25rem;
+    border-radius: 12px;
+    position: relative;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    overflow: hidden;
+}
+
+.navbar-nav .nav-link::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, var(--purple-bg), transparent);
+    transition: left 0.5s ease;
+}
+
+.navbar-nav .nav-link:hover {
+    color: white !important;
+    background: var(--purple-bg);
+    border: 1px solid var(--purple-border);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px var(--purple-glow);
+}
+
+.navbar-nav .nav-link:hover::before {
+    left: 100%;
+}
+
+.navbar-nav .nav-link.active {
+    background: linear-gradient(135deg, var(--purple-primary), var(--purple-dark));
+    color: white !important;
+    border: 1px solid var(--purple-light);
+    box-shadow: 
+        0 0 20px var(--purple-glow),
+        inset 0 1px 0 rgba(255, 255, 255, 0.2);
+    transform: translateY(-1px);
+}
+
+.navbar-nav .nav-link.active::before {
+    display: none;
+}
+
+/* Icons in Navigation */
+.navbar-nav .nav-link i {
+    margin-right: 0.5rem;
+    transition: all 0.3s ease;
+}
+
+.navbar-nav .nav-link:hover i,
+.navbar-nav .nav-link.active i {
+    color: var(--purple-light);
+    text-shadow: 0 0 10px var(--purple-glow);
+}
+
+/* Dropdown Styling */
+.dropdown-toggle {
+    background: var(--purple-bg) !important;
+    border: 1px solid var(--purple-border) !important;
+    color: white !important;
+    border-radius: 12px;
+    padding: 0.75rem 1.25rem;
+    transition: all 0.3s ease;
+}
+
+.dropdown-toggle:hover {
+    background: var(--purple-primary) !important;
+    box-shadow: 0 8px 25px var(--purple-glow);
+    transform: translateY(-2px);
 }
 
 .dropdown-menu {
-    border: 1px solid rgba(255, 255, 255, 0.15);
-    background: rgba(33, 37, 41, 0.95);
-    backdrop-filter: blur(10px);
+    background: rgba(15, 23, 42, 0.95);
+    border: 1px solid var(--purple-border);
+    border-radius: 12px;
+    backdrop-filter: blur(20px);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3), 0 0 20px var(--purple-glow);
+    margin-top: 0.5rem;
+}
+
+.dropdown-item {
+    color: rgba(255, 255, 255, 0.85);
+    padding: 0.75rem 1.25rem;
+    border-radius: 8px;
+    margin: 0.25rem;
+    transition: all 0.3s ease;
 }
 
 .dropdown-item:hover {
-    background: rgba(255, 255, 255, 0.1);
+    background: var(--purple-bg);
+    color: white;
+    border: 1px solid var(--purple-border);
+    transform: translateX(5px);
 }
 
+.dropdown-divider {
+    border-color: var(--purple-border);
+    opacity: 0.5;
+}
+
+.dropdown-header {
+    color: var(--purple-light);
+    font-weight: 600;
+}
+
+/* Mobile Navigation */
 @media (max-width: 991.98px) {
-    .navbar-nav .nav-link {
-        padding: 0.75rem 1rem;
-        margin: 0.25rem 0;
-        border-radius: 6px;
+    .navbar-collapse {
+        background: rgba(15, 23, 42, 0.98);
+        border: 1px solid var(--purple-border);
+        border-radius: 12px;
+        margin-top: 1rem;
+        padding: 1.5rem;
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
     }
+    
+    .navbar-nav .nav-link {
+        margin: 0.5rem 0;
+        padding: 1rem 1.25rem;
+        border-radius: 10px;
+    }
+    
+    .navbar-toggler {
+        border: 1px solid var(--purple-border);
+        padding: 0.5rem;
+        border-radius: 8px;
+    }
+    
+    .navbar-toggler:focus {
+        box-shadow: 0 0 0 2px var(--purple-glow);
+    }
+    
+    .navbar-toggler-icon {
+        background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba%28168, 85, 247, 1%29' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e");
+    }
+}
+
+/* Responsive Design */
+@media (max-width: 576px) {
+    .navbar-brand {
+        font-size: 1.1rem;
+    }
+    
+    .navbar-nav .nav-link {
+        padding: 0.875rem 1rem;
+        font-size: 0.95rem;
+    }
+}
+
+/* Animation for page load */
+@keyframes navSlideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.navbar {
+    animation: navSlideIn 0.6s ease-out;
 }
