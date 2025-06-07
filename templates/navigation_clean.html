@@ -67,7 +67,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const mobileNavToggler = document.getElementById('mobileNavToggler');
     const hamburgerIcon = document.getElementById('hamburgerIcon');
     const navbarContent = document.getElementById('navbarContent');
-    const mobileNavClose = document.getElementById('mobileNavClose');
+
     
     // Profile dropdown animation
     if (dropdown && dropdownMenu) {
@@ -110,16 +110,17 @@ document.addEventListener('DOMContentLoaded', function() {
             toggleMobileNav();
         });
         
-        // Handle close button click
-        if (mobileNavClose) {
-            mobileNavClose.addEventListener('click', function(e) {
-                e.preventDefault();
-                e.stopPropagation();
-                navbarContent.classList.remove('show');
-                hamburgerIcon.classList.remove('active');
-                document.body.style.overflow = '';
+        // Close navigation when clicking on nav links
+        const navLinks = navbarContent.querySelectorAll('.nav-link');
+        navLinks.forEach(link => {
+            link.addEventListener('click', function() {
+                if (window.innerWidth < 992) {
+                    navbarContent.classList.remove('show');
+                    hamburgerIcon.classList.remove('active');
+                    document.body.style.overflow = '';
+                }
             });
-        }
+        });
         
         // Close nav when clicking backdrop
         navbarContent.addEventListener('click', function(e) {
