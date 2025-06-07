@@ -1687,7 +1687,7 @@ function initializeLayoutWithLoading() {
                     <div class="card h-100 border-dashed text-center p-4 layout-placeholder-box" id="placeholder_intraoral_upper">
                         <div class="loading-content">
                             <div class="spinner-border text-success mb-2" role="status"></div>
-                            <p class="mb-0 small">Analyzing Upper Occlusal...</p>
+                            <p class="mb-0 small">Processing Upper...</p>
                         </div>
                     </div>
                 </div>
@@ -1695,7 +1695,7 @@ function initializeLayoutWithLoading() {
                     <div class="card h-100 border-dashed text-center p-4 layout-placeholder-box" id="placeholder_intraoral_lower">
                         <div class="loading-content">
                             <div class="spinner-border text-success mb-2" role="status"></div>
-                            <p class="mb-0 small">Analyzing Lower Occlusal...</p>
+                            <p class="mb-0 small">Processing Lower...</p>
                         </div>
                     </div>
                 </div>
