@@ -2615,96 +2615,23 @@ function initializeCropOverlay() {
         
         if (!cropImage || !cropOverlay) return;
         
-        // Set initial zoom and fit image
-        window.cropZoom = 1;
-        fitImageToContainer();
-        
         // Get image dimensions after it's loaded
         const imageWidth = cropImage.offsetWidth;
         const imageHeight = cropImage.offsetHeight;
         
-        // Start with crop box fitting the full image
-        const margin = 20; // Small margin from edges
-        const startX = margin;
-        const startY = margin;
-        const startWidth = imageWidth - (margin * 2);
-        const startHeight = imageHeight - (margin * 2);
-        
+        // Start with crop box covering the entire image
         cropOverlay.style.display = 'block';
-        cropOverlay.style.left = startX + 'px';
-        cropOverlay.style.top = startY + 'px';
-        cropOverlay.style.width = startWidth + 'px';
-        cropOverlay.style.height = startHeight + 'px';
+        cropOverlay.style.left = '0px';
+        cropOverlay.style.top = '0px';
+        cropOverlay.style.width = imageWidth + 'px';
+        cropOverlay.style.height = imageHeight + 'px';
         
         updateCropRatio();
         setupCropHandlers();
-        setupZoomControls();
     }, 100);
 }
 
-function fitImageToContainer() {
-    const cropImage = document.getElementById('cropImage');
-    const container = cropImage.parentElement;
-    
-    if (!cropImage || !container) return;
-    
-    // Reset transform to get natural dimensions
-    cropImage.style.transform = 'scale(1)';
-    cropImage.style.maxWidth = '100%';
-    cropImage.style.maxHeight = '100%';
-    cropImage.style.width = 'auto';
-    cropImage.style.height = 'auto';
-    
-    window.cropZoom = 1;
-}
 
-function setupZoomControls() {
-    const zoomInBtn = document.getElementById('zoomIn');
-    const zoomOutBtn = document.getElementById('zoomOut');
-    const resetZoomBtn = document.getElementById('resetZoom');
-    const cropImage = document.getElementById('cropImage');
-    
-    if (!zoomInBtn || !zoomOutBtn || !resetZoomBtn || !cropImage) return;
-    
-    // Remove existing listeners
-    zoomInBtn.removeEventListener('click', handleZoomIn);
-    zoomOutBtn.removeEventListener('click', handleZoomOut);
-    resetZoomBtn.removeEventListener('click', handleResetZoom);
-    
-    // Add new listeners
-    zoomInBtn.addEventListener('click', handleZoomIn);
-    zoomOutBtn.addEventListener('click', handleZoomOut);
-    resetZoomBtn.addEventListener('click', handleResetZoom);
-    
-    // Add mouse wheel zoom
-    const container = cropImage.parentElement;
-    container.addEventListener('wheel', function(e) {
-        e.preventDefault();
-        const delta = e.deltaY > 0 ? -0.1 : 0.1;
-        adjustZoom(delta);
-    });
-}
-
-function handleZoomIn() {
-    adjustZoom(0.2);
-}
-
-function handleZoomOut() {
-    adjustZoom(-0.2);
-}
-
-function handleResetZoom() {
-    fitImageToContainer();
-}
-
-function adjustZoom(delta) {
-    const cropImage = document.getElementById('cropImage');
-    if (!cropImage) return;
-    
-    window.cropZoom = Math.max(0.5, Math.min(3, window.cropZoom + delta));
-    cropImage.style.transform = `scale(${window.cropZoom})`;
-    cropImage.style.cursor = window.cropZoom > 1 ? 'move' : 'grab';
-}
 
 function updateCropRatio() {
     const selectedRatioElement = document.querySelector('input[name="cropRatio"]:checked');

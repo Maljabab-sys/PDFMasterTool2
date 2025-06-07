@@ -705,24 +705,11 @@
                         </div>
                     </div>
 
-                    <!-- Zoom Controls -->
-                    <div class="mb-3 text-center">
-                        <div class="btn-group" role="group" aria-label="Zoom controls">
-                            <button type="button" class="btn btn-outline-secondary btn-sm" id="zoomOut">
-                                <i class="bi bi-zoom-out"></i> Zoom Out
-                            </button>
-                            <button type="button" class="btn btn-outline-secondary btn-sm" id="resetZoom">
-                                <i class="bi bi-arrows-fullscreen"></i> Fit
-                            </button>
-                            <button type="button" class="btn btn-outline-secondary btn-sm" id="zoomIn">
-                                <i class="bi bi-zoom-in"></i> Zoom In
-                            </button>
-                        </div>
-                    </div>
+
 
                     <!-- Crop Container -->
                     <div class="crop-container" style="max-height: 400px; overflow: auto; position: relative; background: #000; border: 1px solid #444;">
-                        <img id="cropImage" src="" alt="Image to crop" style="transition: transform 0.2s ease; cursor: grab; user-select: none;">
+                        <img id="cropImage" src="" alt="Image to crop" style="max-width: 100%; max-height: 100%; width: auto; height: auto; user-select: none;">
                         <div id="cropOverlay" style="position: absolute; border: 2px solid #0d6efd; background: rgba(13, 110, 253, 0.1); cursor: move; display: none; box-shadow: 0 0 0 9999px rgba(0,0,0,0.5);">
                             <div class="crop-handle nw-handle" style="position: absolute; top: -6px; left: -6px; width: 12px; height: 12px; background: #0d6efd; cursor: nw-resize; border-radius: 50%; border: 2px solid white;"></div>
                             <div class="crop-handle ne-handle" style="position: absolute; top: -6px; right: -6px; width: 12px; height: 12px; background: #0d6efd; cursor: ne-resize; border-radius: 50%; border: 2px solid white;"></div>
