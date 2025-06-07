@@ -46,8 +46,8 @@ def classify_dental_image(image_path):
         - EXTRAORAL_LEFT: Patient's left side profile view (extraoral) - portrait orientation showing patient's left facial profile and smile from the side
         - EXTRAORAL_RIGHT: Patient's right side profile view (extraoral) - portrait orientation showing patient's right facial profile and smile from the side  
         - EXTRAORAL_FRONT: Frontal facial view (extraoral) - portrait orientation showing patient's face from front, both sides visible, full smile or lips closed
-        - INTRAORAL_LEFT: If molars (large back teeth) are positioned on the LEFT side of the image frame, classify as INTRAORAL_LEFT
-        - INTRAORAL_RIGHT: If molars (large back teeth) are positioned on the RIGHT side of the image frame, classify as INTRAORAL_RIGHT
+        - INTRAORAL_LEFT: If reading the image from left to right shows INCISORS > MOLARS (front teeth on left, back teeth on right), classify as INTRAORAL_LEFT
+        - INTRAORAL_RIGHT: If reading the image from left to right shows MOLARS > INCISORS (back teeth on left, front teeth on right), classify as INTRAORAL_RIGHT
         - INTRAORAL_FRONT: Intraoral frontal view - direct view of front teeth from inside the mouth, showing anterior teeth
         - INTRAORAL_OCCLUSAL: Intraoral top-down or bottom-up view of the bite surface/occlusal plane, showing tooth surfaces
         - OTHER: Individual teeth, X-rays, instruments, or unclear views
@@ -55,17 +55,19 @@ def classify_dental_image(image_path):
         Important distinctions:
         - EXTRAORAL: Shows face/facial features in portrait orientation, taken from outside the mouth, usually showing full face or profile
         - INTRAORAL: Shows teeth/gums directly, taken from inside the mouth with dental instruments, closer view of oral structures
-        - CRITICAL RULE FOR LEFT/RIGHT: Look at the image frame like a photograph - if molars are on the RIGHT side of the photo, classify as INTRAORAL_RIGHT. If molars are on the LEFT side of the photo, classify as INTRAORAL_LEFT.
-        - Molars are the large, broad back teeth - they determine the classification
+        - CRITICAL RULE FOR LEFT/RIGHT: Read the image from left to right like text:
+          * If INCISORS > MOLARS (front teeth on left, back teeth on right) = INTRAORAL_LEFT
+          * If MOLARS > INCISORS (back teeth on left, front teeth on right) = INTRAORAL_RIGHT
+        - Incisors are small, narrow front teeth; Molars are large, broad back teeth
         - Only classify ONE image as left and ONE as right per batch
         - Extraoral photos are portrait orientation (taller than wide)
-        - Focus on visual positioning in the image frame, not dental anatomy
+        - Focus on tooth sequence from left to right in the image frame
 
         Respond with JSON in this exact format:
         {
             "classification": "extraoral_left|extraoral_right|extraoral_front|intraoral_left|intraoral_right|intraoral_front|intraoral_occlusal|other",
             "confidence": 0.85,
-            "reasoning": "Brief explanation focusing on molar positioning in image frame, portrait/landscape orientation, and intraoral vs extraoral distinction"
+            "reasoning": "Brief explanation focusing on tooth sequence from left to right (incisors vs molars positioning), portrait/landscape orientation, and intraoral vs extraoral distinction"
         }
         """
 
