@@ -2234,28 +2234,27 @@ function updatePlaceholderWithDirectImage(placeholderId, file) {
         const containerWidth = placeholder.offsetWidth;
         const imageAspectRatio = this.naturalWidth / this.naturalHeight;
         
-        // Calculate optimal container dimensions for tight border fit
+        // Calculate container dimensions to fit image's natural aspect ratio
         const isMobile = window.innerWidth <= 768;
-        const isUpperLower = file.classification.includes('upper') || file.classification.includes('lower');
         
-        let containerHeight;
-        
+        let effectiveAspectRatio;
         if (isExtraoral) {
-            // For extraoral images (rotated), use consistent portrait dimensions
-            containerHeight = isMobile ? 150 : 200;
-        } else if (isUpperLower) {
-            // Upper/lower jaw images: smaller, more square dimensions
-            containerHeight = isMobile ? 100 : 140;
+            // For extraoral images (rotated 90 degrees), swap width/height ratio
+            effectiveAspectRatio = 1 / imageAspectRatio;
         } else {
-            // Regular intraoral: landscape dimensions
-            const effectiveAspectRatio = imageAspectRatio;
-            containerHeight = containerWidth / effectiveAspectRatio;
-            const maxHeight = isMobile ? 120 : 160;
-            const minHeight = isMobile ? 80 : 100;
-            containerHeight = Math.max(minHeight, Math.min(maxHeight, containerHeight));
+            // For intraoral images, use original aspect ratio
+            effectiveAspectRatio = imageAspectRatio;
         }
         
-        // Update placeholder to fit image tightly
+        // Calculate height based on container width and image aspect ratio
+        let containerHeight = containerWidth / effectiveAspectRatio;
+        
+        // Apply reasonable limits to prevent extreme sizes
+        const maxHeight = isMobile ? 250 : 350;
+        const minHeight = isMobile ? 60 : 80;
+        containerHeight = Math.max(minHeight, Math.min(maxHeight, containerHeight));
+        
+        // Update placeholder to match image dimensions exactly
         placeholder.style.height = `${containerHeight}px`;
         placeholder.style.minHeight = `${containerHeight}px`;
     };
@@ -2495,21 +2494,19 @@ function refreshLayoutResponsiveness() {
             tempImg.onload = function() {
                 const containerWidth = placeholder.offsetWidth;
                 const imageAspectRatio = this.naturalWidth / this.naturalHeight;
-                const effectiveAspectRatio = isExtraoral ? (1 / imageAspectRatio) : imageAspectRatio;
+                
+                let effectiveAspectRatio;
+                if (isExtraoral) {
+                    effectiveAspectRatio = 1 / imageAspectRatio;
+                } else {
+                    effectiveAspectRatio = imageAspectRatio;
+                }
+                
                 let containerHeight = containerWidth / effectiveAspectRatio;
                 
-                const isUpperLower = img.src.includes('upper') || img.src.includes('lower') || 
-                                   img.classList.contains('upper') || img.classList.contains('lower');
-                
-                if (isExtraoral) {
-                    containerHeight = isMobile ? 150 : 200;
-                } else if (isUpperLower) {
-                    containerHeight = isMobile ? 100 : 140;
-                } else {
-                    const maxHeight = isMobile ? 120 : 160;
-                    const minHeight = isMobile ? 80 : 100;
-                    containerHeight = Math.max(minHeight, Math.min(maxHeight, containerHeight));
-                }
+                const maxHeight = isMobile ? 250 : 350;
+                const minHeight = isMobile ? 60 : 80;
+                containerHeight = Math.max(minHeight, Math.min(maxHeight, containerHeight));
                 
                 placeholder.style.height = `${containerHeight}px`;
                 placeholder.style.minHeight = `${containerHeight}px`;
