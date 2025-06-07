@@ -1333,11 +1333,7 @@ def bulk_upload_categorize():
                 file.save(filepath)
                 
                 # Optimize the image
-                optimized_path = optimize_image_for_pdf(filepath)
-                if optimized_path != filepath:
-                    os.remove(filepath)
-                    filepath = optimized_path
-                    unique_filename = os.path.basename(optimized_path)
+                optimize_image_for_pdf(filepath)
                 
                 file_paths.append(filepath)
                 uploaded_files.append({
