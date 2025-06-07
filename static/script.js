@@ -409,22 +409,30 @@ function initializeNavigation() {
     const navbarCollapse = document.querySelector('.navbar-collapse');
     
     if (navbarToggler && navbarCollapse) {
-        // Disable Bootstrap's default collapse behavior
-        navbarToggler.removeAttribute('data-bs-toggle');
-        navbarToggler.removeAttribute('data-bs-target');
+        console.log('Navigation elements found, initializing...');
+        
+        // Ensure initial state is correct
+        navbarToggler.setAttribute('aria-expanded', 'false');
+        navbarToggler.classList.add('collapsed');
+        navbarCollapse.classList.remove('show');
         
         // Handle navbar toggle clicks manually
         navbarToggler.addEventListener('click', function(e) {
             e.preventDefault();
+            e.stopPropagation();
+            
+            console.log('Hamburger clicked');
             const isExpanded = this.getAttribute('aria-expanded') === 'true';
             
             if (!isExpanded) {
+                console.log('Opening navigation');
                 // Open navigation
                 this.setAttribute('aria-expanded', 'true');
                 this.classList.remove('collapsed');
                 navbarCollapse.classList.add('show');
                 document.body.style.overflow = 'hidden';
             } else {
+                console.log('Closing navigation');
                 // Close navigation
                 closeMobileNav();
             }
@@ -446,6 +454,8 @@ function initializeNavigation() {
                 }
             });
         });
+    } else {
+        console.log('Navigation elements not found');
     }
 }
 
