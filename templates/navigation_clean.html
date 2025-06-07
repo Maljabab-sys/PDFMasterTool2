@@ -62,10 +62,10 @@ document.addEventListener('DOMContentLoaded', function() {
             // Add hiding class for fade-out animation
             dropdownMenu.classList.add('hiding');
             
-            // Remove show class after animation
+            // Remove show class after animation (300ms to match CSS)
             setTimeout(() => {
                 dropdownMenu.classList.remove('show', 'hiding');
-            }, 200);
+            }, 300);
         });
         
         dropdown.addEventListener('show.bs.dropdown', function() {

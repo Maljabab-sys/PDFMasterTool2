@@ -123,7 +123,17 @@
 .dropdown-menu.hiding {
     opacity: 0;
     transform: translateY(-10px) scale(0.95);
-    transition: opacity 0.2s ease-in, transform 0.2s ease-in;
+    transition: opacity 0.3s cubic-bezier(0.4, 0.0, 0.2, 1), transform 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
+}
+
+/* Fade out items when dropdown is hiding */
+.dropdown-menu.hiding .dropdown-item,
+.dropdown-menu.hiding .dropdown-header,
+.dropdown-menu.hiding .dropdown-item-text,
+.dropdown-menu.hiding .dropdown-divider {
+    opacity: 0;
+    transform: translateX(-10px);
+    transition: opacity 0.25s ease-out, transform 0.25s ease-out;
 }
 
 .dropdown-item {
