@@ -40,26 +40,30 @@ def classify_dental_image(image_path):
         
         # Create prompt for dental image classification
         prompt = """
-        You are a dental AI assistant. Categorize the input image into one of the following classes. Use facial orientation, expression, and intraoral visibility to determine the correct category. Only choose one label.
+        You are a dental AI assistant. Your job is to categorize the image accurately into one of the following labels. Use clear anatomical cues to distinguish left from right. Do not guess — choose the best label only if confident.
 
-        Categories:
-        1. Extraoral_frontal_view — Full face from the front, not smiling.
-        2. Extraoral_right_view — Full face from the right side, not smiling.
-        3. Extraoral_smiling_view — Full face from the front, smiling.
-        4. Extraoral_teeth_smile_view — Close-up of mouth/teeth while smiling (no full face).
-        5. Intraoral_frontal_view — Teeth from the front inside the mouth.
-        6. Intraoral_right_view — Right-side teeth view (no mirror used).
-        7. Intraoral_left_view — Left-side teeth view (no mirror used).
-        8. Intraoral_upper_occlusal_view — Occlusal (biting surface) view of the upper teeth (maxilla).
-        9. Intraoral_lower_occlusal_view — Occlusal (biting surface) view of the lower teeth (mandible).
-
-        Carefully analyze the image and assign the most accurate label from the list above.
+        Categories and Definitions:
+        1. Extraoral_frontal_view — Full face from front, no smile.
+        2. Extraoral_right_view — Full face from patient's right side, no smile.
+        3. Extraoral_smiling_view — Full face from front, smiling.
+        4. Extraoral_teeth_smile_view — Cropped to mouth/teeth while smiling (not full face).
+        5. Intraoral_frontal_view — Teeth viewed from front inside the mouth (incisors centered).
+        6. Intraoral_right_view — Patient's right-side posterior teeth.
+           • Molars and premolars from the patient's right side.
+           • Buccal surface of the upper right molars visible.
+           • No mirror artifacts or reversed images.
+        7. Intraoral_left_view — Patient's left-side posterior teeth.
+           • Molars and premolars from the patient's left side.
+           • Buccal surface of the upper left molars visible.
+           • No mirror artifacts or reversed images.
+        8. Intraoral_upper_occlusal_view — Occlusal (biting surface) view of the upper jaw (maxilla), clearly showing both arches.
+        9. Intraoral_lower_occlusal_view — Occlusal (biting surface) view of the lower jaw (mandible), clearly showing both arches.
 
         Respond with JSON in this exact format:
         {
             "classification": "extraoral_frontal_view|extraoral_right_view|extraoral_smiling_view|extraoral_teeth_smile_view|intraoral_frontal_view|intraoral_right_view|intraoral_left_view|intraoral_upper_occlusal_view|intraoral_lower_occlusal_view",
             "confidence": 0.85,
-            "reasoning": "Brief explanation of the view type and key visual features that led to this classification"
+            "reasoning": "Brief explanation of anatomical features and positioning that led to this classification"
         }
         """
 
