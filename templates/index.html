@@ -456,15 +456,15 @@
     {% include 'navigation.html' %}
 
     <div class="container my-4">
-        <!-- New Case Section -->
-        <div id="new-case-section" class="section">
+        <!-- Reports Section -->
+        <div id="reports-section" class="section">
             <!-- Header -->
             <div class="text-center mb-4">
                 <h1 class="display-5 fw-bold mb-2">
-                    <i class="bi bi-file-medical text-primary me-2"></i>
-                    Medical Case Manager
+                    <i class="bi bi-bar-chart text-primary me-2"></i>
+                    Reports Dashboard
                 </h1>
-                <p class="lead text-muted">All your cases extremely well presented 😉</p>
+                <p class="lead text-muted">View analytics and reports for your medical cases</p>
             </div>
 
         <!-- Flash Messages -->
@@ -484,14 +484,223 @@
             {% endif %}
         {% endwith %}
 
-        <!-- Main Form -->
-        <div class="row justify-content-center">
-            <div class="col-lg-8">
-                <div class="card shadow-sm">
-                    <div class="card-body p-4">
-                        <form id="slideForm" method="POST" action="{{ url_for('upload_files') }}" enctype="multipart/form-data">
-                            <!-- Visit Type Selection -->
-                            <div class="mb-4">
+        <!-- Reports Dashboard -->
+        <div class="row">
+            <!-- Statistics Cards -->
+            <div class="col-md-3 mb-4">
+                <div class="card bg-primary text-white">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between">
+                            <div>
+                                <h3 class="fw-bold mb-1" id="totalCases">0</h3>
+                                <p class="mb-0">Total Cases</p>
+                            </div>
+                            <i class="bi bi-file-medical display-6"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 mb-4">
+                <div class="card bg-success text-white">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between">
+                            <div>
+                                <h3 class="fw-bold mb-1" id="totalPatients">0</h3>
+                                <p class="mb-0">Total Patients</p>
+                            </div>
+                            <i class="bi bi-people display-6"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 mb-4">
+                <div class="card bg-info text-white">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between">
+                            <div>
+                                <h3 class="fw-bold mb-1" id="thisMonth">0</h3>
+                                <p class="mb-0">This Month</p>
+                            </div>
+                            <i class="bi bi-calendar-month display-6"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 mb-4">
+                <div class="card bg-warning text-white">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between">
+                            <div>
+                                <h3 class="fw-bold mb-1" id="activePatients">0</h3>
+                                <p class="mb-0">Active Patients</p>
+                            </div>
+                            <i class="bi bi-person-check display-6"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Charts Row -->
+        <div class="row">
+            <div class="col-md-8 mb-4">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">Cases by Visit Type</h5>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="visitTypeChart" width="400" height="200"></canvas>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 mb-4">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">Clinic Distribution</h5>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="clinicChart" width="200" height="200"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Recent Activity -->
+        <div class="row">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">Recent Cases</h5>
+                        <a href="{{ url_for('cases') }}" class="btn btn-sm btn-outline-primary">View All</a>
+                    </div>
+                    <div class="card-body">
+                        <div id="recentCasesTable">
+                            <div class="text-center text-muted py-4">
+                                <i class="bi bi-clock-history display-4 mb-3"></i>
+                                <p>Loading recent cases...</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Chart.js Library -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- Load Dashboard Data -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            loadDashboardData();
+        });
+        
+        function loadDashboardData() {
+            // Load statistics
+            fetch('/api/cases')
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('totalCases').textContent = data.length;
+                    
+                    const thisMonth = new Date().getMonth();
+                    const thisMonthCases = data.filter(case_ => {
+                        const caseDate = new Date(case_.created_at);
+                        return caseDate.getMonth() === thisMonth;
+                    });
+                    document.getElementById('thisMonth').textContent = thisMonthCases.length;
+                    
+                    // Update charts
+                    updateVisitTypeChart(data);
+                    updateRecentCases(data.slice(0, 5));
+                })
+                .catch(error => console.error('Error loading cases:', error));
+            
+            // Load patients
+            fetch('/api/patients')
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('totalPatients').textContent = data.length;
+                    document.getElementById('activePatients').textContent = data.filter(p => p.cases_count > 0).length;
+                    updateClinicChart(data);
+                })
+                .catch(error => console.error('Error loading patients:', error));
+        }
+        
+        function updateVisitTypeChart(cases) {
+            const ctx = document.getElementById('visitTypeChart').getContext('2d');
+            const visitTypes = {};
+            cases.forEach(case_ => {
+                visitTypes[case_.visit_type] = (visitTypes[case_.visit_type] || 0) + 1;
+            });
+            
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: Object.keys(visitTypes),
+                    datasets: [{
+                        label: 'Number of Cases',
+                        data: Object.values(visitTypes),
+                        backgroundColor: ['#0d6efd', '#198754', '#ffc107']
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        }
+        
+        function updateClinicChart(patients) {
+            const ctx = document.getElementById('clinicChart').getContext('2d');
+            const clinics = {};
+            patients.forEach(patient => {
+                clinics[patient.clinic] = (clinics[patient.clinic] || 0) + 1;
+            });
+            
+            new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: Object.keys(clinics),
+                    datasets: [{
+                        data: Object.values(clinics),
+                        backgroundColor: ['#0d6efd', '#198754']
+                    }]
+                },
+                options: {
+                    responsive: true
+                }
+            });
+        }
+        
+        function updateRecentCases(cases) {
+            const container = document.getElementById('recentCasesTable');
+            if (cases.length === 0) {
+                container.innerHTML = '<div class="text-center text-muted py-4"><p>No recent cases found</p></div>';
+                return;
+            }
+            
+            let html = '<div class="table-responsive"><table class="table table-hover"><thead><tr><th>Case Title</th><th>Visit Type</th><th>Created</th><th>Actions</th></tr></thead><tbody>';
+            cases.forEach(case_ => {
+                const date = new Date(case_.created_at).toLocaleDateString();
+                html += `
+                    <tr>
+                        <td>${case_.title}</td>
+                        <td><span class="badge bg-primary">${case_.visit_type}</span></td>
+                        <td>${date}</td>
+                        <td><a href="/case/${case_.id}" class="btn btn-sm btn-outline-primary">View</a></td>
+                    </tr>
+                `;
+            });
+            html += '</tbody></table></div>';
+            container.innerHTML = html;
+        }
+    </script>
+</body>
+</html>
                                 <label for="visitType" class="form-label fw-semibold">
                                     <i class="bi bi-calendar-check me-2"></i>Visit Type *
                                 </label>
