@@ -724,10 +724,14 @@ document.addEventListener('DOMContentLoaded', function() {
 // Settings functionality
 function loadUserSettings() {
     fetch('/api/user-settings')
-        .then(response => response.json())
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}`);
+            }
+            return response.json();
+        })
         .then(data => {
-            // Handle both nested and flat data structure
-            const settings = data.settings || data;
+            console.log('Settings loaded:', data);
             
             // Populate form fields
             const fullNameField = document.getElementById('fullName');
@@ -735,37 +739,39 @@ function loadUserSettings() {
             const positionField = document.getElementById('position');
             const genderField = document.getElementById('gender');
             
-            if (fullNameField) fullNameField.value = settings.full_name || '';
-            if (emailField) emailField.value = settings.email || '';
-            if (positionField) positionField.value = settings.position || '';
-            if (genderField) genderField.value = settings.gender || '';
+            if (fullNameField) fullNameField.value = data.full_name || '';
+            if (emailField) emailField.value = data.email || '';
+            if (positionField) positionField.value = data.position || '';
+            if (genderField) genderField.value = data.gender || '';
             
-            // Load clinic checkboxes
-            loadUserClinics(settings.clinics || ['KFMC', 'DC']);
+            // Load clinic list with delete buttons
+            loadUserClinics(data.clinics || ['KFMC', 'DC']);
             
             // Load profile image if exists
-            if (settings.profile_image) {
+            if (data.profile_image) {
                 const preview = document.getElementById('profilePreview');
                 const placeholder = document.getElementById('profilePlaceholder');
                 
                 if (preview && placeholder) {
-                    preview.src = settings.profile_image;
+                    preview.src = data.profile_image;
                     preview.style.display = 'block';
                     placeholder.style.display = 'none';
                 }
                 
                 // Update navigation profile image
-                updateNavProfileImage(settings.profile_image, settings.gender);
+                updateNavProfileImage(data.profile_image, data.gender);
             } else {
                 // No image, use gender-based icon
-                updateNavProfileImage(null, settings.gender || '');
+                updateNavProfileImage(null, data.gender || '');
             }
             
             // Update clinic dropdown in registration form
-            updateClinicDropdown(settings.clinics || ['KFMC', 'DC']);
+            updateClinicDropdown(data.clinics || ['KFMC', 'DC']);
         })
         .catch(error => {
             console.error('Error loading settings:', error);
+            // Load default clinics if API fails
+            loadUserClinics(['KFMC', 'DC']);
         });
 }
 
