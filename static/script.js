@@ -2049,3 +2049,253 @@ function assignToCategory(filename, classification) {
         alert(`Please manually assign this ${classification} image to the appropriate field`);
     }
 }
+
+// Direct upload functionality for guide boxes
+function triggerFileUpload(category) {
+    const fileInput = document.getElementById(`upload_${category}`);
+    if (fileInput) {
+        fileInput.click();
+    }
+}
+
+function handleDirectUpload(input, classification) {
+    const file = input.files[0];
+    if (!file) return;
+    
+    const placeholderId = getPlaceholderIdFromClassification(classification);
+    const placeholder = document.getElementById(placeholderId);
+    
+    if (!placeholder) return;
+    
+    // Show loading state
+    showUploadingState(placeholder);
+    
+    // Create form data and upload
+    const formData = new FormData();
+    formData.append('files', file);
+    
+    fetch('/upload_files', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success && data.filenames.length > 0) {
+            // Create file object for display
+            const fileObj = {
+                filename: data.filenames[0],
+                original_name: file.name,
+                classification: classification,
+                confidence: 0.95 // High confidence for direct placement
+            };
+            
+            // Update placeholder with uploaded image
+            updatePlaceholderWithDirectImage(placeholderId, fileObj);
+        } else {
+            showUploadError(placeholder, 'Upload failed');
+        }
+    })
+    .catch(error => {
+        console.error('Upload error:', error);
+        showUploadError(placeholder, 'Upload error');
+    });
+}
+
+function getPlaceholderIdFromClassification(classification) {
+    const mappings = {
+        'extraoral_right_view': 'placeholder_extraoral_right',
+        'extraoral_frontal_view': 'placeholder_extraoral_frontal',
+        'extraoral_smiling_view': 'placeholder_extraoral_smiling',
+        'intraoral_right_view': 'placeholder_intraoral_right',
+        'intraoral_frontal_view': 'placeholder_intraoral_frontal',
+        'intraoral_left_view': 'placeholder_intraoral_left',
+        'intraoral_upper_occlusal_view': 'placeholder_intraoral_upper',
+        'intraoral_lower_occlusal_view': 'placeholder_intraoral_lower'
+    };
+    return mappings[classification];
+}
+
+function showUploadingState(placeholder) {
+    placeholder.innerHTML = `
+        <div class="loading-content d-flex flex-column align-items-center justify-content-center h-100">
+            <div class="spinner-border text-primary mb-2" role="status"></div>
+            <div class="small text-primary">Uploading...</div>
+        </div>
+    `;
+}
+
+function updatePlaceholderWithDirectImage(placeholderId, file) {
+    const placeholder = document.getElementById(placeholderId);
+    if (!placeholder) return;
+    
+    const confidenceColor = getConfidenceColor(file.confidence);
+    const isExtraoral = file.classification.startsWith('extraoral');
+    const isMobile = window.innerWidth <= 768;
+    
+    const imageStyle = isExtraoral 
+        ? `height: ${isMobile ? '100px' : '150px'}; width: ${isMobile ? '80px' : '100px'}; object-fit: cover; cursor: pointer; margin: 0 auto; display: block; transform: rotate(-90deg);` 
+        : `height: ${isMobile ? '80px' : '120px'}; width: 100%; object-fit: cover; cursor: pointer;`;
+    
+    // Animate the transition
+    placeholder.style.transition = 'all 0.3s ease';
+    placeholder.classList.remove('border-dashed');
+    placeholder.classList.add('border-success');
+    
+    placeholder.innerHTML = `
+        <div class="position-relative d-flex justify-content-center">
+            <img src="/uploads/${file.filename}" alt="${file.original_name}" class="layout-img" style="${imageStyle}" onclick="showImageModal('/uploads/${file.filename}', '${file.original_name}', '${file.classification}')">
+            <span class="badge ${confidenceColor} position-absolute top-0 end-0 m-1">
+                ${Math.round(file.confidence * 100)}%
+            </span>
+            <button class="btn btn-sm btn-outline-danger position-absolute top-0 start-0 m-1" onclick="removeDirectImage('${placeholderId}')">
+                <i class="bi bi-x"></i>
+            </button>
+        </div>
+        <div class="p-2">
+            <div class="mb-2">
+                <small class="text-muted text-truncate d-block" title="${file.original_name}">
+                    ${file.original_name.length > 15 ? file.original_name.substring(0, 15) + '...' : file.original_name}
+                </small>
+            </div>
+            <button class="btn btn-success btn-sm w-100" onclick="addImageToCase('${file.filename}', '${file.original_name}', '${file.classification}')">
+                <i class="bi bi-plus me-1"></i>Add to Case
+            </button>
+        </div>
+    `;
+    
+    // Animate appearance
+    placeholder.style.opacity = '0';
+    placeholder.style.transform = 'scale(0.8)';
+    setTimeout(() => {
+        placeholder.style.opacity = '1';
+        placeholder.style.transform = 'scale(1)';
+    }, 100);
+}
+
+function removeDirectImage(placeholderId) {
+    const placeholder = document.getElementById(placeholderId);
+    if (!placeholder) return;
+    
+    // Get the original category name
+    const categoryMap = {
+        'placeholder_extraoral_right': 'extraoral_right',
+        'placeholder_extraoral_frontal': 'extraoral_frontal',
+        'placeholder_extraoral_smiling': 'extraoral_smiling',
+        'placeholder_intraoral_right': 'intraoral_right',
+        'placeholder_intraoral_frontal': 'intraoral_frontal',
+        'placeholder_intraoral_left': 'intraoral_left',
+        'placeholder_intraoral_upper': 'intraoral_upper',
+        'placeholder_intraoral_lower': 'intraoral_lower'
+    };
+    
+    const category = categoryMap[placeholderId];
+    
+    // Reset to original state
+    resetPlaceholderToOriginal(placeholder, category);
+}
+
+function resetPlaceholderToOriginal(placeholder, category) {
+    const iconMap = {
+        'extraoral_right': 'bi-person',
+        'extraoral_frontal': 'bi-person',
+        'extraoral_smiling': 'bi-emoji-smile',
+        'intraoral_right': 'bi-arrow-right',
+        'intraoral_frontal': 'bi-circle',
+        'intraoral_left': 'bi-arrow-left',
+        'intraoral_upper': 'bi-arrow-up',
+        'intraoral_lower': 'bi-arrow-down'
+    };
+    
+    const labelMap = {
+        'extraoral_right': 'Right Side',
+        'extraoral_frontal': 'Frontal',
+        'extraoral_smiling': 'Smiling',
+        'intraoral_right': 'Right Side',
+        'intraoral_frontal': 'Frontal',
+        'intraoral_left': 'Left Side',
+        'intraoral_upper': 'Upper Occlusal',
+        'intraoral_lower': 'Lower Occlusal'
+    };
+    
+    const isOcclusal = category.includes('upper') || category.includes('lower');
+    const minHeight = isOcclusal ? '100px' : '120px';
+    const iconSize = isOcclusal ? '1.2rem' : '1.5rem';
+    
+    placeholder.className = 'layout-placeholder-box text-center p-3 border border-dashed rounded bg-light position-relative';
+    placeholder.style.cssText = `min-height: ${minHeight}; cursor: pointer;`;
+    placeholder.setAttribute('onclick', `triggerFileUpload('${category}')`);
+    
+    placeholder.innerHTML = `
+        <div class="loading-content d-flex flex-column align-items-center justify-content-center h-100">
+            <i class="${iconMap[category]} text-muted" style="font-size: ${iconSize};"></i>
+            <div class="small text-muted mt-1">${labelMap[category]}</div>
+            <div class="small text-info mt-1">Click to upload</div>
+        </div>
+        <input type="file" id="upload_${category}" class="d-none" accept="image/*" onchange="handleDirectUpload(this, '${getClassificationFromCategory(category)}')">
+    `;
+}
+
+function getClassificationFromCategory(category) {
+    const mappings = {
+        'extraoral_right': 'extraoral_right_view',
+        'extraoral_frontal': 'extraoral_frontal_view',
+        'extraoral_smiling': 'extraoral_smiling_view',
+        'intraoral_right': 'intraoral_right_view',
+        'intraoral_frontal': 'intraoral_frontal_view',
+        'intraoral_left': 'intraoral_left_view',
+        'intraoral_upper': 'intraoral_upper_occlusal_view',
+        'intraoral_lower': 'intraoral_lower_occlusal_view'
+    };
+    return mappings[category];
+}
+
+function showUploadError(placeholder, message) {
+    placeholder.innerHTML = `
+        <div class="loading-content d-flex flex-column align-items-center justify-content-center h-100">
+            <i class="bi bi-exclamation-triangle text-danger" style="font-size: 1.5rem;"></i>
+            <div class="small text-danger mt-1">${message}</div>
+            <button class="btn btn-sm btn-outline-secondary mt-2" onclick="location.reload()">
+                <i class="bi bi-arrow-clockwise me-1"></i>Retry
+            </button>
+        </div>
+    `;
+}
+
+function addImageToCase(filename, originalName, classification) {
+    // Add image to the main case form - look for existing image container
+    let imageContainer = document.getElementById('imageContainer');
+    
+    // If no container exists, create one
+    if (!imageContainer) {
+        imageContainer = document.createElement('div');
+        imageContainer.id = 'imageContainer';
+        imageContainer.className = 'mt-3';
+        
+        // Insert after the layout guide
+        const layoutGuide = document.getElementById('layoutGuide');
+        if (layoutGuide) {
+            layoutGuide.parentNode.insertBefore(imageContainer, layoutGuide.nextSibling);
+        }
+    }
+    
+    const imageDiv = document.createElement('div');
+    imageDiv.className = 'image-upload-item mb-3 p-3 border rounded bg-light';
+    imageDiv.innerHTML = `
+        <div class="d-flex align-items-center">
+            <img src="/uploads/${filename}" alt="${originalName}" class="me-3" style="width: 60px; height: 60px; object-fit: cover; border-radius: 0.375rem;">
+            <div class="flex-grow-1">
+                <h6 class="mb-1">${originalName}</h6>
+                <small class="text-muted">${classification.replace(/_/g, ' ').replace(/view/g, 'View')}</small>
+            </div>
+            <button type="button" class="btn btn-sm btn-outline-danger" onclick="this.parentElement.parentElement.remove()">
+                <i class="bi bi-trash"></i>
+            </button>
+        </div>
+        <input type="hidden" name="image_files" value="${filename}">
+    `;
+    
+    imageContainer.appendChild(imageDiv);
+    
+    // Show success message
+    showSuccessPopup(`Added ${originalName} to case`);
+}

@@ -294,21 +294,33 @@
                                     <h6 class="text-primary small mb-2">📸 Extraoral Views</h6>
                                     <div class="row g-2">
                                         <div class="col-4">
-                                            <div class="template-placeholder text-center p-3 border border-dashed rounded bg-light">
-                                                <i class="bi bi-person text-muted"></i>
-                                                <div class="small text-muted mt-1">Right Side</div>
+                                            <div id="placeholder_extraoral_right" class="layout-placeholder-box text-center p-3 border border-dashed rounded bg-light position-relative" style="min-height: 120px; cursor: pointer;" onclick="triggerFileUpload('extraoral_right')">
+                                                <div class="loading-content d-flex flex-column align-items-center justify-content-center h-100">
+                                                    <i class="bi bi-person text-muted" style="font-size: 1.5rem;"></i>
+                                                    <div class="small text-muted mt-1">Right Side</div>
+                                                    <div class="small text-info mt-1">Click to upload</div>
+                                                </div>
+                                                <input type="file" id="upload_extraoral_right" class="d-none" accept="image/*" onchange="handleDirectUpload(this, 'extraoral_right_view')">
                                             </div>
                                         </div>
                                         <div class="col-4">
-                                            <div class="template-placeholder text-center p-3 border border-dashed rounded bg-light">
-                                                <i class="bi bi-person text-muted"></i>
-                                                <div class="small text-muted mt-1">Frontal</div>
+                                            <div id="placeholder_extraoral_frontal" class="layout-placeholder-box text-center p-3 border border-dashed rounded bg-light position-relative" style="min-height: 120px; cursor: pointer;" onclick="triggerFileUpload('extraoral_frontal')">
+                                                <div class="loading-content d-flex flex-column align-items-center justify-content-center h-100">
+                                                    <i class="bi bi-person text-muted" style="font-size: 1.5rem;"></i>
+                                                    <div class="small text-muted mt-1">Frontal</div>
+                                                    <div class="small text-info mt-1">Click to upload</div>
+                                                </div>
+                                                <input type="file" id="upload_extraoral_frontal" class="d-none" accept="image/*" onchange="handleDirectUpload(this, 'extraoral_frontal_view')">
                                             </div>
                                         </div>
                                         <div class="col-4">
-                                            <div class="template-placeholder text-center p-3 border border-dashed rounded bg-light">
-                                                <i class="bi bi-emoji-smile text-muted"></i>
-                                                <div class="small text-muted mt-1">Smiling</div>
+                                            <div id="placeholder_extraoral_smiling" class="layout-placeholder-box text-center p-3 border border-dashed rounded bg-light position-relative" style="min-height: 120px; cursor: pointer;" onclick="triggerFileUpload('extraoral_smiling')">
+                                                <div class="loading-content d-flex flex-column align-items-center justify-content-center h-100">
+                                                    <i class="bi bi-emoji-smile text-muted" style="font-size: 1.5rem;"></i>
+                                                    <div class="small text-muted mt-1">Smiling</div>
+                                                    <div class="small text-info mt-1">Click to upload</div>
+                                                </div>
+                                                <input type="file" id="upload_extraoral_smiling" class="d-none" accept="image/*" onchange="handleDirectUpload(this, 'extraoral_smiling_view')">
                                             </div>
                                         </div>
                                     </div>
@@ -319,43 +331,59 @@
                                     <h6 class="text-success small mb-2">🦷 Intraoral Views</h6>
                                     <div class="row g-2 mb-2">
                                         <div class="col-4">
-                                            <div class="template-placeholder text-center p-3 border border-dashed rounded bg-light">
-                                                <i class="bi bi-arrow-right text-muted"></i>
-                                                <div class="small text-muted mt-1">Right Side</div>
+                                            <div id="placeholder_intraoral_right" class="layout-placeholder-box text-center p-3 border border-dashed rounded bg-light position-relative" style="min-height: 120px; cursor: pointer;" onclick="triggerFileUpload('intraoral_right')">
+                                                <div class="loading-content d-flex flex-column align-items-center justify-content-center h-100">
+                                                    <i class="bi bi-arrow-right text-muted" style="font-size: 1.5rem;"></i>
+                                                    <div class="small text-muted mt-1">Right Side</div>
+                                                    <div class="small text-info mt-1">Click to upload</div>
+                                                </div>
+                                                <input type="file" id="upload_intraoral_right" class="d-none" accept="image/*" onchange="handleDirectUpload(this, 'intraoral_right_view')">
                                             </div>
                                         </div>
                                         <div class="col-4">
-                                            <div class="template-placeholder text-center p-3 border border-dashed rounded bg-light">
-                                                <i class="bi bi-circle text-muted"></i>
-                                                <div class="small text-muted mt-1">Frontal</div>
+                                            <div id="placeholder_intraoral_frontal" class="layout-placeholder-box text-center p-3 border border-dashed rounded bg-light position-relative" style="min-height: 120px; cursor: pointer;" onclick="triggerFileUpload('intraoral_frontal')">
+                                                <div class="loading-content d-flex flex-column align-items-center justify-content-center h-100">
+                                                    <i class="bi bi-circle text-muted" style="font-size: 1.5rem;"></i>
+                                                    <div class="small text-muted mt-1">Frontal</div>
+                                                    <div class="small text-info mt-1">Click to upload</div>
+                                                </div>
+                                                <input type="file" id="upload_intraoral_frontal" class="d-none" accept="image/*" onchange="handleDirectUpload(this, 'intraoral_frontal_view')">
                                             </div>
                                         </div>
                                         <div class="col-4">
-                                            <div class="template-placeholder text-center p-3 border border-dashed rounded bg-light">
-                                                <i class="bi bi-arrow-left text-muted"></i>
-                                                <div class="small text-muted mt-1">Left Side</div>
+                                            <div id="placeholder_intraoral_left" class="layout-placeholder-box text-center p-3 border border-dashed rounded bg-light position-relative" style="min-height: 120px; cursor: pointer;" onclick="triggerFileUpload('intraoral_left')">
+                                                <div class="loading-content d-flex flex-column align-items-center justify-content-center h-100">
+                                                    <i class="bi bi-arrow-left text-muted" style="font-size: 1.5rem;"></i>
+                                                    <div class="small text-muted mt-1">Left Side</div>
+                                                    <div class="small text-info mt-1">Click to upload</div>
+                                                </div>
+                                                <input type="file" id="upload_intraoral_left" class="d-none" accept="image/*" onchange="handleDirectUpload(this, 'intraoral_left_view')">
                                             </div>
                                         </div>
                                     </div>
                                     <div class="row g-2 justify-content-center">
                                         <div class="col-6">
-                                            <div class="template-placeholder text-center p-2 border border-dashed rounded bg-light">
-                                                <i class="bi bi-arrow-up text-muted"></i>
-                                                <div class="small text-muted mt-1">Upper Occlusal</div>
+                                            <div id="placeholder_intraoral_upper" class="layout-placeholder-box text-center p-2 border border-dashed rounded bg-light position-relative" style="min-height: 100px; cursor: pointer;" onclick="triggerFileUpload('intraoral_upper')">
+                                                <div class="loading-content d-flex flex-column align-items-center justify-content-center h-100">
+                                                    <i class="bi bi-arrow-up text-muted" style="font-size: 1.2rem;"></i>
+                                                    <div class="small text-muted mt-1">Upper Occlusal</div>
+                                                    <div class="small text-info mt-1">Click to upload</div>
+                                                </div>
+                                                <input type="file" id="upload_intraoral_upper" class="d-none" accept="image/*" onchange="handleDirectUpload(this, 'intraoral_upper_occlusal_view')">
                                             </div>
                                         </div>
                                         <div class="col-6">
-                                            <div class="template-placeholder text-center p-2 border border-dashed rounded bg-light">
-                                                <i class="bi bi-arrow-down text-muted"></i>
-                                                <div class="small text-muted mt-1">Lower Occlusal</div>
+                                            <div id="placeholder_intraoral_lower" class="layout-placeholder-box text-center p-2 border border-dashed rounded bg-light position-relative" style="min-height: 100px; cursor: pointer;" onclick="triggerFileUpload('intraoral_lower')">
+                                                <div class="loading-content d-flex flex-column align-items-center justify-content-center h-100">
+                                                    <i class="bi bi-arrow-down text-muted" style="font-size: 1.2rem;"></i>
+                                                    <div class="small text-muted mt-1">Lower Occlusal</div>
+                                                    <div class="small text-info mt-1">Click to upload</div>
+                                                </div>
+                                                <input type="file" id="upload_intraoral_lower" class="d-none" accept="image/*" onchange="handleDirectUpload(this, 'intraoral_lower_occlusal_view')">
                                             </div>
                                         </div>
                                     </div>
                                 </div>
-                                
-                                <button type="button" class="btn btn-sm btn-outline-secondary" onclick="document.getElementById('layoutGuide').style.display='none';">
-                                    <i class="bi bi-eye-slash me-1"></i>Hide Guide
-                                </button>
                             </div>
                             
                             <div class="mb-3">
