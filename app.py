@@ -1528,6 +1528,12 @@ def serve_profile_image(filename):
     """Serve profile images"""
     return send_from_directory(os.path.join('uploads', 'profiles'), filename)
 
+@app.route('/uploads/<filename>')
+@login_required
+def serve_uploaded_file(filename):
+    """Serve uploaded files for the current user"""
+    return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
+
 @app.route('/save_settings', methods=['POST'])
 def save_settings():
     """Save user settings to database"""

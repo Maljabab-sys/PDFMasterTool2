@@ -1423,6 +1423,12 @@ function displayBulkUploadResults(data) {
         const imageHTML = `
             <div class="col-md-4 col-lg-3">
                 <div class="card h-100">
+                    <div class="position-relative">
+                        <img src="/uploads/${file.filename}" alt="${file.original_name}" class="card-img-top" style="height: 120px; object-fit: cover; cursor: pointer;" onclick="showImageModal('/uploads/${file.filename}', '${file.original_name}')">
+                        <span class="badge ${confidenceColor} position-absolute top-0 end-0 m-1" id="badge_${index}">
+                            ${classificationIcon} ${file.classification.toUpperCase()}
+                        </span>
+                    </div>
                     <div class="card-body p-2">
                         <div class="d-flex align-items-center justify-content-between mb-2">
                             <small class="text-muted text-truncate" title="${file.original_name}">
@@ -1434,9 +1440,6 @@ function displayBulkUploadResults(data) {
                         </div>
                         
                         <div class="text-center mb-2">
-                            <span class="badge ${confidenceColor} mb-1" id="badge_${index}">
-                                ${classificationIcon} ${file.classification.toUpperCase()}
-                            </span>
                             <div class="small text-muted">
                                 Confidence: ${Math.round(file.confidence * 100)}%
                             </div>
@@ -1453,7 +1456,7 @@ function displayBulkUploadResults(data) {
                             </select>
                         </div>
                         
-                        ${file.reasoning ? `<div class="small text-muted">${file.reasoning}</div>` : ''}
+                        ${file.reasoning ? `<div class="small text-muted" style="font-size: 0.75rem;">${file.reasoning}</div>` : ''}
                     </div>
                 </div>
             </div>
@@ -1487,8 +1490,50 @@ function updateClassificationDisplay(index, newClassification) {
     
     if (badge) {
         badge.innerHTML = `${icon} ${newClassification.toUpperCase()}`;
-        badge.className = `badge bg-info mb-1`; // Use info color for manually corrected
+        badge.className = `badge bg-info position-absolute top-0 end-0 m-1`; // Use info color for manually corrected
     }
+}
+
+function showImageModal(imageSrc, imageName) {
+    // Create modal HTML
+    const modalHtml = `
+        <div class="modal fade" id="imageModal" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-lg modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">${imageName}</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body text-center">
+                        <img src="${imageSrc}" alt="${imageName}" class="img-fluid" style="max-height: 70vh;">
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // Remove existing modal if any
+    const existingModal = document.getElementById('imageModal');
+    if (existingModal) {
+        existingModal.remove();
+    }
+    
+    // Add modal to body
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+    
+    // Show modal
+    const modal = new bootstrap.Modal(document.getElementById('imageModal'));
+    modal.show();
+    
+    // Clean up modal when hidden
+    document.getElementById('imageModal').addEventListener('hidden.bs.modal', function() {
+        setTimeout(() => {
+            const modalElement = document.getElementById('imageModal');
+            if (modalElement) {
+                modalElement.remove();
+            }
+        }, 100);
+    });
 }
 
 function assignToCategory(filename, classification) {
