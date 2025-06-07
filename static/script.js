@@ -2622,13 +2622,20 @@ function initializeCropOverlay() {
                 return;
             }
             
+            const container = cropImage.parentElement;
+            const containerRect = container.getBoundingClientRect();
+            const imageRect = cropImage.getBoundingClientRect();
+            
+            // Calculate image position relative to container
+            const imageLeft = imageRect.left - containerRect.left;
+            const imageTop = imageRect.top - containerRect.top;
             const imageWidth = cropImage.offsetWidth;
             const imageHeight = cropImage.offsetHeight;
             
             // Start with crop box covering the entire image (maximum size)
             cropOverlay.style.display = 'block';
-            cropOverlay.style.left = '0px';
-            cropOverlay.style.top = '0px';
+            cropOverlay.style.left = imageLeft + 'px';
+            cropOverlay.style.top = imageTop + 'px';
             cropOverlay.style.width = imageWidth + 'px';
             cropOverlay.style.height = imageHeight + 'px';
             
@@ -2652,60 +2659,62 @@ function updateCropRatio() {
     
     if (!cropOverlay || !cropImage) return;
     
-    const currentWidth = parseFloat(cropOverlay.style.width) || 100;
-    let newWidth, newHeight;
+    const container = cropImage.parentElement;
+    const containerRect = container.getBoundingClientRect();
+    const imageRect = cropImage.getBoundingClientRect();
     
-    switch(selectedRatio) {
-        case 'free':
-            // Free transform - no aspect ratio constraints
-            return; // Exit early, no ratio adjustment needed
-        case '1:1':
-            newHeight = currentWidth;
-            newWidth = currentWidth;
-            break;
-        case '5:7':
-            newHeight = currentWidth * (7/5);
-            newWidth = currentWidth;
-            break;
-        case '16:9':
-            newHeight = currentWidth * (9/16); // Horizontal widescreen
-            newWidth = currentWidth;
-            break;
-        default:
-            return; // No ratio constraint for unknown values
+    // Calculate image position and dimensions relative to container
+    const imageLeft = imageRect.left - containerRect.left;
+    const imageTop = imageRect.top - containerRect.top;
+    const imageWidth = cropImage.offsetWidth;
+    const imageHeight = cropImage.offsetHeight;
+    
+    let newWidth, newHeight, newLeft, newTop;
+    
+    if (selectedRatio === 'free') {
+        // Free transform - reset to maximum size covering entire image
+        newLeft = imageLeft;
+        newTop = imageTop;
+        newWidth = imageWidth;
+        newHeight = imageHeight;
+    } else {
+        // Calculate maximum dimensions that fit the aspect ratio
+        let ratioWidth, ratioHeight;
+        
+        switch(selectedRatio) {
+            case '1:1':
+                ratioWidth = ratioHeight = 1;
+                break;
+            case '5:7':
+                ratioWidth = 5;
+                ratioHeight = 7;
+                break;
+            case '16:9':
+                ratioWidth = 16;
+                ratioHeight = 9;
+                break;
+            default:
+                return;
+        }
+        
+        // Calculate the largest size that fits the ratio within the image
+        const scaleByWidth = imageWidth / ratioWidth;
+        const scaleByHeight = imageHeight / ratioHeight;
+        const scale = Math.min(scaleByWidth, scaleByHeight);
+        
+        newWidth = ratioWidth * scale;
+        newHeight = ratioHeight * scale;
+        
+        // Center the crop box within the image
+        newLeft = imageLeft + (imageWidth - newWidth) / 2;
+        newTop = imageTop + (imageHeight - newHeight) / 2;
     }
     
-    // Ensure crop area doesn't exceed image bounds
-    const maxWidth = cropImage.offsetWidth || 400;
-    const maxHeight = cropImage.offsetHeight || 400;
-    
-    if (newWidth > maxWidth) {
-        newWidth = maxWidth;
-        if (selectedRatio === '5:7') newHeight = newWidth * (7/5);
-        if (selectedRatio === '9:16') newHeight = newWidth * (16/9);
-        if (selectedRatio === '1:1') newHeight = newWidth;
-    }
-    
-    if (newHeight > maxHeight) {
-        newHeight = maxHeight;
-        if (selectedRatio === '5:7') newWidth = newHeight * (5/7);
-        if (selectedRatio === '9:16') newWidth = newHeight * (9/16);
-        if (selectedRatio === '1:1') newWidth = newHeight;
-    }
-    
+    // Apply the new dimensions and position
+    cropOverlay.style.left = newLeft + 'px';
+    cropOverlay.style.top = newTop + 'px';
     cropOverlay.style.width = newWidth + 'px';
     cropOverlay.style.height = newHeight + 'px';
-    
-    // Center if needed
-    const currentLeft = parseFloat(cropOverlay.style.left) || 0;
-    const currentTop = parseFloat(cropOverlay.style.top) || 0;
-    
-    if (currentLeft + newWidth > maxWidth) {
-        cropOverlay.style.left = Math.max(0, maxWidth - newWidth) + 'px';
-    }
-    if (currentTop + newHeight > maxHeight) {
-        cropOverlay.style.top = Math.max(0, maxHeight - newHeight) + 'px';
-    }
 }
 
 function setupCropHandlers() {
@@ -2758,6 +2767,12 @@ function setupCropHandlers() {
         const cropImage = document.getElementById('cropImage');
         if (!cropImage) return;
         
+        // Get image and container positioning
+        const container = cropImage.parentElement;
+        const containerRect = container.getBoundingClientRect();
+        const imageRect = cropImage.getBoundingClientRect();
+        const imageLeft = imageRect.left - containerRect.left;
+        const imageTop = imageRect.top - containerRect.top;
         const imageWidth = cropImage.offsetWidth;
         const imageHeight = cropImage.offsetHeight;
         
@@ -2770,8 +2785,8 @@ function setupCropHandlers() {
             const cropHeight = cropOverlay.offsetHeight;
             
             // Ensure crop box stays completely within image boundaries
-            const constrainedLeft = Math.max(0, Math.min(imageWidth - cropWidth, newLeft));
-            const constrainedTop = Math.max(0, Math.min(imageHeight - cropHeight, newTop));
+            const constrainedLeft = Math.max(imageLeft, Math.min(imageLeft + imageWidth - cropWidth, newLeft));
+            const constrainedTop = Math.max(imageTop, Math.min(imageTop + imageHeight - cropHeight, newTop));
             
             cropOverlay.style.left = constrainedLeft + 'px';
             cropOverlay.style.top = constrainedTop + 'px';
@@ -2833,24 +2848,24 @@ function setupCropHandlers() {
                 }
             }
             
-            // Enforce strict boundary constraints
-            // First, constrain position to image boundaries
-            newLeft = Math.max(0, Math.min(newLeft, imageWidth - 50)); // minimum 50px width
-            newTop = Math.max(0, Math.min(newTop, imageHeight - 50)); // minimum 50px height
+            // Enforce strict boundary constraints within image area
+            // Constrain position to image boundaries
+            newLeft = Math.max(imageLeft, Math.min(newLeft, imageLeft + imageWidth - 50)); // minimum 50px width
+            newTop = Math.max(imageTop, Math.min(newTop, imageTop + imageHeight - 50)); // minimum 50px height
             
-            // Then, constrain dimensions to fit within remaining space
-            const maxAllowedWidth = imageWidth - newLeft;
-            const maxAllowedHeight = imageHeight - newTop;
+            // Constrain dimensions to fit within remaining space from position to image edge
+            const maxAllowedWidth = imageLeft + imageWidth - newLeft;
+            const maxAllowedHeight = imageTop + imageHeight - newTop;
             
             newWidth = Math.max(50, Math.min(maxAllowedWidth, newWidth));
             newHeight = Math.max(50, Math.min(maxAllowedHeight, newHeight));
             
             // Final check: ensure crop box doesn't exceed image boundaries
-            if (newLeft + newWidth > imageWidth) {
-                newWidth = imageWidth - newLeft;
+            if (newLeft + newWidth > imageLeft + imageWidth) {
+                newWidth = imageLeft + imageWidth - newLeft;
             }
-            if (newTop + newHeight > imageHeight) {
-                newHeight = imageHeight - newTop;
+            if (newTop + newHeight > imageTop + imageHeight) {
+                newHeight = imageTop + imageHeight - newTop;
             }
             
             // Apply the new dimensions
