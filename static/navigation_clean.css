@@ -355,19 +355,25 @@
         color: white;
     }
     
-    /* Mobile nav links */
+    /* Mobile nav links with slide animations */
     .navbar-nav {
         flex-direction: column;
         gap: 0.5rem;
         opacity: 0;
-        transform: translateY(15px);
-        transition: all 0.4s ease;
+        transform: translateX(30px);
+        transition: all 0.4s cubic-bezier(0.4, 0.0, 0.2, 1);
     }
     
     .navbar-collapse.show .navbar-nav {
         opacity: 1;
-        transform: translateY(0);
-        transition-delay: 0.15s;
+        transform: translateX(0);
+        transition-delay: 0.2s;
+    }
+    
+    .navbar-collapse.hiding .navbar-nav {
+        opacity: 0;
+        transform: translateX(30px);
+        transition-delay: 0s;
     }
     
     .navbar-nav .nav-link {

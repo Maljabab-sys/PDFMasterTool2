@@ -86,17 +86,22 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Mobile navigation functionality
     if (mobileNavToggler && hamburgerIcon && navbarContent) {
-        // Toggle mobile navigation
+        // Toggle mobile navigation with slide animations
         function toggleMobileNav() {
             const isOpen = navbarContent.classList.contains('show');
             
             if (isOpen) {
-                // Close navigation
-                navbarContent.classList.remove('show');
+                // Start close animation
+                navbarContent.classList.add('hiding');
                 hamburgerIcon.classList.remove('active');
-                document.body.style.overflow = '';
+                
+                setTimeout(() => {
+                    navbarContent.classList.remove('show', 'hiding');
+                    document.body.style.overflow = '';
+                }, 300);
             } else {
                 // Open navigation
+                navbarContent.classList.remove('hiding');
                 navbarContent.classList.add('show');
                 hamburgerIcon.classList.add('active');
                 document.body.style.overflow = 'hidden';
@@ -128,15 +133,20 @@ document.addEventListener('DOMContentLoaded', function() {
                     mobileNavToggler.style.pointerEvents = 'none';
                     hamburgerIcon.style.pointerEvents = 'none';
                     
-                    navbarContent.classList.remove('show');
+                    // Start close animation
+                    navbarContent.classList.add('hiding');
                     hamburgerIcon.classList.remove('active');
-                    document.body.style.overflow = '';
                     
-                    // Re-enable hamburger button after navigation transition
                     setTimeout(() => {
-                        mobileNavToggler.style.pointerEvents = 'auto';
-                        hamburgerIcon.style.pointerEvents = 'auto';
-                    }, 500);
+                        navbarContent.classList.remove('show', 'hiding');
+                        document.body.style.overflow = '';
+                        
+                        // Re-enable hamburger button after navigation transition
+                        setTimeout(() => {
+                            mobileNavToggler.style.pointerEvents = 'auto';
+                            hamburgerIcon.style.pointerEvents = 'auto';
+                        }, 200);
+                    }, 300);
                 }
             });
         });
