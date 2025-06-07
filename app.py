@@ -1385,7 +1385,13 @@ def api_patients():
 @app.route('/api/user-settings', methods=['GET'])
 def api_user_settings():
     """API endpoint for user settings"""
+    # Add debugging
+    logging.info(f"User authenticated: {current_user.is_authenticated}")
+    if hasattr(current_user, 'id'):
+        logging.info(f"Current user ID: {current_user.id}")
+    
     if not current_user.is_authenticated:
+        logging.info("User not authenticated, returning defaults")
         return jsonify({'clinics': ['KFMC', 'DC']})
     
     # Get settings from database
