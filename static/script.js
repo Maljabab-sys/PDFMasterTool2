@@ -1330,3 +1330,181 @@ function showDeleteConfirmation(itemName, onConfirm) {
         }, 100);
     });
 }
+
+// Bulk Upload with AI Categorization
+document.addEventListener('DOMContentLoaded', function() {
+    const bulkUploadInput = document.getElementById('bulkUploadInput');
+    const bulkUploadBtn = document.getElementById('bulkUploadBtn');
+    const clearBulkBtn = document.getElementById('clearBulkBtn');
+    const bulkUploadProgress = document.getElementById('bulkUploadProgress');
+    const bulkUploadResults = document.getElementById('bulkUploadResults');
+    const classificationSummary = document.getElementById('classificationSummary');
+    const imageResults = document.getElementById('imageResults');
+
+    if (bulkUploadInput && bulkUploadBtn) {
+        bulkUploadInput.addEventListener('change', function() {
+            bulkUploadBtn.disabled = this.files.length === 0;
+        });
+
+        bulkUploadBtn.addEventListener('click', function() {
+            const files = bulkUploadInput.files;
+            if (files.length === 0) return;
+
+            const formData = new FormData();
+            for (let i = 0; i < files.length; i++) {
+                formData.append('files[]', files[i]);
+            }
+
+            bulkUploadProgress.style.display = 'block';
+            bulkUploadResults.style.display = 'none';
+            bulkUploadBtn.disabled = true;
+
+            fetch('/bulk_upload_categorize', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                bulkUploadProgress.style.display = 'none';
+                bulkUploadBtn.disabled = false;
+
+                if (data.success) {
+                    displayBulkUploadResults(data);
+                    clearBulkBtn.style.display = 'inline-block';
+                } else {
+                    alert('Error: ' + (data.error || 'Upload failed'));
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                bulkUploadProgress.style.display = 'none';
+                bulkUploadBtn.disabled = false;
+                alert('An error occurred during upload');
+            });
+        });
+
+        clearBulkBtn.addEventListener('click', function() {
+            bulkUploadInput.value = '';
+            bulkUploadBtn.disabled = true;
+            bulkUploadResults.style.display = 'none';
+            clearBulkBtn.style.display = 'none';
+        });
+    }
+});
+
+function displayBulkUploadResults(data) {
+    const { files, classification_summary } = data;
+    
+    classificationSummary.innerHTML = '';
+    if (classification_summary) {
+        const summaryHTML = `
+            <div class="col-12">
+                <div class="alert alert-info">
+                    <strong>Classification Summary:</strong> 
+                    ${classification_summary.successful}/${classification_summary.total} images processed
+                    <div class="mt-2">
+                        <span class="badge bg-success me-2">Left: ${classification_summary.categories.left}</span>
+                        <span class="badge bg-primary me-2">Right: ${classification_summary.categories.right}</span>
+                        <span class="badge bg-warning me-2">Front: ${classification_summary.categories.front}</span>
+                        <span class="badge bg-info me-2">Occlusal: ${classification_summary.categories.occlusal}</span>
+                        <span class="badge bg-secondary">Other: ${classification_summary.categories.other}</span>
+                    </div>
+                </div>
+            </div>
+        `;
+        classificationSummary.innerHTML = summaryHTML;
+    }
+
+    imageResults.innerHTML = '';
+    files.forEach((file, index) => {
+        const confidenceColor = getConfidenceColor(file.confidence);
+        const classificationIcon = getClassificationIcon(file.classification);
+        
+        const imageHTML = `
+            <div class="col-md-4 col-lg-3">
+                <div class="card h-100">
+                    <div class="card-body p-2">
+                        <div class="d-flex align-items-center justify-content-between mb-2">
+                            <small class="text-muted text-truncate" title="${file.original_name}">
+                                ${file.original_name}
+                            </small>
+                            <button class="btn btn-sm btn-outline-primary" onclick="assignToCategory('${file.filename}', '${file.classification}')">
+                                Use
+                            </button>
+                        </div>
+                        
+                        <div class="text-center mb-2">
+                            <span class="badge ${confidenceColor} mb-1">
+                                ${classificationIcon} ${file.classification.toUpperCase()}
+                            </span>
+                            <div class="small text-muted">
+                                Confidence: ${Math.round(file.confidence * 100)}%
+                            </div>
+                        </div>
+                        
+                        ${file.reasoning ? `<div class="small text-muted">${file.reasoning}</div>` : ''}
+                    </div>
+                </div>
+            </div>
+        `;
+        imageResults.innerHTML += imageHTML;
+    });
+
+    bulkUploadResults.style.display = 'block';
+}
+
+function getConfidenceColor(confidence) {
+    if (confidence >= 0.8) return 'bg-success';
+    if (confidence >= 0.6) return 'bg-warning';
+    return 'bg-danger';
+}
+
+function getClassificationIcon(classification) {
+    const icons = {
+        'left': '←',
+        'right': '→',
+        'front': '↑',
+        'occlusal': '⬇',
+        'other': '?'
+    };
+    return icons[classification] || '?';
+}
+
+function assignToCategory(filename, classification) {
+    const fieldMapping = {
+        'left': 'extra_oral_left',
+        'right': 'extra_oral_right', 
+        'front': 'extra_oral_front',
+        'occlusal': 'intra_oral_center'
+    };
+    
+    const fieldName = fieldMapping[classification];
+    if (fieldName) {
+        const targetInput = document.querySelector(`input[name="${fieldName}"]`);
+        if (targetInput) {
+            const container = targetInput.closest('.image-upload-container');
+            if (container) {
+                const placeholder = container.querySelector('.upload-placeholder');
+                const preview = container.querySelector('.image-preview');
+                
+                if (placeholder && preview) {
+                    placeholder.style.display = 'none';
+                    preview.style.display = 'block';
+                    
+                    const previewImg = preview.querySelector('.preview-img');
+                    if (previewImg) {
+                        previewImg.src = '/uploads/' + filename;
+                        previewImg.alt = `AI Classified: ${classification}`;
+                    }
+                    
+                    container.setAttribute('data-ai-file', filename);
+                    container.setAttribute('data-ai-classification', classification);
+                    
+                    showSuccessPopup(`Image assigned to ${classification.toUpperCase()} category`);
+                }
+            }
+        }
+    } else {
+        alert(`Please manually assign this ${classification} image to the appropriate field`);
+    }
+}
