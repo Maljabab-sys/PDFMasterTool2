@@ -27,25 +27,26 @@ def classify_dental_image(image_path):
         Analyze this dental/orthodontic image and classify the view type. Pay careful attention to perspective and anatomical orientation.
 
         Classification criteria:
-        - EXTRAORAL_LEFT: Patient's left side profile view (extraoral) - shows patient's left facial profile, right side of dental arch visible
-        - EXTRAORAL_RIGHT: Patient's right side profile view (extraoral) - shows patient's right facial profile, left side of dental arch visible  
-        - EXTRAORAL_FRONT: Frontal facial view (extraoral) - shows patient's face from front, both sides visible, lips may be open or closed
-        - INTRAORAL_LEFT: Intraoral view of patient's left side - direct view inside mouth showing left dental arch/quadrant
-        - INTRAORAL_RIGHT: Intraoral view of patient's right side - direct view inside mouth showing right dental arch/quadrant
-        - INTRAORAL_FRONT: Intraoral frontal view - direct view of front teeth from inside the mouth
-        - INTRAORAL_OCCLUSAL: Intraoral top-down or bottom-up view of the bite surface/occlusal plane
+        - EXTRAORAL_LEFT: Patient's left side profile view (extraoral) - portrait orientation showing patient's left facial profile and smile from the side
+        - EXTRAORAL_RIGHT: Patient's right side profile view (extraoral) - portrait orientation showing patient's right facial profile and smile from the side  
+        - EXTRAORAL_FRONT: Frontal facial view (extraoral) - portrait orientation showing patient's face from front, both sides visible, full smile or lips closed
+        - INTRAORAL_LEFT: Intraoral view of patient's left side - direct view inside mouth showing left dental arch/quadrant, taken with dental mirror or retractor
+        - INTRAORAL_RIGHT: Intraoral view of patient's right side - direct view inside mouth showing right dental arch/quadrant, taken with dental mirror or retractor
+        - INTRAORAL_FRONT: Intraoral frontal view - direct view of front teeth from inside the mouth, showing anterior teeth
+        - INTRAORAL_OCCLUSAL: Intraoral top-down or bottom-up view of the bite surface/occlusal plane, showing tooth surfaces
         - OTHER: Individual teeth, X-rays, instruments, or unclear views
 
-        Key distinctions:
-        - EXTRAORAL: Shows face/facial features, taken from outside the mouth
-        - INTRAORAL: Shows teeth/gums directly, taken from inside the mouth
-        - For LEFT/RIGHT: Determine which side of the patient's anatomy is being shown
+        Important distinctions:
+        - EXTRAORAL: Shows face/facial features in portrait orientation, taken from outside the mouth, usually showing full face or profile
+        - INTRAORAL: Shows teeth/gums directly, taken from inside the mouth with dental instruments, closer view of oral structures
+        - For LEFT/RIGHT intraoral: Look carefully at which side of the patient's dental arch is being shown - the left or right quadrant
+        - Extraoral photos are typically portrait orientation (taller than wide)
 
         Respond with JSON in this exact format:
         {
             "classification": "extraoral_left|extraoral_right|extraoral_front|intraoral_left|intraoral_right|intraoral_front|intraoral_occlusal|other",
             "confidence": 0.85,
-            "reasoning": "Brief explanation focusing on intraoral vs extraoral and anatomical side identification"
+            "reasoning": "Brief explanation focusing on portrait/landscape orientation, intraoral vs extraoral, and anatomical side identification"
         }
         """
 
@@ -73,7 +74,10 @@ def classify_dental_image(image_path):
         )
 
         # Parse the response
-        result = json.loads(response.choices[0].message.content)
+        response_content = response.choices[0].message.content
+        if not response_content:
+            raise Exception("Empty response from OpenAI")
+        result = json.loads(response_content)
         
         return {
             "success": True,
