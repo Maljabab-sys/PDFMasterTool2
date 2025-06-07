@@ -25,20 +25,23 @@
 
                 <!-- Search Bar -->
                 <div class="row mb-4">
-                    <div class="col-md-8 col-lg-6">
+                    <div class="col-12 col-md-8 col-lg-6">
                         <form method="GET" action="{{ url_for('log') }}">
-                            <div class="input-group">
-                                <input type="text" class="form-control" name="search" 
-                                       placeholder="Search cases, patients, MRN, visit types..." 
-                                       value="{{ search_query or '' }}">
-                                <button class="btn btn-outline-light" type="submit">
-                                    <i class="bi bi-search"></i>
-                                </button>
-                                {% if search_query %}
-                                <a href="{{ url_for('log') }}" class="btn btn-outline-secondary">
-                                    <i class="bi bi-x"></i>
-                                </a>
-                                {% endif %}
+                            <div class="modern-search-container">
+                                <div class="input-group rounded-pill overflow-hidden">
+                                    <span class="input-group-text bg-dark border-0 ps-3">
+                                        <i class="bi bi-search text-muted"></i>
+                                    </span>
+                                    <input type="text" class="form-control border-0 bg-dark text-light" name="search" 
+                                           placeholder="Search cases, patients, MRN, visit types..." 
+                                           value="{{ search_query or '' }}"
+                                           style="box-shadow: none;">
+                                    {% if search_query %}
+                                    <a href="{{ url_for('log') }}" class="input-group-text bg-dark border-0 text-muted pe-3 text-decoration-none">
+                                        <i class="bi bi-x"></i>
+                                    </a>
+                                    {% endif %}
+                                </div>
                             </div>
                         </form>
                     </div>

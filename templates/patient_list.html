@@ -26,22 +26,25 @@
         </div>
 
         <!-- Search Box -->
-        <div class="card border-0 bg-dark mb-4">
-            <div class="card-body">
-                <div class="row align-items-center">
-                    <div class="col-md-8">
-                        <label for="patientSearch" class="form-label">Search Patients</label>
-                        <div class="input-group">
-                            <span class="input-group-text"><i class="bi bi-search"></i></span>
-                            <input type="text" class="form-control" id="patientSearch" 
-                                   placeholder="Search by name, MRN, or clinic..." oninput="filterPatients()">
+        <div class="mb-4">
+            <div class="row g-3 align-items-end">
+                <div class="col-12 col-md-8 col-lg-6">
+                    <label for="patientSearch" class="form-label text-muted mb-2">Search Patients</label>
+                    <div class="modern-search-container">
+                        <div class="input-group rounded-pill overflow-hidden">
+                            <span class="input-group-text bg-dark border-0 ps-3">
+                                <i class="bi bi-search text-muted"></i>
+                            </span>
+                            <input type="text" class="form-control border-0 bg-dark text-light" id="patientSearch" 
+                                   placeholder="Search by name, MRN, or clinic..." oninput="filterPatients()"
+                                   style="box-shadow: none;">
                         </div>
                     </div>
-                    <div class="col-md-4 d-flex align-items-end">
-                        <button type="button" class="btn btn-outline-secondary" onclick="clearPatientSearch()">
-                            <i class="bi bi-x-circle me-1"></i>Clear
-                        </button>
-                    </div>
+                </div>
+                <div class="col-12 col-md-4 col-lg-6 d-flex justify-content-start justify-content-md-end">
+                    <button type="button" class="btn btn-outline-secondary rounded-pill px-3" onclick="clearPatientSearch()">
+                        <i class="bi bi-x-circle me-1"></i>Clear
+                    </button>
                 </div>
             </div>
         </div>

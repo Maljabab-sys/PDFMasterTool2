@@ -422,3 +422,59 @@
 .modern-btn i {
     font-size: 0.875rem;
 }
+
+/* Modern Search Container */
+.modern-search-container {
+    position: relative;
+}
+
+.modern-search-container .input-group {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    transition: all 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
+    backdrop-filter: blur(10px);
+}
+
+.modern-search-container .input-group:hover {
+    border-color: rgba(255, 255, 255, 0.2);
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.modern-search-container .input-group:focus-within {
+    border-color: rgba(124, 58, 237, 0.5);
+    background: rgba(255, 255, 255, 0.08);
+    box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.1);
+}
+
+.modern-search-container .input-group-text {
+    background: transparent !important;
+    border: none !important;
+}
+
+.modern-search-container .form-control {
+    background: transparent !important;
+    border: none !important;
+    color: #ffffff !important;
+}
+
+.modern-search-container .form-control::placeholder {
+    color: rgba(255, 255, 255, 0.5) !important;
+}
+
+.modern-search-container .form-control:focus {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    color: #ffffff !important;
+}
+
+/* Mobile responsive search */
+@media (max-width: 768px) {
+    .modern-search-container .input-group {
+        border-radius: 25px !important;
+    }
+    
+    .modern-search-container .form-control {
+        font-size: 16px; /* Prevents zoom on iOS */
+    }
+}
