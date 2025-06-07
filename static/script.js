@@ -1430,7 +1430,7 @@ function displayBulkUploadResults(data) {
             <div class="col-md-4 col-lg-3">
                 <div class="card h-100">
                     <div class="position-relative d-flex justify-content-center">
-                        <img src="/uploads/${file.filename}" alt="${file.original_name}" class="card-img-top" style="${imageStyle}" onclick="showImageModal('/uploads/${file.filename}', '${file.original_name}')">
+                        <img src="/uploads/${file.filename}" alt="${file.original_name}" class="card-img-top" style="${imageStyle}" onclick="showImageModal('/uploads/${file.filename}', '${file.original_name}', '${file.classification}')">
                         <span class="badge ${confidenceColor} position-absolute top-0 end-0 m-1" id="badge_${index}">
                             ${classificationIcon} ${file.classification.toUpperCase()}
                         </span>
@@ -1511,7 +1511,14 @@ function updateClassificationDisplay(index, newClassification) {
     }
 }
 
-function showImageModal(imageSrc, imageName) {
+function showImageModal(imageSrc, imageName, classification = '') {
+    // Determine if this is an extraoral image based on classification
+    const isExtraoralModal = classification.startsWith('extraoral');
+    
+    const imageStyle = isExtraoralModal ? 
+        "max-height: 70vh; transform: rotate(-90deg);" : 
+        "max-height: 70vh;";
+    
     // Create modal HTML
     const modalHtml = `
         <div class="modal fade" id="imageModal" tabindex="-1" aria-hidden="true">
@@ -1522,7 +1529,7 @@ function showImageModal(imageSrc, imageName) {
                         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                     </div>
                     <div class="modal-body text-center">
-                        <img src="${imageSrc}" alt="${imageName}" class="img-fluid" style="max-height: 70vh;">
+                        <img src="${imageSrc}" alt="${imageName}" class="img-fluid" style="${imageStyle}">
                     </div>
                 </div>
             </div>

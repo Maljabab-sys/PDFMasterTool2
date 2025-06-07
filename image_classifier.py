@@ -30,8 +30,8 @@ def classify_dental_image(image_path):
         - EXTRAORAL_LEFT: Patient's left side profile view (extraoral) - portrait orientation showing patient's left facial profile and smile from the side
         - EXTRAORAL_RIGHT: Patient's right side profile view (extraoral) - portrait orientation showing patient's right facial profile and smile from the side  
         - EXTRAORAL_FRONT: Frontal facial view (extraoral) - portrait orientation showing patient's face from front, both sides visible, full smile or lips closed
-        - INTRAORAL_LEFT: Intraoral view of patient's left side - when looking directly into the patient's mouth, the LEFT side of their dental arch is visible (from patient's perspective, not camera perspective)
-        - INTRAORAL_RIGHT: Intraoral view of patient's right side - when looking directly into the patient's mouth, the RIGHT side of their dental arch is visible (from patient's perspective, not camera perspective)
+        - INTRAORAL_LEFT: Intraoral view showing the patient's LEFT dental quadrant - if you imagine yourself as the dentist looking into the patient's mouth, you see their LEFT side (usually shows molars and premolars on the left side of the image)
+        - INTRAORAL_RIGHT: Intraoral view showing the patient's RIGHT dental quadrant - if you imagine yourself as the dentist looking into the patient's mouth, you see their RIGHT side (usually shows molars and premolars on the right side of the image)
         - INTRAORAL_FRONT: Intraoral frontal view - direct view of front teeth from inside the mouth, showing anterior teeth
         - INTRAORAL_OCCLUSAL: Intraoral top-down or bottom-up view of the bite surface/occlusal plane, showing tooth surfaces
         - OTHER: Individual teeth, X-rays, instruments, or unclear views
