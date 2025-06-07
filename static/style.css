@@ -279,7 +279,7 @@ body {
         opacity: 1;
     }
     
-    /* Close button for mobile nav */
+    /* Position hamburger when navigation is open */
     .navbar-toggler[aria-expanded="true"] {
         position: fixed;
         top: 1rem;
@@ -287,20 +287,6 @@ body {
         z-index: 1051;
         background: rgba(255, 255, 255, 0.1);
         border: 1px solid rgba(255, 255, 255, 0.2);
-    }
-    
-    /* Mobile close button styling */
-    .navbar-collapse .btn-close {
-        position: absolute;
-        top: 1rem;
-        right: 1rem;
-        z-index: 1052;
-        opacity: 0.8;
-        transition: opacity 0.3s ease;
-    }
-    
-    .navbar-collapse .btn-close:hover {
-        opacity: 1;
     }
     
     /* Mobile nav transition */
