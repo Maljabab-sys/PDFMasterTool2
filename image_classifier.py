@@ -40,14 +40,17 @@ def classify_dental_image(image_path):
         - EXTRAORAL: Shows face/facial features in portrait orientation, taken from outside the mouth, usually showing full face or profile
         - INTRAORAL: Shows teeth/gums directly, taken from inside the mouth with dental instruments, closer view of oral structures
         - For LEFT/RIGHT intraoral classification: Use this simple rule - if the molars (large back teeth) are positioned on the LEFT side of the image, classify as INTRAORAL_LEFT. If molars are on the RIGHT side of the image, classify as INTRAORAL_RIGHT.
+        - Be very careful with left/right classification - there should typically only be ONE left and ONE right intraoral view per patient
+        - If you see molars clearly on one side of the image, that determines the classification
         - Extraoral photos are typically portrait orientation (taller than wide)
         - Molars are the larger, broader teeth typically visible in the back/posterior region of dental photos
+        - IMPORTANT: Look at the actual positioning of molars in the image frame, not patient anatomy orientation
 
         Respond with JSON in this exact format:
         {
             "classification": "extraoral_left|extraoral_right|extraoral_front|intraoral_left|intraoral_right|intraoral_front|intraoral_occlusal|other",
             "confidence": 0.85,
-            "reasoning": "Brief explanation focusing on portrait/landscape orientation, intraoral vs extraoral, and anatomical side identification"
+            "reasoning": "Brief explanation focusing on molar positioning in image frame, portrait/landscape orientation, and intraoral vs extraoral distinction"
         }
         """
 
@@ -119,6 +122,52 @@ def classify_bulk_images(image_paths):
                 "image_path": image_path,
                 "filename": os.path.basename(image_path)
             })
+    
+    # Validate and fix duplicate classifications
+    results = validate_and_fix_duplicates(results)
+    return results
+
+def validate_and_fix_duplicates(results):
+    """
+    Validate classifications and fix duplicate left/right issues
+    """
+    # Count classifications
+    classification_counts = {}
+    for result in results:
+        if result['success']:
+            classification = result['classification']
+            classification_counts[classification] = classification_counts.get(classification, 0) + 1
+    
+    # Check for duplicates in left/right intraoral
+    intraoral_left_count = classification_counts.get('intraoral_left', 0)
+    intraoral_right_count = classification_counts.get('intraoral_right', 0)
+    
+    # If we have duplicates, re-examine and fix
+    if intraoral_left_count > 1 or intraoral_right_count > 1:
+        # Find intraoral left/right results
+        intraoral_lr_results = []
+        for i, result in enumerate(results):
+            if result['success'] and result['classification'] in ['intraoral_left', 'intraoral_right']:
+                intraoral_lr_results.append((i, result))
+        
+        # If we have exactly 2 intraoral L/R images and they're both classified the same
+        if len(intraoral_lr_results) == 2 and intraoral_lr_results[0][1]['classification'] == intraoral_lr_results[1][1]['classification']:
+            # Fix by making the one with lower confidence the opposite side
+            idx1, result1 = intraoral_lr_results[0]
+            idx2, result2 = intraoral_lr_results[1]
+            
+            if result1['confidence'] < result2['confidence']:
+                # Change the lower confidence one to opposite
+                original_class = result1['classification']
+                results[idx1]['classification'] = 'intraoral_right' if original_class == 'intraoral_left' else 'intraoral_left'
+                results[idx1]['reasoning'] = f"Auto-corrected to avoid duplicate {original_class}. {result1['reasoning']}"
+                results[idx1]['confidence'] = max(0.6, result1['confidence'] - 0.1)
+            else:
+                # Change the lower confidence one to opposite
+                original_class = result2['classification']
+                results[idx2]['classification'] = 'intraoral_right' if original_class == 'intraoral_left' else 'intraoral_left'
+                results[idx2]['reasoning'] = f"Auto-corrected to avoid duplicate {original_class}. {result2['reasoning']}"
+                results[idx2]['confidence'] = max(0.6, result2['confidence'] - 0.1)
     
     return results
 
