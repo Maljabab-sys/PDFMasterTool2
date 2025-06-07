@@ -424,9 +424,11 @@ function loadCaseHistory() {
     fetch('/api/cases')
         .then(response => response.json())
         .then(data => {
-            content.innerHTML = renderCaseHistory(data.cases);
+            console.log('Cases loaded:', data);
+            content.innerHTML = renderCaseHistory(data);
         })
         .catch(error => {
+            console.error('Error loading cases:', error);
             content.innerHTML = '<div class="alert alert-danger">Error loading case history</div>';
         });
 }
@@ -440,10 +442,12 @@ function loadPatientList() {
     fetch('/api/patients')
         .then(response => response.json())
         .then(data => {
-            content.innerHTML = renderPatientList(data.patients);
-            updatePatientStats(data.patients);
+            console.log('Patients loaded:', data);
+            content.innerHTML = renderPatientList(data);
+            updatePatientStats(data);
         })
         .catch(error => {
+            console.error('Error loading patients:', error);
             content.innerHTML = '<div class="alert alert-danger">Error loading patient list</div>';
         });
 }
