@@ -2532,11 +2532,11 @@ function refreshLayoutResponsiveness() {
                 if (isUpperLower) {
                     if (img.src.includes('lower') || img.classList.contains('lower')) {
                         // Lower jaw images - fixed square dimensions
-                        containerHeight = isMobile ? 70 : 90;
+                        containerHeight = isMobile ? 60 : 75;
                         containerWidth = containerHeight;
                     } else {
                         // Upper jaw images - also fixed square dimensions
-                        containerHeight = isMobile ? 70 : 90;
+                        containerHeight = isMobile ? 60 : 75;
                         containerWidth = containerHeight;
                     }
                 } else {
