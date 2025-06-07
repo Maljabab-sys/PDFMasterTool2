@@ -1386,7 +1386,7 @@ def api_patients():
 def api_user_settings():
     """API endpoint for user settings"""
     if not current_user.is_authenticated:
-        return jsonify({'error': 'Not authenticated'}), 401
+        return jsonify({'clinics': ['KFMC', 'DC']})
     
     # Get settings from database
     user_settings = UserSettings.query.filter_by(user_id=current_user.id).first()
