@@ -2257,11 +2257,11 @@ function updatePlaceholderWithDirectImage(placeholderId, file) {
             <span class="badge ${confidenceColor} position-absolute top-0 end-0 m-1" style="font-size: 0.7rem;">
                 ${Math.round(file.confidence * 100)}%
             </span>
-            <div class="position-absolute top-0 start-0 m-1 d-flex flex-column gap-1">
-                <button type="button" class="btn btn-sm btn-danger" onclick="event.preventDefault(); event.stopPropagation(); removeDirectImage('${placeholderId}')" style="padding: ${isMobile ? '0.2rem 0.3rem' : '0.25rem 0.4rem'}; border-radius: 50%; width: ${isMobile ? '20px' : '24px'}; height: ${isMobile ? '20px' : '24px'}; display: flex; align-items: center; justify-content: center;">
+            <div class="position-absolute" style="top: 5px; left: 5px; z-index: 10; display: flex; flex-direction: column; gap: 3px;">
+                <button type="button" class="btn btn-sm btn-danger" onclick="event.preventDefault(); event.stopPropagation(); removeDirectImage('${placeholderId}')" style="padding: ${isMobile ? '0.2rem 0.3rem' : '0.25rem 0.4rem'}; border-radius: 50%; width: ${isMobile ? '20px' : '24px'}; height: ${isMobile ? '20px' : '24px'}; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 4px rgba(0,0,0,0.3);">
                     <i class="bi bi-x" style="font-size: ${isMobile ? '0.6rem' : '0.8rem'};"></i>
                 </button>
-                <button type="button" class="btn btn-sm btn-warning" onclick="event.preventDefault(); event.stopPropagation(); replaceDirectImage('${placeholderId}')" style="padding: ${isMobile ? '0.2rem 0.3rem' : '0.25rem 0.4rem'}; border-radius: 50%; width: ${isMobile ? '20px' : '24px'}; height: ${isMobile ? '20px' : '24px'}; display: flex; align-items: center; justify-content: center;" title="Replace image">
+                <button type="button" class="btn btn-sm btn-warning" onclick="event.preventDefault(); event.stopPropagation(); replaceDirectImage('${placeholderId}')" style="padding: ${isMobile ? '0.2rem 0.3rem' : '0.25rem 0.4rem'}; border-radius: 50%; width: ${isMobile ? '20px' : '24px'}; height: ${isMobile ? '20px' : '24px'}; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 4px rgba(0,0,0,0.3);" title="Replace image">
                     <i class="bi bi-arrow-repeat" style="font-size: ${isMobile ? '0.5rem' : '0.7rem'};"></i>
                 </button>
             </div>
