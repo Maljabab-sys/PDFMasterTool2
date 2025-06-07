@@ -2294,6 +2294,9 @@ function updatePlaceholderWithDirectImage(placeholderId, file) {
                 <button type="button" class="btn btn-sm btn-warning" onclick="event.preventDefault(); event.stopPropagation(); replaceDirectImage('${placeholderId}')" style="padding: ${isMobile ? '0.2rem 0.3rem' : '0.25rem 0.4rem'}; border-radius: 50%; width: ${isMobile ? '20px' : '24px'}; height: ${isMobile ? '20px' : '24px'}; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 4px rgba(0,0,0,0.3);" title="Replace image">
                     <i class="bi bi-arrow-repeat" style="font-size: ${isMobile ? '0.5rem' : '0.7rem'};"></i>
                 </button>
+                <button type="button" class="btn btn-sm btn-primary" onclick="event.preventDefault(); event.stopPropagation(); cropImage('/uploads/${file.filename}', '${placeholderId}')" style="padding: ${isMobile ? '0.2rem 0.3rem' : '0.25rem 0.4rem'}; border-radius: 50%; width: ${isMobile ? '20px' : '24px'}; height: ${isMobile ? '20px' : '24px'}; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 4px rgba(0,0,0,0.3);" title="Crop image">
+                    <i class="bi bi-crop" style="font-size: ${isMobile ? '0.5rem' : '0.7rem'};"></i>
+                </button>
             </div>
         </div>
         <input type="hidden" name="image_files" value="${file.filename}">
@@ -2577,4 +2580,236 @@ if ('ontouchstart' in window) {
             e.target.closest('.layout-placeholder-box').style.transform = 'scale(1)';
         }
     });
+}
+
+// Crop functionality
+let currentCropData = null;
+
+function cropImage(imageSrc, placeholderId) {
+    currentCropData = { imageSrc, placeholderId };
+    
+    const cropImage = document.getElementById('cropImage');
+    const cropModal = new bootstrap.Modal(document.getElementById('cropModal'));
+    
+    cropImage.src = imageSrc;
+    cropImage.onload = function() {
+        initializeCropOverlay();
+        cropModal.show();
+    };
+}
+
+function initializeCropOverlay() {
+    const cropImage = document.getElementById('cropImage');
+    const cropOverlay = document.getElementById('cropOverlay');
+    const container = cropImage.parentElement;
+    
+    const imageRect = cropImage.getBoundingClientRect();
+    const containerRect = container.getBoundingClientRect();
+    
+    // Position overlay relative to container
+    const overlaySize = Math.min(imageRect.width, imageRect.height) * 0.6;
+    const startX = (imageRect.width - overlaySize) / 2;
+    const startY = (imageRect.height - overlaySize) / 2;
+    
+    cropOverlay.style.display = 'block';
+    cropOverlay.style.left = startX + 'px';
+    cropOverlay.style.top = startY + 'px';
+    cropOverlay.style.width = overlaySize + 'px';
+    cropOverlay.style.height = overlaySize + 'px';
+    
+    updateCropRatio();
+    setupCropHandlers();
+}
+
+function updateCropRatio() {
+    const selectedRatio = document.querySelector('input[name="cropRatio"]:checked').value;
+    const cropOverlay = document.getElementById('cropOverlay');
+    const cropImage = document.getElementById('cropImage');
+    
+    const currentWidth = parseFloat(cropOverlay.style.width);
+    let newWidth, newHeight;
+    
+    switch(selectedRatio) {
+        case '1:1':
+            newWidth = newHeight = Math.min(currentWidth, parseFloat(cropOverlay.style.height));
+            break;
+        case '5:7':
+            newHeight = currentWidth * (7/5);
+            newWidth = currentWidth;
+            break;
+        case '9:16':
+            newHeight = currentWidth * (16/9);
+            newWidth = currentWidth;
+            break;
+    }
+    
+    // Ensure crop area doesn't exceed image bounds
+    const maxWidth = cropImage.offsetWidth;
+    const maxHeight = cropImage.offsetHeight;
+    
+    if (newWidth > maxWidth) {
+        newWidth = maxWidth;
+        if (selectedRatio === '5:7') newHeight = newWidth * (7/5);
+        if (selectedRatio === '9:16') newHeight = newWidth * (16/9);
+    }
+    
+    if (newHeight > maxHeight) {
+        newHeight = maxHeight;
+        if (selectedRatio === '5:7') newWidth = newHeight * (5/7);
+        if (selectedRatio === '9:16') newWidth = newHeight * (9/16);
+    }
+    
+    cropOverlay.style.width = newWidth + 'px';
+    cropOverlay.style.height = newHeight + 'px';
+    
+    // Center if needed
+    const currentLeft = parseFloat(cropOverlay.style.left);
+    const currentTop = parseFloat(cropOverlay.style.top);
+    
+    if (currentLeft + newWidth > maxWidth) {
+        cropOverlay.style.left = (maxWidth - newWidth) + 'px';
+    }
+    if (currentTop + newHeight > maxHeight) {
+        cropOverlay.style.top = (maxHeight - newHeight) + 'px';
+    }
+}
+
+function setupCropHandlers() {
+    const cropOverlay = document.getElementById('cropOverlay');
+    const handles = cropOverlay.querySelectorAll('.crop-handle');
+    
+    // Handle ratio change
+    document.querySelectorAll('input[name="cropRatio"]').forEach(radio => {
+        radio.addEventListener('change', updateCropRatio);
+    });
+    
+    // Handle dragging
+    let isDragging = false;
+    let isResizing = false;
+    let startX, startY, startLeft, startTop, startWidth, startHeight;
+    
+    cropOverlay.addEventListener('mousedown', function(e) {
+        if (e.target.classList.contains('crop-handle')) {
+            isResizing = true;
+            const rect = cropOverlay.getBoundingClientRect();
+            startX = e.clientX;
+            startY = e.clientY;
+            startWidth = rect.width;
+            startHeight = rect.height;
+            startLeft = rect.left;
+            startTop = rect.top;
+        } else {
+            isDragging = true;
+            startX = e.clientX - cropOverlay.offsetLeft;
+            startY = e.clientY - cropOverlay.offsetTop;
+        }
+        e.preventDefault();
+    });
+    
+    document.addEventListener('mousemove', function(e) {
+        if (isDragging) {
+            const cropImage = document.getElementById('cropImage');
+            const newLeft = e.clientX - startX;
+            const newTop = e.clientY - startY;
+            
+            const maxLeft = cropImage.offsetWidth - cropOverlay.offsetWidth;
+            const maxTop = cropImage.offsetHeight - cropOverlay.offsetHeight;
+            
+            cropOverlay.style.left = Math.max(0, Math.min(maxLeft, newLeft)) + 'px';
+            cropOverlay.style.top = Math.max(0, Math.min(maxTop, newTop)) + 'px';
+        }
+    });
+    
+    document.addEventListener('mouseup', function() {
+        isDragging = false;
+        isResizing = false;
+    });
+}
+
+// Apply crop functionality
+document.addEventListener('DOMContentLoaded', function() {
+    const applyCropBtn = document.getElementById('applyCrop');
+    if (applyCropBtn) {
+        applyCropBtn.addEventListener('click', function() {
+            if (!currentCropData) return;
+            
+            const cropOverlay = document.getElementById('cropOverlay');
+            const cropImage = document.getElementById('cropImage');
+            
+            const cropData = {
+                x: parseFloat(cropOverlay.style.left),
+                y: parseFloat(cropOverlay.style.top),
+                width: parseFloat(cropOverlay.style.width),
+                height: parseFloat(cropOverlay.style.height),
+                imageWidth: cropImage.offsetWidth,
+                imageHeight: cropImage.offsetHeight,
+                originalSrc: currentCropData.imageSrc
+            };
+            
+            // Create canvas and apply crop
+            applyCropToImage(cropData, currentCropData.placeholderId);
+            
+            const modal = bootstrap.Modal.getInstance(document.getElementById('cropModal'));
+            modal.hide();
+        });
+    }
+});
+
+function applyCropToImage(cropData, placeholderId) {
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    const img = new Image();
+    
+    img.onload = function() {
+        // Calculate scale factors
+        const scaleX = img.naturalWidth / cropData.imageWidth;
+        const scaleY = img.naturalHeight / cropData.imageHeight;
+        
+        // Set canvas size to crop dimensions
+        canvas.width = cropData.width * scaleX;
+        canvas.height = cropData.height * scaleY;
+        
+        // Draw cropped portion
+        ctx.drawImage(
+            img,
+            cropData.x * scaleX, cropData.y * scaleY,
+            cropData.width * scaleX, cropData.height * scaleY,
+            0, 0,
+            canvas.width, canvas.height
+        );
+        
+        // Convert to blob and update image
+        canvas.toBlob(function(blob) {
+            const formData = new FormData();
+            formData.append('cropped_image', blob, 'cropped_image.png');
+            formData.append('placeholder_id', placeholderId);
+            
+            fetch('/upload_single_files', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Update the image in the placeholder
+                    const placeholder = document.getElementById(placeholderId);
+                    const img = placeholder.querySelector('img');
+                    if (img) {
+                        img.src = '/uploads/' + data.filename + '?t=' + Date.now();
+                        // Update hidden input
+                        const hiddenInput = placeholder.querySelector('input[name="image_files"]');
+                        if (hiddenInput) {
+                            hiddenInput.value = data.filename;
+                        }
+                    }
+                }
+            })
+            .catch(error => {
+                console.error('Error uploading cropped image:', error);
+                showError('Failed to apply crop. Please try again.');
+            });
+        }, 'image/png');
+    };
+    
+    img.src = cropData.originalSrc;
 }
