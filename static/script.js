@@ -266,7 +266,12 @@ function setFollowupRequired() {
 // Search patients function
 function searchPatients() {
     const mrnSearch = document.getElementById('mrnSearch').value.trim();
-    const resultsDiv = document.getElementById('patientResults');
+    const resultsDiv = document.getElementById('searchResults');
+    
+    if (!resultsDiv) {
+        console.error('Search results container not found');
+        return;
+    }
     
     if (mrnSearch.length < 2) {
         resultsDiv.innerHTML = '';
@@ -287,12 +292,19 @@ function searchPatients() {
     })
     .catch(error => {
         console.error('Error searching patients:', error);
-        resultsDiv.innerHTML = '<div class="alert alert-danger">Error searching patients</div>';
+        if (resultsDiv) {
+            resultsDiv.innerHTML = '<div class="alert alert-danger">Error searching patients</div>';
+        }
     });
 }
 
 function displaySearchResults(patients) {
-    const resultsDiv = document.getElementById('patientResults');
+    const resultsDiv = document.getElementById('searchResults');
+    
+    if (!resultsDiv) {
+        console.error('Search results container not found');
+        return;
+    }
     
     if (patients.length === 0) {
         resultsDiv.innerHTML = '<div class="alert alert-warning">No patients found</div>';
@@ -318,23 +330,12 @@ function displaySearchResults(patients) {
 }
 
 function selectPatient(id, mrn, firstName, lastName, clinic) {
-    // Remove previous selections
-    document.querySelectorAll('.patient-result').forEach(el => {
-        el.classList.remove('selected');
-        el.classList.remove('list-group-item-success');
-    });
-    
-    // Mark clicked patient as selected
-    const clickedElement = event.target.closest('.patient-result');
-    if (clickedElement) {
-        clickedElement.classList.add('selected');
-        clickedElement.classList.add('list-group-item-success');
-    }
-    
     // Show selected patient info
     const selectedPatientInfo = document.getElementById('selectedPatientInfo');
     const selectedPatientDetails = document.getElementById('selectedPatientDetails');
     const selectedPatientId = document.getElementById('selectedPatientId');
+    const mrnSearch = document.getElementById('mrnSearch');
+    const searchResults = document.getElementById('searchResults');
     
     if (selectedPatientInfo) selectedPatientInfo.style.display = 'block';
     if (selectedPatientDetails) {
@@ -342,8 +343,46 @@ function selectPatient(id, mrn, firstName, lastName, clinic) {
     }
     if (selectedPatientId) selectedPatientId.value = id;
     
-    // Keep search results visible but update search field
-    document.getElementById('mrnSearch').value = `${firstName} ${lastName}`;
+    // Update search field with patient name and clear results
+    if (mrnSearch) {
+        mrnSearch.value = `${firstName} ${lastName} (${mrn})`;
+        mrnSearch.setAttribute('readonly', true);
+        mrnSearch.style.backgroundColor = '#e9ecef';
+    }
+    
+    // Clear search results
+    if (searchResults) {
+        searchResults.innerHTML = '';
+    }
+    
+    // Add a clear selection button
+    if (selectedPatientInfo && !document.getElementById('clearPatientBtn')) {
+        const clearBtn = document.createElement('button');
+        clearBtn.id = 'clearPatientBtn';
+        clearBtn.type = 'button';
+        clearBtn.className = 'btn btn-sm btn-outline-secondary mt-2';
+        clearBtn.innerHTML = '<i class="bi bi-x-circle me-1"></i>Clear Selection';
+        clearBtn.onclick = clearPatientSelection;
+        selectedPatientInfo.appendChild(clearBtn);
+    }
+}
+
+function clearPatientSelection() {
+    const selectedPatientInfo = document.getElementById('selectedPatientInfo');
+    const selectedPatientId = document.getElementById('selectedPatientId');
+    const mrnSearch = document.getElementById('mrnSearch');
+    const searchResults = document.getElementById('searchResults');
+    const clearBtn = document.getElementById('clearPatientBtn');
+    
+    if (selectedPatientInfo) selectedPatientInfo.style.display = 'none';
+    if (selectedPatientId) selectedPatientId.value = '';
+    if (mrnSearch) {
+        mrnSearch.value = '';
+        mrnSearch.removeAttribute('readonly');
+        mrnSearch.style.backgroundColor = '';
+    }
+    if (searchResults) searchResults.innerHTML = '';
+    if (clearBtn) clearBtn.remove();
 }
 
 // Section navigation for single-page app
