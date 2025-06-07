@@ -1762,7 +1762,7 @@ function updatePlaceholderWithImage(placeholderId, file, index) {
     placeholder.classList.add('border-success');
     
     placeholder.innerHTML = `
-        <div class="position-relative d-flex justify-content-center">
+        <div class="position-relative w-100 h-100">
             <img src="/uploads/${file.filename}" alt="${file.original_name}" class="${imageClasses}" style="${imageStyle}" onclick="showImageModal('/uploads/${file.filename}', '${file.original_name}', '${file.classification}')">
             <span class="badge ${confidenceColor} position-absolute top-0 end-0 m-1">
                 ${Math.round(file.confidence * 100)}%
@@ -1794,6 +1794,9 @@ function updatePlaceholderWithImage(placeholderId, file, index) {
             </button>
         </div>
     `;
+    
+    // Remove onclick handler from the placeholder to prevent accidental uploads
+    placeholder.removeAttribute('onclick');
 }
 
 function showCompletionMessage() {
@@ -2221,13 +2224,13 @@ function updatePlaceholderWithDirectImage(placeholderId, file) {
     placeholder.classList.add('border-success');
     
     placeholder.innerHTML = `
-        <div class="position-relative w-100 h-100 d-flex align-items-center justify-content-center">
+        <div class="position-relative w-100 h-100">
             <img src="/uploads/${file.filename}" alt="${file.original_name}" class="${imageClasses}" style="${imageStyle}" onclick="showImageModal('/uploads/${file.filename}', '${file.original_name}', '${file.classification}')">
             <span class="badge ${confidenceColor} position-absolute top-0 end-0 m-1" style="font-size: 0.7rem;">
                 ${Math.round(file.confidence * 100)}%
             </span>
             <div class="position-absolute top-0 start-0 m-1 d-flex flex-column gap-1">
-                <button class="btn btn-sm btn-danger" onclick="removeDirectImage('${placeholderId}')" style="padding: 0.25rem 0.4rem; border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center;">
+                <button class="btn btn-sm btn-danger" onclick="event.stopPropagation(); removeDirectImage('${placeholderId}')" style="padding: 0.25rem 0.4rem; border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center;">
                     <i class="bi bi-x" style="font-size: 0.8rem;"></i>
                 </button>
                 <button class="btn btn-sm btn-warning" onclick="replaceDirectImage('${placeholderId}')" style="padding: 0.25rem 0.4rem; border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center;" title="Replace image">
@@ -2237,6 +2240,9 @@ function updatePlaceholderWithDirectImage(placeholderId, file) {
         </div>
         <input type="hidden" name="image_files" value="${file.filename}">
     `;
+    
+    // Remove onclick handler from the placeholder to prevent accidental uploads
+    placeholder.removeAttribute('onclick');
     
     // Animate appearance
     placeholder.style.opacity = '0';

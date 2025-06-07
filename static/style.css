@@ -81,6 +81,7 @@
     border: 2px dashed #007bff !important;
     background-color: transparent !important;
     border-radius: 8px;
+    overflow: hidden;
 }
 
 .layout-placeholder-box:hover {
@@ -93,6 +94,10 @@
     border: 2px solid #28a745 !important;
     box-shadow: 0 4px 8px rgba(40, 167, 69, 0.2);
     background-color: transparent !important;
+    padding: 0 !important;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .loading-content {
