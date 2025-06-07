@@ -106,14 +106,24 @@
     /* Animation setup */
     opacity: 0;
     transform: translateY(-10px) scale(0.95);
-    transition: all 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
+    transition: opacity 0.25s ease-out, transform 0.25s ease-out;
     pointer-events: none;
+    visibility: hidden;
 }
 
 .dropdown-menu.show {
     opacity: 1;
     transform: translateY(0) scale(1);
     pointer-events: auto;
+    visibility: visible;
+    transition: opacity 0.3s cubic-bezier(0.4, 0.0, 0.2, 1), transform 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
+}
+
+/* Fade out animation when closing */
+.dropdown-menu.hiding {
+    opacity: 0;
+    transform: translateY(-10px) scale(0.95);
+    transition: opacity 0.2s ease-in, transform 0.2s ease-in;
 }
 
 .dropdown-item {
@@ -137,8 +147,8 @@
 .dropdown-item:hover {
     background: linear-gradient(135deg, rgba(124, 58, 237, 0.2), rgba(168, 85, 247, 0.15));
     color: white;
-    transform: translateX(0) scale(1.02);
-    box-shadow: 0 4px 12px rgba(124, 58, 237, 0.3);
+    transform: translateX(0);
+    box-shadow: 0 2px 8px rgba(124, 58, 237, 0.2);
 }
 
 @keyframes dropdownItemSlide {

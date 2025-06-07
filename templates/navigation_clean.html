@@ -34,10 +34,10 @@
             </ul>
             
             <div class="dropdown">
-                <button class="btn btn-outline-light dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                <button class="btn btn-outline-light dropdown-toggle" type="button" data-bs-toggle="dropdown" id="profileDropdown">
                     <i class="bi bi-person-circle me-1"></i>{{ current_user.first_name }}
                 </button>
-                <ul class="dropdown-menu dropdown-menu-end">
+                <ul class="dropdown-menu dropdown-menu-end" id="profileDropdownMenu">
                     <li><h6 class="dropdown-header">{{ current_user.first_name }} {{ current_user.last_name }}</h6></li>
                     <li><small class="dropdown-item-text">{{ current_user.email }}</small></li>
                     <li><hr class="dropdown-divider"></li>
@@ -48,3 +48,30 @@
         </div>
     </div>
 </nav>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const dropdown = document.getElementById('profileDropdown');
+    const dropdownMenu = document.getElementById('profileDropdownMenu');
+    
+    if (dropdown && dropdownMenu) {
+        // Handle dropdown show/hide events
+        dropdown.addEventListener('hide.bs.dropdown', function(e) {
+            e.preventDefault();
+            
+            // Add hiding class for fade-out animation
+            dropdownMenu.classList.add('hiding');
+            
+            // Remove show class after animation
+            setTimeout(() => {
+                dropdownMenu.classList.remove('show', 'hiding');
+            }, 200);
+        });
+        
+        dropdown.addEventListener('show.bs.dropdown', function() {
+            // Reset any hiding state
+            dropdownMenu.classList.remove('hiding');
+        });
+    }
+});
+</script>
