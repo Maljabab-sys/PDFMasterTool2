@@ -871,7 +871,7 @@ def reset_password(token):
     
     return render_template('reset_password.html', token=token)
 
-@app.route('/save-draft', methods=['POST'])
+@app.route('/save_draft', methods=['POST'])
 @login_required
 def save_draft():
     """Save case as draft"""
