@@ -5,7 +5,7 @@
             <i class="bi bi-file-medical me-2"></i>Medical Case Manager
         </a>
         
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarContent" id="mobileNavToggler">
+        <button class="navbar-toggler" type="button" id="mobileNavToggler">
             <div class="hamburger" id="hamburgerIcon">
                 <span></span>
                 <span></span>
@@ -107,6 +107,15 @@ document.addEventListener('DOMContentLoaded', function() {
         mobileNavToggler.addEventListener('click', function(e) {
             e.preventDefault();
             e.stopPropagation();
+            console.log('Hamburger clicked, current state:', navbarContent.classList.contains('show'));
+            toggleMobileNav();
+        });
+        
+        // Also handle click on hamburger icon itself
+        hamburgerIcon.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            console.log('Hamburger icon clicked directly');
             toggleMobileNav();
         });
         
