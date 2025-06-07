@@ -158,27 +158,85 @@ body {
         margin-top: 0.5rem;
     }
     
+    /* Mobile navigation slide-in from right */
     .navbar-collapse {
-        background: rgba(255, 255, 255, 0.05);
-        border-radius: 8px;
-        margin-top: 1rem;
-        padding: 1rem;
+        position: fixed;
+        top: 0;
+        right: -100%;
+        width: 80%;
+        max-width: 320px;
+        height: 100vh;
+        background: linear-gradient(135deg, rgba(33, 37, 41, 0.98), rgba(52, 58, 64, 0.98));
+        backdrop-filter: blur(20px);
+        border-left: 1px solid var(--border-color);
+        padding: 2rem 1.5rem;
+        z-index: 1050;
+        transition: right 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        overflow-y: auto;
+        box-shadow: -10px 0 30px rgba(0, 0, 0, 0.3);
+    }
+    
+    .navbar-collapse.show {
+        right: 0;
+    }
+    
+    .navbar-collapse.collapsing {
+        right: -100%;
+        transition: right 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    }
+    
+    .navbar-nav {
+        margin-top: 2rem;
     }
     
     .nav-link {
-        padding: 0.75rem 1rem;
-        border-radius: 6px;
-        margin-bottom: 0.25rem;
-        transition: all 0.2s ease;
+        padding: 1rem 1.25rem;
+        border-radius: 12px;
+        margin-bottom: 0.5rem;
+        transition: all 0.3s ease;
+        font-weight: 500;
+        border: 1px solid transparent;
     }
     
     .nav-link:hover {
         background: rgba(255, 255, 255, 0.1);
+        border-color: rgba(255, 255, 255, 0.2);
+        transform: translateX(-5px);
     }
     
     .nav-link.active {
         background: var(--bs-primary);
         color: white;
+        border-color: var(--bs-primary);
+    }
+    
+    /* Mobile overlay */
+    .navbar-collapse::before {
+        content: '';
+        position: fixed;
+        top: 0;
+        left: -100vw;
+        width: 100vw;
+        height: 100vh;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: -1;
+        opacity: 0;
+        transition: opacity 0.3s ease;
+    }
+    
+    .navbar-collapse.show::before {
+        left: 0;
+        opacity: 1;
+    }
+    
+    /* Close button for mobile nav */
+    .navbar-toggler[aria-expanded="true"] {
+        position: fixed;
+        top: 1rem;
+        right: 1rem;
+        z-index: 1051;
+        background: rgba(255, 255, 255, 0.1);
+        border: 1px solid rgba(255, 255, 255, 0.2);
     }
 }
 

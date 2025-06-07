@@ -581,6 +581,49 @@
                 }
             }
         });
+
+        // Mobile navigation enhancement
+        document.addEventListener('DOMContentLoaded', function() {
+            const navbarToggler = document.querySelector('.navbar-toggler');
+            const navbarCollapse = document.querySelector('.navbar-collapse');
+            
+            // Handle mobile nav toggle
+            navbarToggler.addEventListener('click', function() {
+                const isExpanded = this.getAttribute('aria-expanded') === 'true';
+                
+                if (!isExpanded) {
+                    // Opening nav
+                    navbarCollapse.classList.add('show');
+                    this.setAttribute('aria-expanded', 'true');
+                    document.body.style.overflow = 'hidden';
+                } else {
+                    // Closing nav
+                    navbarCollapse.classList.remove('show');
+                    this.setAttribute('aria-expanded', 'false');
+                    document.body.style.overflow = '';
+                }
+            });
+
+            // Close nav when clicking overlay
+            navbarCollapse.addEventListener('click', function(e) {
+                if (e.target === this) {
+                    navbarCollapse.classList.remove('show');
+                    navbarToggler.setAttribute('aria-expanded', 'false');
+                    document.body.style.overflow = '';
+                }
+            });
+
+            // Close nav when clicking nav links
+            document.querySelectorAll('.nav-link').forEach(link => {
+                link.addEventListener('click', function() {
+                    if (window.innerWidth < 992) {
+                        navbarCollapse.classList.remove('show');
+                        navbarToggler.setAttribute('aria-expanded', 'false');
+                        document.body.style.overflow = '';
+                    }
+                });
+            });
+        });
     </script>
     
     <!-- Bootstrap JavaScript -->
