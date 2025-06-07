@@ -813,8 +813,12 @@ document.addEventListener('DOMContentLoaded', function() {
 
 function loadUserClinics(clinics) {
     const clinicsList = document.getElementById('clinicsList');
-    if (!clinicsList) return;
+    if (!clinicsList) {
+        console.log('clinicsList element not found');
+        return;
+    }
     
+    console.log('Loading clinics:', clinics);
     clinicsList.innerHTML = '';
     
     // If no clinics, add default ones
@@ -823,12 +827,19 @@ function loadUserClinics(clinics) {
     }
     
     clinics.forEach(clinic => {
+        console.log('Adding clinic to list:', clinic);
         addClinicToList(clinic);
     });
 }
 
 function addClinicToList(clinicName) {
     const clinicsList = document.getElementById('clinicsList');
+    if (!clinicsList) {
+        console.log('Cannot add clinic - clinicsList element not found');
+        return;
+    }
+    
+    console.log('Adding clinic to DOM:', clinicName);
     const clinicId = `clinic_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     
     const clinicHtml = `
@@ -845,6 +856,7 @@ function addClinicToList(clinicName) {
     `;
     
     clinicsList.insertAdjacentHTML('beforeend', clinicHtml);
+    console.log('Clinic added to DOM, current content:', clinicsList.innerHTML);
 }
 
 function addClinic() {
