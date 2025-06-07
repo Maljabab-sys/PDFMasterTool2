@@ -45,6 +45,30 @@
     justify-content: center;
 }
 
+/* Template guide styling */
+.template-placeholder {
+    min-height: 60px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+}
+
+.template-placeholder:hover {
+    background-color: #e9ecef !important;
+    border-color: #6c757d !important;
+}
+
+.template-placeholder i {
+    font-size: 1.2rem;
+}
+
+#layoutGuide {
+    border: 2px solid #dee2e6;
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+}
+
 .image-card-hover {
     transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
@@ -153,6 +177,20 @@
     h5.text-primary, h5.text-success {
         font-size: 1.1rem;
         margin-bottom: 1rem !important;
+    }
+    
+    /* Template guide mobile adjustments */
+    .template-placeholder {
+        min-height: 50px;
+        padding: 0.5rem !important;
+    }
+    
+    .template-placeholder i {
+        font-size: 1rem;
+    }
+    
+    .template-placeholder .small {
+        font-size: 0.75rem !important;
     }
 }
 

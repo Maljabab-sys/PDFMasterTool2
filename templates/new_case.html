@@ -282,6 +282,82 @@
                         <div class="card-body">
                             <p class="text-muted mb-3">Upload multiple images at once and let AI automatically categorize them as left, right, front, or occlusal views.</p>
                             
+                            <!-- Layout Template Guide -->
+                            <div class="alert alert-light border mb-4" id="layoutGuide">
+                                <h6 class="text-primary mb-3">
+                                    <i class="bi bi-layout-wtf me-2"></i>Image Layout Guide
+                                </h6>
+                                <p class="small text-muted mb-3">Upload your dental images and AI will organize them in this layout:</p>
+                                
+                                <!-- Extraoral Section -->
+                                <div class="mb-4">
+                                    <h6 class="text-primary small mb-2">📸 Extraoral Views</h6>
+                                    <div class="row g-2">
+                                        <div class="col-4">
+                                            <div class="template-placeholder text-center p-3 border border-dashed rounded bg-light">
+                                                <i class="bi bi-person text-muted"></i>
+                                                <div class="small text-muted mt-1">Right Side</div>
+                                            </div>
+                                        </div>
+                                        <div class="col-4">
+                                            <div class="template-placeholder text-center p-3 border border-dashed rounded bg-light">
+                                                <i class="bi bi-person text-muted"></i>
+                                                <div class="small text-muted mt-1">Frontal</div>
+                                            </div>
+                                        </div>
+                                        <div class="col-4">
+                                            <div class="template-placeholder text-center p-3 border border-dashed rounded bg-light">
+                                                <i class="bi bi-emoji-smile text-muted"></i>
+                                                <div class="small text-muted mt-1">Smiling</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Intraoral Section -->
+                                <div class="mb-3">
+                                    <h6 class="text-success small mb-2">🦷 Intraoral Views</h6>
+                                    <div class="row g-2 mb-2">
+                                        <div class="col-4">
+                                            <div class="template-placeholder text-center p-3 border border-dashed rounded bg-light">
+                                                <i class="bi bi-arrow-right text-muted"></i>
+                                                <div class="small text-muted mt-1">Right Side</div>
+                                            </div>
+                                        </div>
+                                        <div class="col-4">
+                                            <div class="template-placeholder text-center p-3 border border-dashed rounded bg-light">
+                                                <i class="bi bi-circle text-muted"></i>
+                                                <div class="small text-muted mt-1">Frontal</div>
+                                            </div>
+                                        </div>
+                                        <div class="col-4">
+                                            <div class="template-placeholder text-center p-3 border border-dashed rounded bg-light">
+                                                <i class="bi bi-arrow-left text-muted"></i>
+                                                <div class="small text-muted mt-1">Left Side</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="row g-2 justify-content-center">
+                                        <div class="col-6">
+                                            <div class="template-placeholder text-center p-2 border border-dashed rounded bg-light">
+                                                <i class="bi bi-arrow-up text-muted"></i>
+                                                <div class="small text-muted mt-1">Upper Occlusal</div>
+                                            </div>
+                                        </div>
+                                        <div class="col-6">
+                                            <div class="template-placeholder text-center p-2 border border-dashed rounded bg-light">
+                                                <i class="bi bi-arrow-down text-muted"></i>
+                                                <div class="small text-muted mt-1">Lower Occlusal</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <button type="button" class="btn btn-sm btn-outline-secondary" onclick="document.getElementById('layoutGuide').style.display='none';">
+                                    <i class="bi bi-eye-slash me-1"></i>Hide Guide
+                                </button>
+                            </div>
+                            
                             <div class="mb-3">
                                 <label class="form-label fw-semibold">Select Multiple Images</label>
                                 <input type="file" id="bulkUploadInput" multiple accept="image/*" class="form-control">
