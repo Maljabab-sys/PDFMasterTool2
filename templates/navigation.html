@@ -11,6 +11,9 @@
         <!-- Center Navigation - Desktop -->
         <div class="d-none d-lg-flex justify-content-center flex-grow-1">
             <div class="nav nav-pills">
+                <a class="nav-link {% if request.endpoint == 'dashboard' %}active{% endif %}" href="{{ url_for('dashboard') }}">
+                    <i class="bi bi-speedometer2 me-2"></i>Dashboard
+                </a>
                 <a class="nav-link {% if request.endpoint == 'new_case' %}active{% endif %}" href="{{ url_for('new_case') }}">
                     <i class="bi bi-plus-circle me-2"></i>New Case
                 </a>
@@ -57,7 +60,7 @@
         </div>
         
         <!-- Mobile toggle button -->
-        <button class="navbar-toggler d-lg-none" type="button" aria-expanded="false">
+        <button class="navbar-toggler d-lg-none" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
             <span class="hamburger-icon">
                 <span class="line"></span>
                 <span class="line"></span>
@@ -90,6 +93,9 @@
                 </div>
                 
                 <!-- Navigation Links - Mobile -->
+                <a class="nav-link {% if request.endpoint == 'dashboard' %}active{% endif %}" href="{{ url_for('dashboard') }}">
+                    <i class="bi bi-speedometer2 me-2"></i>Dashboard
+                </a>
                 <a class="nav-link {% if request.endpoint == 'new_case' %}active{% endif %}" href="{{ url_for('new_case') }}">
                     <i class="bi bi-plus-circle me-2"></i>New Case
                 </a>
