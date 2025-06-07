@@ -1,4 +1,10 @@
-/* Navigation-specific styles for new design */
+/* Navigation-specific styles - clean implementation */
+
+/* Reset any potential conflicts */
+.navbar {
+    position: relative;
+    z-index: 1030;
+}
 
 /* Center navigation styling */
 .nav-pills .nav-link {
@@ -49,7 +55,7 @@
 
 /* Mobile navigation improvements */
 @media (max-width: 991.98px) {
-    .navbar-collapse {
+    #mobileNav {
         background: rgba(33, 37, 41, 0.98);
         border-radius: 8px;
         margin-top: 1rem;
@@ -57,7 +63,7 @@
         border: 1px solid rgba(255, 255, 255, 0.1);
     }
     
-    .navbar-nav .nav-link {
+    #mobileNav .nav-link {
         padding: 0.75rem 1rem;
         border-bottom: 1px solid rgba(255, 255, 255, 0.1);
         border-radius: 6px;
@@ -67,18 +73,18 @@
         transition: all 0.3s ease;
     }
     
-    .navbar-nav .nav-link:last-child {
+    #mobileNav .nav-link:last-child {
         border-bottom: none;
         margin-bottom: 0;
     }
     
-    .navbar-nav .nav-link:hover {
+    #mobileNav .nav-link:hover {
         background: rgba(255, 255, 255, 0.1);
         color: white;
         transform: translateX(5px);
     }
     
-    .navbar-nav .nav-link.active {
+    #mobileNav .nav-link.active {
         background: var(--bs-primary);
         color: white;
         border-color: var(--bs-primary);
@@ -87,12 +93,12 @@
 
 /* Extra small mobile devices */
 @media (max-width: 576px) {
-    .navbar-collapse {
+    #mobileNav {
         margin-top: 0.5rem;
         padding: 0.75rem;
     }
     
-    .navbar-nav .nav-link {
+    #mobileNav .nav-link {
         padding: 0.5rem 0.75rem;
         font-size: 0.9rem;
     }
@@ -102,36 +108,7 @@
     }
 }
 
-/* Hamburger menu animation */
-.hamburger-icon {
-    width: 24px;
-    height: 18px;
-    position: relative;
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-}
-
-.hamburger-icon .line {
-    width: 100%;
-    height: 2px;
-    background: currentColor;
-    border-radius: 1px;
-    transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
-}
-
-.navbar-toggler[aria-expanded="true"] .hamburger-icon .line:nth-child(1) {
-    transform: rotate(45deg) translate(6px, 6px);
-}
-
-.navbar-toggler[aria-expanded="true"] .hamburger-icon .line:nth-child(2) {
-    opacity: 0;
-}
-
-.navbar-toggler[aria-expanded="true"] .hamburger-icon .line:nth-child(3) {
-    transform: rotate(-45deg) translate(7px, -6px);
-}
-
+/* Bootstrap navbar toggler styling */
 .navbar-toggler {
     border: none;
     padding: 0.25rem 0.5rem;
