@@ -2254,18 +2254,15 @@ function updatePlaceholderWithDirectImage(placeholderId, file) {
         
         let maxHeight, minHeight;
         if (isUpperLower) {
-            // Make upper/lower jaw images smaller and more square
+            // Make upper/lower jaw images square with fixed dimensions
             if (file.classification.includes('lower')) {
-                // Force lower jaw images to be square
-                containerHeight = containerWidth;
-                maxHeight = isMobile ? 100 : 120;
-                minHeight = isMobile ? 60 : 80;
-                containerHeight = Math.max(minHeight, Math.min(maxHeight, containerHeight));
+                // Lower jaw images - perfect squares
+                containerHeight = isMobile ? 100 : 120;
+                containerWidth = containerHeight; // Force square
             } else {
-                // Upper jaw images
-                maxHeight = isMobile ? 100 : 120;
-                minHeight = isMobile ? 60 : 80;
-                containerHeight = Math.max(minHeight, Math.min(maxHeight, containerHeight));
+                // Upper jaw images - also perfect squares
+                containerHeight = isMobile ? 100 : 120;
+                containerWidth = containerHeight; // Force square
             }
         } else {
             // Regular constraints for other images
@@ -2277,6 +2274,10 @@ function updatePlaceholderWithDirectImage(placeholderId, file) {
         // Update placeholder to match image dimensions exactly
         placeholder.style.height = `${containerHeight}px`;
         placeholder.style.minHeight = `${containerHeight}px`;
+        if (isUpperLower) {
+            placeholder.style.width = `${containerWidth}px`;
+            placeholder.style.minWidth = `${containerWidth}px`;
+        }
     };
     tempImg.src = `/uploads/${file.filename}`;
     
@@ -2530,16 +2531,13 @@ function refreshLayoutResponsiveness() {
                 let maxHeight, minHeight;
                 if (isUpperLower) {
                     if (img.src.includes('lower') || img.classList.contains('lower')) {
-                        // Force lower jaw images to be square
-                        containerHeight = containerWidth;
-                        maxHeight = isMobile ? 100 : 120;
-                        minHeight = isMobile ? 60 : 80;
-                        containerHeight = Math.max(minHeight, Math.min(maxHeight, containerHeight));
+                        // Lower jaw images - fixed square dimensions
+                        containerHeight = isMobile ? 100 : 120;
+                        containerWidth = containerHeight;
                     } else {
-                        // Upper jaw images
-                        maxHeight = isMobile ? 100 : 120;
-                        minHeight = isMobile ? 60 : 80;
-                        containerHeight = Math.max(minHeight, Math.min(maxHeight, containerHeight));
+                        // Upper jaw images - also fixed square dimensions
+                        containerHeight = isMobile ? 100 : 120;
+                        containerWidth = containerHeight;
                     }
                 } else {
                     maxHeight = isMobile ? 250 : 350;
@@ -2549,6 +2547,10 @@ function refreshLayoutResponsiveness() {
                 
                 placeholder.style.height = `${containerHeight}px`;
                 placeholder.style.minHeight = `${containerHeight}px`;
+                if (isUpperLower) {
+                    placeholder.style.width = `${containerWidth}px`;
+                    placeholder.style.minWidth = `${containerWidth}px`;
+                }
             };
             tempImg.src = img.src;
         }
