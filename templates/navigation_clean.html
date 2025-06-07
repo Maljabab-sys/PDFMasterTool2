@@ -5,11 +5,25 @@
             <i class="bi bi-file-medical me-2"></i>Medical Case Manager
         </a>
         
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarContent">
-            <span class="navbar-toggler-icon"></span>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarContent" id="mobileNavToggler">
+            <div class="hamburger" id="hamburgerIcon">
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
         </button>
         
         <div class="collapse navbar-collapse" id="navbarContent">
+            <!-- Mobile nav header (only visible on mobile) -->
+            <div class="mobile-nav-header d-lg-none">
+                <div class="mobile-nav-brand">
+                    <i class="bi bi-file-medical me-2"></i>Medical Case Manager
+                </div>
+                <button class="mobile-nav-close" id="mobileNavClose">
+                    <i class="bi bi-x-lg"></i>
+                </button>
+            </div>
+            
             <ul class="navbar-nav me-auto">
                 <li class="nav-item">
                     <a class="nav-link{% if request.endpoint in ['dashboard', 'index'] %} active{% endif %}" href="{{ url_for('dashboard') }}">
@@ -53,24 +67,99 @@
 document.addEventListener('DOMContentLoaded', function() {
     const dropdown = document.getElementById('profileDropdown');
     const dropdownMenu = document.getElementById('profileDropdownMenu');
+    const mobileNavToggler = document.getElementById('mobileNavToggler');
+    const hamburgerIcon = document.getElementById('hamburgerIcon');
+    const navbarContent = document.getElementById('navbarContent');
+    const mobileNavClose = document.getElementById('mobileNavClose');
     
+    // Profile dropdown animation
     if (dropdown && dropdownMenu) {
-        // Handle dropdown show/hide events
         dropdown.addEventListener('hide.bs.dropdown', function(e) {
             e.preventDefault();
-            
-            // Add hiding class for fade-out animation
             dropdownMenu.classList.add('hiding');
-            
-            // Remove show class after animation (300ms to match CSS)
             setTimeout(() => {
                 dropdownMenu.classList.remove('show', 'hiding');
             }, 300);
         });
         
         dropdown.addEventListener('show.bs.dropdown', function() {
-            // Reset any hiding state
             dropdownMenu.classList.remove('hiding');
+        });
+    }
+    
+    // Mobile navigation functionality
+    if (mobileNavToggler && hamburgerIcon && navbarContent) {
+        // Toggle mobile navigation
+        function toggleMobileNav() {
+            const isOpen = navbarContent.classList.contains('show');
+            
+            if (isOpen) {
+                // Close navigation
+                navbarContent.classList.remove('show');
+                hamburgerIcon.classList.remove('active');
+                document.body.style.overflow = '';
+            } else {
+                // Open navigation
+                navbarContent.classList.add('show');
+                hamburgerIcon.classList.add('active');
+                document.body.style.overflow = 'hidden';
+            }
+        }
+        
+        // Handle hamburger click
+        mobileNavToggler.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            toggleMobileNav();
+        });
+        
+        // Handle close button click
+        if (mobileNavClose) {
+            mobileNavClose.addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                navbarContent.classList.remove('show');
+                hamburgerIcon.classList.remove('active');
+                document.body.style.overflow = '';
+            });
+        }
+        
+        // Close nav when clicking backdrop
+        navbarContent.addEventListener('click', function(e) {
+            if (e.target === navbarContent || e.target.classList.contains('mobile-nav-backdrop')) {
+                navbarContent.classList.remove('show');
+                hamburgerIcon.classList.remove('active');
+                document.body.style.overflow = '';
+            }
+        });
+        
+        // Close nav when clicking nav links (mobile only)
+        document.querySelectorAll('.nav-link').forEach(link => {
+            link.addEventListener('click', function() {
+                if (window.innerWidth < 992) {
+                    navbarContent.classList.remove('show');
+                    hamburgerIcon.classList.remove('active');
+                    document.body.style.overflow = '';
+                }
+            });
+        });
+        
+        // Handle window resize
+        window.addEventListener('resize', function() {
+            if (window.innerWidth >= 992) {
+                navbarContent.classList.remove('show');
+                hamburgerIcon.classList.remove('active');
+                document.body.style.overflow = '';
+            }
+        });
+        
+        // Handle escape key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape' && navbarContent.classList.contains('show')) {
+                navbarContent.classList.remove('show');
+                hamburgerIcon.classList.remove('active');
+                document.body.style.overflow = '';
+            }
         });
     }
 });
