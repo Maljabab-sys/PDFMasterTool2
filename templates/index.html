@@ -146,20 +146,22 @@
         let visitTypeChartInstance = null;
         let clinicChartInstance = null;
         
+        let resizeTimeout;
+        let isLoaded = false;
+        
         document.addEventListener('DOMContentLoaded', function() {
             loadDashboardData();
             
-            // Handle window resize for responsive charts
+            // Handle window resize for responsive charts with debouncing
             window.addEventListener('resize', function() {
-                if (visitTypeChartInstance) {
-                    visitTypeChartInstance.destroy();
-                }
-                if (clinicChartInstance) {
-                    clinicChartInstance.destroy();
-                }
-                setTimeout(() => {
-                    loadDashboardData();
-                }, 100);
+                clearTimeout(resizeTimeout);
+                resizeTimeout = setTimeout(() => {
+                    // Only reload if data has been loaded and window actually resized significantly
+                    if (isLoaded && visitTypeChartInstance && clinicChartInstance) {
+                        visitTypeChartInstance.resize();
+                        clinicChartInstance.resize();
+                    }
+                }, 300);
             });
         });
         
@@ -185,6 +187,7 @@
                     // Update charts
                     updateVisitTypeChart(data);
                     updateRecentCases(data.slice(0, 5));
+                    isLoaded = true;
                 })
                 .catch(error => console.error('Error loading cases:', error));
             
