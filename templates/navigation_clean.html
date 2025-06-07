@@ -10,25 +10,24 @@
         </button>
         
         <div class="collapse navbar-collapse" id="navbarContent">
-            <!-- Debug: Current endpoint is {{ request.endpoint }} -->
             <ul class="navbar-nav me-auto">
                 <li class="nav-item">
-                    <a class="nav-link {% if request.endpoint in ['dashboard', 'index'] %}active{% endif %}" href="{{ url_for('dashboard') }}">
+                    <a class="nav-link{% if request.endpoint in ['dashboard', 'index'] %} active{% endif %}" href="{{ url_for('dashboard') }}">
                         <i class="bi bi-speedometer2 me-1"></i>Dashboard
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link {% if request.endpoint == 'new_case' %}active{% endif %}" href="{{ url_for('new_case') }}">
+                    <a class="nav-link{% if request.endpoint == 'new_case' %} active{% endif %}" href="{{ url_for('new_case') }}">
                         <i class="bi bi-plus-circle me-1"></i>New Case
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link {% if request.endpoint == 'patient_list' %}active{% endif %}" href="{{ url_for('patient_list') }}">
+                    <a class="nav-link{% if request.endpoint == 'patient_list' %} active{% endif %}" href="{{ url_for('patient_list') }}">
                         <i class="bi bi-people me-1"></i>Patients
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link {% if request.endpoint == 'cases' %}active{% endif %}" href="{{ url_for('cases') }}">
+                    <a class="nav-link{% if request.endpoint == 'cases' %} active{% endif %}" href="{{ url_for('cases') }}">
                         <i class="bi bi-journal-text me-1"></i>Log
                     </a>
                 </li>

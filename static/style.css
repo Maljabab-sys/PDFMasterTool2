@@ -327,10 +327,7 @@ body {
         min-height: 100px;
     }
     
-    /* Mobile navigation brand text */
-    .navbar-brand {
-        font-size: 1.1rem;
-    }
+    /* Mobile navigation brand text - removed to avoid conflicts */
     
     /* Mobile heading adjustments */
     h1.display-5 {

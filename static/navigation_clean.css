@@ -53,17 +53,18 @@
     background: rgba(124, 58, 237, 0.15);
 }
 
-.navbar-nav .nav-link.active {
-    background: var(--purple-primary) !important;
-    color: white !important;
+/* High specificity active navigation styling */
+.navbar .navbar-nav .nav-link.active,
+.navbar .navbar-nav .nav-link.active:hover,
+.navbar .navbar-nav .nav-link.active:focus,
+.navbar .navbar-nav .nav-link.active:visited {
+    background: #7c3aed !important;
+    color: #ffffff !important;
     border-radius: 8px !important;
     font-weight: 600 !important;
-    box-shadow: 0 2px 8px rgba(124, 58, 237, 0.3) !important;
-}
-
-.navbar-nav .nav-link.active:hover {
-    background: var(--purple-primary) !important;
-    color: white !important;
+    box-shadow: 0 2px 8px rgba(124, 58, 237, 0.4) !important;
+    border: none !important;
+    text-decoration: none !important;
 }
 
 /* Icons in Navigation */
