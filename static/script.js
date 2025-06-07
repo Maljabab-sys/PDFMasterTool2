@@ -2226,9 +2226,14 @@ function updatePlaceholderWithDirectImage(placeholderId, file) {
             <span class="badge ${confidenceColor} position-absolute top-0 end-0 m-1" style="font-size: 0.7rem;">
                 ${Math.round(file.confidence * 100)}%
             </span>
-            <button class="btn btn-sm btn-outline-danger position-absolute top-0 start-0 m-1" onclick="removeDirectImage('${placeholderId}')" style="padding: 0.25rem 0.4rem;">
-                <i class="bi bi-x" style="font-size: 0.8rem;"></i>
-            </button>
+            <div class="position-absolute top-0 start-0 m-1 d-flex flex-column gap-1">
+                <button class="btn btn-sm btn-danger" onclick="removeDirectImage('${placeholderId}')" style="padding: 0.25rem 0.4rem; border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center;">
+                    <i class="bi bi-x" style="font-size: 0.8rem;"></i>
+                </button>
+                <button class="btn btn-sm btn-warning" onclick="replaceDirectImage('${placeholderId}')" style="padding: 0.25rem 0.4rem; border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center;" title="Replace image">
+                    <i class="bi bi-arrow-repeat" style="font-size: 0.7rem;"></i>
+                </button>
+            </div>
         </div>
         <input type="hidden" name="image_files" value="${file.filename}">
     `;
@@ -2240,6 +2245,25 @@ function updatePlaceholderWithDirectImage(placeholderId, file) {
         placeholder.style.opacity = '1';
         placeholder.style.transform = 'scale(1)';
     }, 100);
+}
+
+function replaceDirectImage(placeholderId) {
+    // Trigger file upload for the specific category
+    const categoryMap = {
+        'placeholder_extraoral_right': 'extraoral_right',
+        'placeholder_extraoral_front': 'extraoral_front', 
+        'placeholder_extraoral_smile': 'extraoral_smile',
+        'placeholder_intraoral_right': 'intraoral_right',
+        'placeholder_intraoral_front': 'intraoral_front',
+        'placeholder_intraoral_left': 'intraoral_left',
+        'placeholder_intraoral_upper': 'intraoral_upper',
+        'placeholder_intraoral_lower': 'intraoral_lower'
+    };
+    
+    const category = categoryMap[placeholderId];
+    if (category) {
+        triggerFileUpload(category);
+    }
 }
 
 function removeDirectImage(placeholderId) {

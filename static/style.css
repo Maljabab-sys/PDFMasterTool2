@@ -442,8 +442,8 @@
         box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     }
     
-    .layout-placeholder-box .btn-outline-danger {
-        background: rgba(255,255,255,0.9);
+    .layout-placeholder-box .btn-danger {
+        background: #dc3545 !important;
         border: none;
         border-radius: 50%;
         width: 24px;
@@ -451,6 +451,31 @@
         display: flex;
         align-items: center;
         justify-content: center;
+        color: white !important;
+        transition: all 0.2s ease;
+    }
+    
+    .layout-placeholder-box .btn-danger:hover {
+        background: #c82333 !important;
+        transform: scale(1.1);
+    }
+    
+    .layout-placeholder-box .btn-warning {
+        background: #ffc107 !important;
+        border: none;
+        border-radius: 50%;
+        width: 24px;
+        height: 24px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #212529 !important;
+        transition: all 0.2s ease;
+    }
+    
+    .layout-placeholder-box .btn-warning:hover {
+        background: #e0a800 !important;
+        transform: scale(1.1);
     }
     
     .layout-placeholder-box .badge {
