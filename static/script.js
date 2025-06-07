@@ -2561,7 +2561,9 @@ function refreshLayoutResponsiveness() {
 }
 
 // Window resize handler for mobile responsiveness
-let resizeTimeout;
+if (typeof resizeTimeout === 'undefined') {
+    var resizeTimeout;
+}
 window.addEventListener('resize', function() {
     clearTimeout(resizeTimeout);
     resizeTimeout = setTimeout(refreshLayoutResponsiveness, 250);
@@ -2582,43 +2584,55 @@ if ('ontouchstart' in window) {
     });
 }
 
-// Crop functionality
-let currentCropData = null;
+// Crop functionality - simplified and robust
+window.currentCropData = null;
+window.cropModal = null;
 
 function cropImage(imageSrc, placeholderId) {
-    currentCropData = { imageSrc, placeholderId };
+    window.currentCropData = { imageSrc, placeholderId };
     
     const cropImage = document.getElementById('cropImage');
-    const cropModal = new bootstrap.Modal(document.getElementById('cropModal'));
+    const cropModalElement = document.getElementById('cropModal');
     
-    cropImage.src = imageSrc;
-    cropImage.onload = function() {
-        initializeCropOverlay();
-        cropModal.show();
-    };
+    if (cropModalElement && cropImage) {
+        cropImage.src = imageSrc;
+        cropImage.onload = function() {
+            setTimeout(() => {
+                initializeCropOverlay();
+                if (!window.cropModal) {
+                    window.cropModal = new bootstrap.Modal(cropModalElement);
+                }
+                window.cropModal.show();
+            }, 200);
+        };
+    }
 }
 
 function initializeCropOverlay() {
-    const cropImage = document.getElementById('cropImage');
-    const cropOverlay = document.getElementById('cropOverlay');
-    const container = cropImage.parentElement;
-    
-    const imageRect = cropImage.getBoundingClientRect();
-    const containerRect = container.getBoundingClientRect();
-    
-    // Position overlay relative to container
-    const overlaySize = Math.min(imageRect.width, imageRect.height) * 0.6;
-    const startX = (imageRect.width - overlaySize) / 2;
-    const startY = (imageRect.height - overlaySize) / 2;
-    
-    cropOverlay.style.display = 'block';
-    cropOverlay.style.left = startX + 'px';
-    cropOverlay.style.top = startY + 'px';
-    cropOverlay.style.width = overlaySize + 'px';
-    cropOverlay.style.height = overlaySize + 'px';
-    
-    updateCropRatio();
-    setupCropHandlers();
+    setTimeout(() => {
+        const cropImage = document.getElementById('cropImage');
+        const cropOverlay = document.getElementById('cropOverlay');
+        
+        if (!cropImage || !cropOverlay) return;
+        
+        // Get image dimensions after it's loaded
+        const imageWidth = cropImage.offsetWidth;
+        const imageHeight = cropImage.offsetHeight;
+        
+        // Position overlay relative to image
+        const overlaySize = Math.min(imageWidth, imageHeight) * 0.6;
+        const startX = (imageWidth - overlaySize) / 2;
+        const startY = (imageHeight - overlaySize) / 2;
+        
+        cropOverlay.style.display = 'block';
+        cropOverlay.style.left = startX + 'px';
+        cropOverlay.style.top = startY + 'px';
+        cropOverlay.style.width = overlaySize + 'px';
+        cropOverlay.style.height = overlaySize + 'px';
+        
+        updateCropRatio();
+        setupCropHandlers();
+    }, 100);
 }
 
 function updateCropRatio() {
@@ -2676,39 +2690,34 @@ function updateCropRatio() {
 
 function setupCropHandlers() {
     const cropOverlay = document.getElementById('cropOverlay');
-    const handles = cropOverlay.querySelectorAll('.crop-handle');
     
-    // Handle ratio change
-    document.querySelectorAll('input[name="cropRatio"]').forEach(radio => {
+    if (!cropOverlay) return;
+    
+    // Remove existing listeners to prevent duplicates
+    const existingRadios = document.querySelectorAll('input[name="cropRatio"]');
+    existingRadios.forEach(radio => {
+        radio.removeEventListener('change', updateCropRatio);
         radio.addEventListener('change', updateCropRatio);
     });
     
-    // Handle dragging
+    // Simple dragging functionality
     let isDragging = false;
-    let isResizing = false;
-    let startX, startY, startLeft, startTop, startWidth, startHeight;
+    let startX, startY;
     
-    cropOverlay.addEventListener('mousedown', function(e) {
-        if (e.target.classList.contains('crop-handle')) {
-            isResizing = true;
-            const rect = cropOverlay.getBoundingClientRect();
-            startX = e.clientX;
-            startY = e.clientY;
-            startWidth = rect.width;
-            startHeight = rect.height;
-            startLeft = rect.left;
-            startTop = rect.top;
-        } else {
+    const handleMouseDown = function(e) {
+        if (e.target === cropOverlay) {
             isDragging = true;
             startX = e.clientX - cropOverlay.offsetLeft;
             startY = e.clientY - cropOverlay.offsetTop;
+            e.preventDefault();
         }
-        e.preventDefault();
-    });
+    };
     
-    document.addEventListener('mousemove', function(e) {
+    const handleMouseMove = function(e) {
         if (isDragging) {
             const cropImage = document.getElementById('cropImage');
+            if (!cropImage) return;
+            
             const newLeft = e.clientX - startX;
             const newTop = e.clientY - startY;
             
@@ -2718,39 +2727,50 @@ function setupCropHandlers() {
             cropOverlay.style.left = Math.max(0, Math.min(maxLeft, newLeft)) + 'px';
             cropOverlay.style.top = Math.max(0, Math.min(maxTop, newTop)) + 'px';
         }
-    });
+    };
     
-    document.addEventListener('mouseup', function() {
+    const handleMouseUp = function() {
         isDragging = false;
-        isResizing = false;
-    });
+    };
+    
+    // Remove existing event listeners
+    cropOverlay.removeEventListener('mousedown', handleMouseDown);
+    document.removeEventListener('mousemove', handleMouseMove);
+    document.removeEventListener('mouseup', handleMouseUp);
+    
+    // Add new event listeners
+    cropOverlay.addEventListener('mousedown', handleMouseDown);
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
 }
 
-// Apply crop functionality
+// Apply crop functionality - simplified
 document.addEventListener('DOMContentLoaded', function() {
     const applyCropBtn = document.getElementById('applyCrop');
     if (applyCropBtn) {
         applyCropBtn.addEventListener('click', function() {
-            if (!currentCropData) return;
+            if (!window.currentCropData) return;
             
             const cropOverlay = document.getElementById('cropOverlay');
             const cropImage = document.getElementById('cropImage');
             
-            const cropData = {
-                x: parseFloat(cropOverlay.style.left),
-                y: parseFloat(cropOverlay.style.top),
-                width: parseFloat(cropOverlay.style.width),
-                height: parseFloat(cropOverlay.style.height),
-                imageWidth: cropImage.offsetWidth,
-                imageHeight: cropImage.offsetHeight,
-                originalSrc: currentCropData.imageSrc
-            };
-            
-            // Create canvas and apply crop
-            applyCropToImage(cropData, currentCropData.placeholderId);
-            
-            const modal = bootstrap.Modal.getInstance(document.getElementById('cropModal'));
-            modal.hide();
+            if (cropOverlay && cropImage) {
+                const cropData = {
+                    x: parseFloat(cropOverlay.style.left) || 0,
+                    y: parseFloat(cropOverlay.style.top) || 0,
+                    width: parseFloat(cropOverlay.style.width) || 100,
+                    height: parseFloat(cropOverlay.style.height) || 100,
+                    imageWidth: cropImage.offsetWidth,
+                    imageHeight: cropImage.offsetHeight,
+                    originalSrc: window.currentCropData.imageSrc
+                };
+                
+                applyCropToImage(cropData, window.currentCropData.placeholderId);
+                
+                if (window.cropModal) {
+                    window.cropModal.hide();
+                }
+            }
         });
     }
 });
