@@ -444,7 +444,6 @@ function loadPatientList() {
         .then(data => {
             console.log('Patients loaded:', data);
             content.innerHTML = renderPatientList(data);
-            updatePatientStats(data);
         })
         .catch(error => {
             console.error('Error loading patients:', error);
@@ -560,48 +559,7 @@ function renderPatientList(patients) {
     return html;
 }
 
-// Filter patients based on search input
-function filterPatients() {
-    const searchTerm = document.getElementById('patientSearchInput').value.toLowerCase();
-    const patientItems = document.querySelectorAll('.patient-item');
-    let visibleCount = 0;
-    
-    patientItems.forEach(item => {
-        const name = item.getAttribute('data-patient-name');
-        const mrn = item.getAttribute('data-patient-mrn');
-        const clinic = item.getAttribute('data-patient-clinic');
-        
-        if (name.includes(searchTerm) || mrn.includes(searchTerm) || clinic.includes(searchTerm)) {
-            item.style.display = 'block';
-            visibleCount++;
-        } else {
-            item.style.display = 'none';
-        }
-    });
-    
-    // Show/hide no results message
-    const accordion = document.getElementById('patientAccordion');
-    let noResultsMsg = document.getElementById('no-search-results');
-    
-    if (visibleCount === 0 && searchTerm.length > 0) {
-        if (!noResultsMsg) {
-            noResultsMsg = document.createElement('div');
-            noResultsMsg.id = 'no-search-results';
-            noResultsMsg.className = 'text-center text-muted py-4';
-            noResultsMsg.innerHTML = '<i class="bi bi-search display-4 mb-3"></i><h5>No patients found</h5><p>Try adjusting your search terms</p>';
-            accordion.parentNode.appendChild(noResultsMsg);
-        }
-        noResultsMsg.style.display = 'block';
-    } else if (noResultsMsg) {
-        noResultsMsg.style.display = 'none';
-    }
-}
 
-// Clear patient search
-function clearPatientSearch() {
-    document.getElementById('patientSearchInput').value = '';
-    filterPatients();
-}
 
 // Render patient cases in single column with dark theme and Riyadh timezone
 function renderPatientCases(cases) {
@@ -944,25 +902,7 @@ function addCustomClinic() {
 }
 
 // Update patient statistics
-function updatePatientStats(patients) {
-    const totalPatients = patients.length;
-    const kfmcPatients = patients.filter(p => p.clinic === 'KFMC').length;
-    const dcPatients = patients.filter(p => p.clinic === 'DC').length;
-    const totalCases = patients.reduce((sum, p) => sum + p.cases_count, 0);
-    
-    // Update stats elements
-    const totalElement = document.getElementById('totalPatients');
-    const kfmcElement = document.getElementById('kfmcPatients');
-    const dcElement = document.getElementById('dcPatients');
-    const casesElement = document.getElementById('totalCases');
-    const countElement = document.getElementById('patientCount');
-    
-    if (totalElement) totalElement.textContent = totalPatients;
-    if (kfmcElement) kfmcElement.textContent = kfmcPatients;
-    if (dcElement) dcElement.textContent = dcPatients;
-    if (casesElement) casesElement.textContent = totalCases;
-    if (countElement) countElement.textContent = `${totalPatients} patients`;
-}
+
 
 // Mobile navigation close function with transition animation
 // Update clinic dropdowns throughout the application
