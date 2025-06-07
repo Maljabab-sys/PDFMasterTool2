@@ -1295,9 +1295,17 @@ def not_found(e):
     return render_template('index.html'), 404
 
 @app.route('/api/cases')
-@login_required
 def api_cases():
     """API endpoint for case history"""
+    if not current_user.is_authenticated:
+        # Auto-login demo user if not authenticated
+        demo_user = User.query.filter_by(email='demo@example.com').first()
+        if demo_user:
+            login_user(demo_user, remember=True)
+            session.permanent = True
+        else:
+            return jsonify([])
+    
     cases = Case.query.filter_by(user_id=current_user.id).order_by(Case.created_at.desc()).all()
     cases_data = []
     
@@ -1328,9 +1336,17 @@ def api_cases():
     return jsonify(cases_data)
 
 @app.route('/api/patients')
-@login_required
 def api_patients():
     """API endpoint for patient list with cases"""
+    if not current_user.is_authenticated:
+        # Auto-login demo user if not authenticated
+        demo_user = User.query.filter_by(email='demo@example.com').first()
+        if demo_user:
+            login_user(demo_user, remember=True)
+            session.permanent = True
+        else:
+            return jsonify([])
+    
     patients = Patient.query.filter_by(user_id=current_user.id).order_by(Patient.created_at.desc()).all()
     patients_data = []
     
