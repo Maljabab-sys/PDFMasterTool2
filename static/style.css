@@ -212,9 +212,13 @@ body {
         border-left: 1px solid var(--border-color);
         padding: 2rem 1.5rem;
         z-index: 1050;
-        transition: right 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        transition: right 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
         overflow-y: auto;
         box-shadow: -10px 0 30px rgba(0, 0, 0, 0.3);
+        /* Override Bootstrap's default collapse behavior */
+        display: block !important;
+        visibility: visible !important;
+        height: 100vh !important;
     }
     
     .navbar-collapse.show {
@@ -223,7 +227,12 @@ body {
     
     .navbar-collapse.collapsing {
         right: -100%;
-        transition: right 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        transition: right 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    }
+    
+    /* Ensure smooth animation states */
+    .navbar-collapse:not(.show) {
+        right: -100%;
     }
     
     .navbar-nav {

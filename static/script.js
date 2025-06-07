@@ -409,17 +409,25 @@ function initializeNavigation() {
     const navbarCollapse = document.querySelector('.navbar-collapse');
     
     if (navbarToggler && navbarCollapse) {
-        // Handle Bootstrap navbar toggle events
-        navbarCollapse.addEventListener('show.bs.collapse', function() {
-            navbarToggler.setAttribute('aria-expanded', 'true');
-            navbarToggler.classList.remove('collapsed');
-            document.body.style.overflow = 'hidden';
-        });
+        // Disable Bootstrap's default collapse behavior
+        navbarToggler.removeAttribute('data-bs-toggle');
+        navbarToggler.removeAttribute('data-bs-target');
         
-        navbarCollapse.addEventListener('hide.bs.collapse', function() {
-            navbarToggler.setAttribute('aria-expanded', 'false');
-            navbarToggler.classList.add('collapsed');
-            document.body.style.overflow = '';
+        // Handle navbar toggle clicks manually
+        navbarToggler.addEventListener('click', function(e) {
+            e.preventDefault();
+            const isExpanded = this.getAttribute('aria-expanded') === 'true';
+            
+            if (!isExpanded) {
+                // Open navigation
+                this.setAttribute('aria-expanded', 'true');
+                this.classList.remove('collapsed');
+                navbarCollapse.classList.add('show');
+                document.body.style.overflow = 'hidden';
+            } else {
+                // Close navigation
+                closeMobileNav();
+            }
         });
         
         // Handle clicks outside the navigation to close it
@@ -428,6 +436,15 @@ function initializeNavigation() {
             if (!isClickInsideNav && navbarCollapse.classList.contains('show')) {
                 closeMobileNav();
             }
+        });
+        
+        // Close navigation when clicking nav links on mobile
+        document.querySelectorAll('.nav-link').forEach(link => {
+            link.addEventListener('click', function() {
+                if (window.innerWidth < 992 && navbarCollapse.classList.contains('show')) {
+                    closeMobileNav();
+                }
+            });
         });
     }
 }
@@ -987,16 +1004,9 @@ function closeMobileNav() {
         navbarToggler.setAttribute('aria-expanded', 'false');
         navbarToggler.classList.add('collapsed');
         
-        // Start slide-out animation
-        navbarCollapse.style.transform = 'translateX(100%)';
-        navbarCollapse.style.transition = 'transform 0.3s ease-in-out';
-        
-        setTimeout(() => {
-            navbarCollapse.classList.remove('show');
-            document.body.style.overflow = '';
-            navbarCollapse.style.transform = '';
-            navbarCollapse.style.transition = '';
-        }, 300);
+        // Remove show class to trigger CSS slide-out animation
+        navbarCollapse.classList.remove('show');
+        document.body.style.overflow = '';
     }
 }
 
