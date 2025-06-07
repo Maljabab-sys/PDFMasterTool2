@@ -1095,8 +1095,7 @@ function loadClinicOptions() {
         })
         .catch(error => {
             console.log('Error loading clinic options:', error);
-            // Fallback to default clinics
-            updateClinicDropdown(['KFMC', 'DC']);
+            // No fallback - user must add clinics manually
         });
 }
 
