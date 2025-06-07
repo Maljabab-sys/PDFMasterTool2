@@ -74,6 +74,51 @@
     background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
 }
 
+/* Dynamic layout loading animations */
+.layout-placeholder-box {
+    transition: all 0.4s ease;
+    border: 2px dashed #dee2e6 !important;
+}
+
+.layout-placeholder-box.border-success {
+    border: 2px solid #28a745 !important;
+    box-shadow: 0 4px 8px rgba(40, 167, 69, 0.2);
+}
+
+.loading-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 120px;
+}
+
+.spinner-border {
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.layout-img {
+    transition: opacity 0.3s ease, transform 0.3s ease;
+    opacity: 0;
+    animation: fadeInScale 0.5s ease forwards;
+}
+
+@keyframes fadeInScale {
+    0% {
+        opacity: 0;
+        transform: scale(0.9);
+    }
+    100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
 .image-card-hover {
     transition: transform 0.2s ease, box-shadow 0.2s ease;
 }

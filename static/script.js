@@ -1350,13 +1350,16 @@ document.addEventListener('DOMContentLoaded', function() {
             const files = bulkUploadInput.files;
             if (files.length === 0) return;
 
+            // Initialize layout with loading states
+            initializeLayoutWithLoading();
+
             const formData = new FormData();
             for (let i = 0; i < files.length; i++) {
                 formData.append('files[]', files[i]);
             }
 
             bulkUploadProgress.style.display = 'block';
-            bulkUploadResults.style.display = 'none';
+            bulkUploadResults.style.display = 'block';
             bulkUploadBtn.disabled = true;
 
             fetch('/bulk_upload_categorize', {
@@ -1369,7 +1372,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 bulkUploadBtn.disabled = false;
 
                 if (data.success) {
-                    displayBulkUploadResults(data);
+                    updateLayoutWithResults(data);
                     clearBulkBtn.style.display = 'inline-block';
                 } else {
                     alert('Error: ' + (data.error || 'Upload failed'));
@@ -1523,24 +1526,234 @@ function displayBulkUploadResults(data) {
     bulkUploadResults.style.display = 'block';
 }
 
+function initializeLayoutWithLoading() {
+    // Hide the initial template guide
+    const layoutGuide = document.getElementById('layoutGuide');
+    if (layoutGuide) {
+        layoutGuide.style.display = 'none';
+    }
+    
+    // Show the empty layout structure with loading states
+    const imageResults = document.getElementById('imageResults');
+    imageResults.innerHTML = `
+        <div class="alert alert-info border mb-4">
+            <h6 class="text-info mb-3">
+                <i class="bi bi-cloud-upload me-2"></i>Processing Your Images
+            </h6>
+            <p class="small text-muted mb-0">AI is analyzing and categorizing your dental images...</p>
+        </div>
+        
+        <!-- Extraoral Section -->
+        <div class="col-12 mb-4">
+            <h5 class="text-primary mb-3">📸 Extraoral Views</h5>
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <div class="card h-100 border-dashed text-center p-4 layout-placeholder-box" id="placeholder_extraoral_right">
+                        <div class="loading-content">
+                            <div class="spinner-border text-primary mb-2" role="status"></div>
+                            <p class="mb-0 small">Analyzing Right Side...</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card h-100 border-dashed text-center p-4 layout-placeholder-box" id="placeholder_extraoral_frontal">
+                        <div class="loading-content">
+                            <div class="spinner-border text-primary mb-2" role="status"></div>
+                            <p class="mb-0 small">Analyzing Frontal...</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card h-100 border-dashed text-center p-4 layout-placeholder-box" id="placeholder_extraoral_smiling">
+                        <div class="loading-content">
+                            <div class="spinner-border text-primary mb-2" role="status"></div>
+                            <p class="mb-0 small">Analyzing Smiling...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Intraoral Section -->
+        <div class="col-12 mb-4">
+            <h5 class="text-success mb-3">🦷 Intraoral Views</h5>
+            <div class="row g-3 mb-3">
+                <div class="col-md-4">
+                    <div class="card h-100 border-dashed text-center p-4 layout-placeholder-box" id="placeholder_intraoral_right">
+                        <div class="loading-content">
+                            <div class="spinner-border text-success mb-2" role="status"></div>
+                            <p class="mb-0 small">Analyzing Right Side...</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card h-100 border-dashed text-center p-4 layout-placeholder-box" id="placeholder_intraoral_frontal">
+                        <div class="loading-content">
+                            <div class="spinner-border text-success mb-2" role="status"></div>
+                            <p class="mb-0 small">Analyzing Frontal...</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card h-100 border-dashed text-center p-4 layout-placeholder-box" id="placeholder_intraoral_left">
+                        <div class="loading-content">
+                            <div class="spinner-border text-success mb-2" role="status"></div>
+                            <p class="mb-0 small">Analyzing Left Side...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="row g-3 justify-content-center">
+                <div class="col-md-4">
+                    <div class="card h-100 border-dashed text-center p-4 layout-placeholder-box" id="placeholder_intraoral_upper">
+                        <div class="loading-content">
+                            <div class="spinner-border text-success mb-2" role="status"></div>
+                            <p class="mb-0 small">Analyzing Upper Occlusal...</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card h-100 border-dashed text-center p-4 layout-placeholder-box" id="placeholder_intraoral_lower">
+                        <div class="loading-content">
+                            <div class="spinner-border text-success mb-2" role="status"></div>
+                            <p class="mb-0 small">Analyzing Lower Occlusal...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+function updateLayoutWithResults(data) {
+    const { files } = data;
+    
+    // Map classifications to placeholder IDs
+    const classificationMap = {
+        'extraoral_right_view': 'placeholder_extraoral_right',
+        'extraoral_frontal_view': 'placeholder_extraoral_frontal',
+        'extraoral_smiling_view': 'placeholder_extraoral_smiling',
+        'intraoral_right_view': 'placeholder_intraoral_right',
+        'intraoral_frontal_view': 'placeholder_intraoral_frontal',
+        'intraoral_left_view': 'placeholder_intraoral_left',
+        'intraoral_upper_occlusal_view': 'placeholder_intraoral_upper',
+        'intraoral_lower_occlusal_view': 'placeholder_intraoral_lower'
+    };
+    
+    // Update each classified image in its designated position
+    files.forEach((file, index) => {
+        const placeholderId = classificationMap[file.classification];
+        if (placeholderId) {
+            updatePlaceholderWithImage(placeholderId, file, index);
+        }
+    });
+    
+    // After all updates, show final completion message
+    setTimeout(() => {
+        showCompletionMessage();
+    }, 500);
+}
+
+function updatePlaceholderWithImage(placeholderId, file, index) {
+    const placeholder = document.getElementById(placeholderId);
+    if (!placeholder) return;
+    
+    const confidenceColor = getConfidenceColor(file.confidence);
+    const isExtraoral = file.classification.startsWith('extraoral');
+    const imageStyle = isExtraoral 
+        ? "height: 150px; width: 100px; object-fit: cover; cursor: pointer; margin: 0 auto; display: block; transform: rotate(-90deg);" 
+        : "height: 120px; width: 100%; object-fit: cover; cursor: pointer;";
+    
+    // Animate the transition
+    placeholder.style.transition = 'all 0.3s ease';
+    placeholder.classList.remove('border-dashed');
+    placeholder.classList.add('border-success');
+    
+    placeholder.innerHTML = `
+        <div class="position-relative d-flex justify-content-center">
+            <img src="/uploads/${file.filename}" alt="${file.original_name}" class="layout-img" style="${imageStyle}" onclick="showImageModal('/uploads/${file.filename}', '${file.original_name}', '${file.classification}')">
+            <span class="badge ${confidenceColor} position-absolute top-0 end-0 m-1">
+                ${Math.round(file.confidence * 100)}%
+            </span>
+        </div>
+        <div class="p-2">
+            <div class="mb-2">
+                <small class="text-muted text-truncate d-block" title="${file.original_name}">
+                    ${file.original_name.length > 15 ? file.original_name.substring(0, 15) + '...' : file.original_name}
+                </small>
+            </div>
+            
+            <div class="mb-2">
+                <select class="form-select form-select-sm" id="select_${index}" onchange="updateClassificationDisplay(${index}, this.value)">
+                    <option value="extraoral_frontal_view" ${file.classification === 'extraoral_frontal_view' ? 'selected' : ''}>Extraoral Frontal</option>
+                    <option value="extraoral_right_view" ${file.classification === 'extraoral_right_view' ? 'selected' : ''}>Extraoral Right</option>
+                    <option value="extraoral_smiling_view" ${file.classification === 'extraoral_smiling_view' ? 'selected' : ''}>Extraoral Smiling</option>
+                    <option value="extraoral_teeth_smile_view" ${file.classification === 'extraoral_teeth_smile_view' ? 'selected' : ''}>Extraoral Teeth Smile</option>
+                    <option value="intraoral_frontal_view" ${file.classification === 'intraoral_frontal_view' ? 'selected' : ''}>Intraoral Frontal</option>
+                    <option value="intraoral_right_view" ${file.classification === 'intraoral_right_view' ? 'selected' : ''}>Intraoral Right</option>
+                    <option value="intraoral_left_view" ${file.classification === 'intraoral_left_view' ? 'selected' : ''}>Intraoral Left</option>
+                    <option value="intraoral_upper_occlusal_view" ${file.classification === 'intraoral_upper_occlusal_view' ? 'selected' : ''}>Upper Occlusal</option>
+                    <option value="intraoral_lower_occlusal_view" ${file.classification === 'intraoral_lower_occlusal_view' ? 'selected' : ''}>Lower Occlusal</option>
+                </select>
+            </div>
+            
+            <button class="btn btn-sm btn-primary w-100" onclick="assignToCategory('${file.filename}', document.getElementById('select_${index}').value)">
+                Add to Case
+            </button>
+        </div>
+    `;
+}
+
+function showCompletionMessage() {
+    const imageResults = document.getElementById('imageResults');
+    const completionAlert = `
+        <div class="col-12 mt-4">
+            <div class="alert alert-success">
+                <h6 class="mb-2">
+                    <i class="bi bi-check-circle me-2"></i>Classification Complete
+                </h6>
+                <p class="mb-0 small">Your images have been organized in the layout above. Review the classifications and make any adjustments using the dropdowns, then click "Add to Case" for each image.</p>
+            </div>
+        </div>
+    `;
+    imageResults.innerHTML += completionAlert;
+}
+
 function createLayoutRow(files, labels, colClass = 'col-md-4') {
     return files.map((file, index) => {
+        const categoryKey = getCategoryKeyFromLabel(labels[index]);
         if (file) {
             return createLayoutCard(file, colClass, labels[index]);
         } else {
             return `
                 <div class="${colClass}">
-                    <div class="card h-100 border-dashed text-center p-4" style="border: 2px dashed #dee2e6;">
-                        <div class="text-muted">
+                    <div class="card h-100 border-dashed text-center p-4 layout-placeholder-box" style="border: 2px dashed #dee2e6;" id="placeholder_${categoryKey}">
+                        <div class="text-muted placeholder-content">
                             <i class="bi bi-image" style="font-size: 2rem;"></i>
                             <p class="mt-2 mb-0">${labels[index]}</p>
                             <small>No image classified</small>
+                        </div>
+                        <div class="loading-content" style="display: none;">
+                            <div class="spinner-border text-primary mb-2" role="status"></div>
+                            <p class="mb-0 small">Processing...</p>
                         </div>
                     </div>
                 </div>
             `;
         }
     }).join('');
+}
+
+function getCategoryKeyFromLabel(label) {
+    const labelMap = {
+        'Right Side': 'extraoral_right',
+        'Frontal': 'extraoral_frontal', 
+        'Smiling': 'extraoral_smiling',
+        'Left Side': 'intraoral_left',
+        'Upper Occlusal': 'intraoral_upper',
+        'Lower Occlusal': 'intraoral_lower'
+    };
+    return labelMap[label] || label.toLowerCase().replace(/\s+/g, '_');
 }
 
 function createLayoutCard(file, colClass = 'col-md-4', label = '') {
