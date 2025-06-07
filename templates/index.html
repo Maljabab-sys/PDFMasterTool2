@@ -3,475 +3,27 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Patient Data Organizer</title>
+    <title>Dashboard - Medical Case Manager</title>
     <link href="https://cdn.replit.com/agent/bootstrap-agent-dark-theme.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
-    <style>
-        /* Mobile-first responsive design */
-        * {
-            box-sizing: border-box;
-        }
-        
-        body {
-            overflow-x: hidden;
-        }
-        
-        .container {
-            max-width: 100%;
-            padding-left: 15px;
-            padding-right: 15px;
-        }
-        
-        /* Upload box responsive styling */
-        .upload-box {
-            width: 100%;
-            min-height: 200px;
-            margin-bottom: 1rem;
-        }
-        
-        .image-upload-container {
-            width: 100%;
-            height: 180px;
-            position: relative;
-        }
-        
-        .upload-placeholder {
-            width: 100%;
-            height: 100%;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-        }
-        
-        /* Mobile responsive grid fixes */
-        @media (max-width: 576px) {
-            .col-lg-4, .col-md-4, .col-sm-4 {
-                flex: 0 0 33.333333%;
-                max-width: 33.333333%;
-            }
-            
-            .col-lg-4.col-md-6.col-sm-6 {
-                flex: 0 0 50%;
-                max-width: 50%;
-            }
-            
-            .upload-box {
-                min-height: 150px;
-            }
-            
-            .image-upload-container {
-                height: 130px;
-            }
-            
-            .display-6 {
-                font-size: 2rem !important;
-            }
-            
-            .form-label {
-                font-size: 0.9rem;
-            }
-            
-            .container {
-                padding-left: 10px;
-                padding-right: 10px;
-            }
-            
-            .nav-pills .nav-link {
-                padding: 0.5rem 0.75rem;
-                font-size: 0.9rem;
-            }
-            
-            .display-5 {
-                font-size: 2rem !important;
-            }
-            
-            .lead {
-                font-size: 1rem;
-            }
-        }
-        
-        /* Tablet responsive adjustments */
-        @media (min-width: 577px) and (max-width: 768px) {
-            .col-lg-4, .col-md-4 {
-                flex: 0 0 33.333333%;
-                max-width: 33.333333%;
-            }
-            
-            .col-lg-4.col-md-6 {
-                flex: 0 0 50%;
-                max-width: 50%;
-            }
-        }
-        
-        /* Custom animations and styling */
-        .animated-select {
-            transition: all 0.3s ease;
-        }
-        
-        .animated-select:focus {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(0,123,255,0.3);
-        }
-        
-        .animated-button {
-            transition: all 0.2s ease;
-        }
-        
-        .animated-button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(0,123,255,0.4);
-        }
-        
-        .visit-fields {
-            animation: fadeInUp 0.5s ease-out;
-        }
-        
-        @keyframes fadeInUp {
-            from {
-                opacity: 0;
-                transform: translateY(20px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-        
-        /* Image upload styling */
-        .upload-box {
-            margin-bottom: 1rem;
-        }
-        
-        .image-upload-container {
-            position: relative;
-            border: 2px dashed #dee2e6;
-            border-radius: 8px;
-            padding: 1rem;
-            text-align: center;
-            transition: all 0.3s ease;
-            min-height: 180px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        
-        .image-upload-container:hover {
-            border-color: #0d6efd;
-            background-color: rgba(13, 110, 253, 0.05);
-        }
-        
-        .image-input {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            opacity: 0;
-            cursor: pointer;
-        }
-        
-        .upload-placeholder {
-            pointer-events: none;
-        }
-        
-        .image-preview {
-            position: relative;
-            width: 100%;
-            height: 100%;
-        }
-        
-        .preview-img {
-            width: 100%;
-            height: 150px;
-            object-fit: cover;
-            border-radius: 6px;
-        }
-        
-        .btn-remove-image {
-            position: absolute;
-            top: -8px;
-            right: -8px;
-            background: #dc3545;
-            color: white;
-            border: none;
-            border-radius: 50%;
-            width: 24px;
-            height: 24px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 12px;
-            cursor: pointer;
-            transition: all 0.2s ease;
-        }
-        
-        .btn-remove-image:hover {
-            background: #bb2d3b;
-            transform: scale(1.1);
-        }
-        
-        /* Navigation animations */
-        .navbar-nav .nav-link {
-            transition: all 0.3s ease;
-            position: relative;
-        }
-        
-        .navbar-nav .nav-link::after {
-            content: '';
-            position: absolute;
-            bottom: 0;
-            left: 50%;
-            width: 0;
-            height: 2px;
-            background: #0d6efd;
-            transition: all 0.3s ease;
-            transform: translateX(-50%);
-        }
-        
-        .navbar-nav .nav-link:hover::after,
-        .navbar-nav .nav-link.active::after {
-            width: 80%;
-        }
-        
-        .navbar-nav .nav-link:hover {
-            transform: translateY(-2px);
-        }
-        
-        /* Card animations */
-        .card {
-            transition: all 0.3s ease;
-        }
-        
-        .card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
-        }
-        
-        /* Success popup notification */
-        .success-popup {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            background: linear-gradient(135deg, #28a745, #20c997);
-            color: white;
-            padding: 16px 24px;
-            border-radius: 12px;
-            box-shadow: 0 8px 32px rgba(40, 167, 69, 0.3);
-            z-index: 9999;
-            transform: translateX(400px);
-            opacity: 0;
-            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            min-width: 280px;
-        }
-        
-        .success-popup.show {
-            transform: translateX(0);
-            opacity: 1;
-        }
-        
-        .success-popup.hide {
-            transform: translateX(400px);
-            opacity: 0;
-        }
-        
-        .success-icon {
-            width: 24px;
-            height: 24px;
-            border-radius: 50%;
-            background: rgba(255, 255, 255, 0.2);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            animation: checkmark 0.6s ease-in-out;
-        }
-        
-        @keyframes checkmark {
-            0% { transform: scale(0) rotate(45deg); }
-            50% { transform: scale(1.2) rotate(45deg); }
-            100% { transform: scale(1) rotate(45deg); }
-        }
-        
-        .success-text {
-            font-weight: 600;
-            font-size: 15px;
-        }
-        
-        /* Profile dropdown animations */
-        .dropdown-menu {
-            border: none;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
-            border-radius: 12px;
-            overflow: hidden;
-            transform: translateY(-10px);
-            opacity: 0;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            pointer-events: none;
-        }
-        
-        .dropdown-menu.show {
-            transform: translateY(0);
-            opacity: 1;
-            pointer-events: auto;
-        }
-        
-        /* Mobile responsive dropdown */
-        @media (max-width: 768px) {
-            .dropdown-menu {
-                transform: translateY(-5px);
-                min-width: 200px;
-            }
-            
-            .dropdown-item {
-                padding: 10px 16px;
-                font-size: 14px;
-            }
-            
-            .dropdown-header {
-                padding: 12px 16px;
-                font-size: 14px;
-            }
-        }
-        
-        /* Profile icon styling */
-        #navProfileImage {
-            width: 32px;
-            height: 32px;
-            border-radius: 50%;
-            object-fit: cover;
-            border: 2px solid rgba(255, 255, 255, 0.2);
-        }
-        
-        #navProfileIcon {
-            width: 32px;
-            height: 32px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: rgba(255, 255, 255, 0.1);
-            border: 2px solid rgba(255, 255, 255, 0.2);
-        }
-        
-        /* Profile upload area styling */
-        .profile-upload-area {
-            width: 150px;
-            height: 150px;
-            border: 2px dashed #6c757d;
-            border-radius: 50%;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            margin: 0 auto;
-            background: var(--bs-dark);
-        }
-        
-        .profile-upload-area:hover {
-            border-color: #007bff;
-            background: #1a1d29;
-        }
-        
-        .profile-preview {
-            width: 150px;
-            height: 150px;
-            border-radius: 50%;
-            object-fit: cover;
-            border: 2px solid #dee2e6;
-        }
-        
-        .dropdown-item {
-            padding: 12px 20px;
-            transition: all 0.2s ease;
-            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
-        }
-        
-        .dropdown-item:hover {
-            background: linear-gradient(135deg, #6f42c1, #5a2c91);
-            color: white;
-            transform: translateX(5px);
-        }
-        
-        .dropdown-item:focus {
-            background: linear-gradient(135deg, #6f42c1, #5a2c91);
-            color: white;
-            outline: none;
-        }
-        
-        .dropdown-header {
-            background: linear-gradient(135deg, #6c757d, #495057);
-            color: white;
-            border-bottom: none;
-            padding: 15px 20px;
-            margin: 0;
-        }
-        
-        /* Profile image styling */
-        .profile-image {
-            width: 32px;
-            height: 32px;
-            border-radius: 50%;
-            object-fit: cover;
-            border: 2px solid rgba(255, 255, 255, 0.3);
-        }
-        
-        .profile-upload-area {
-            border: 2px dashed #dee2e6;
-            border-radius: 12px;
-            padding: 20px;
-            text-align: center;
-            transition: all 0.3s ease;
-            cursor: pointer;
-            margin-bottom: 20px;
-        }
-        
-        .profile-upload-area:hover {
-            border-color: #007bff;
-            background: rgba(0, 123, 255, 0.05);
-        }
-        
-        .profile-preview {
-            width: 80px;
-            height: 80px;
-            border-radius: 50%;
-            object-fit: cover;
-            margin: 0 auto 10px;
-            border: 3px solid #dee2e6;
-        }
-        
-        /* Tooltip styling */
-        .tooltip {
-            font-size: 0.875rem;
-        }
-    </style>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=3.1">
     <link rel="stylesheet" href="{{ url_for('static', filename='navigation.css') }}">
 </head>
 <body>
     {% include 'navigation.html' %}
 
-    <div class="container my-4">
-        <!-- Reports Section -->
-        <div id="reports-section" class="section">
-            <!-- Header -->
-            <div class="text-center mb-4">
-                <h1 class="display-5 fw-bold mb-2">
-                    <i class="bi bi-bar-chart text-primary me-2"></i>
-                    Reports Dashboard
-                </h1>
-                <p class="lead text-muted">View analytics and reports for your medical cases</p>
-            </div>
+    <div class="container-fluid px-3 px-md-4 my-3 my-md-5">
+        <div class="row justify-content-center">
+            <div class="col-12">
+                <!-- Header -->
+                <div class="text-center mb-5">
+                    <h1 class="display-5 fw-bold mb-3">Dashboard</h1>
+                    <p class="lead text-muted">Overview of your medical case management</p>
+                </div>
 
-        <!-- Flash Messages -->
-        {% with messages = get_flashed_messages(with_categories=true) %}
-            {% if messages %}
-                <div class="row justify-content-center mb-4">
-                    <div class="col-lg-8">
+                <!-- Flash Messages -->
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
                         {% for category, message in messages %}
                             <div class="alert alert-{{ 'danger' if category == 'error' else 'success' }} alert-dismissible fade show" role="alert">
                                 <i class="bi bi-{{ 'exclamation-triangle' if category == 'error' else 'check-circle' }} me-2"></i>
@@ -479,13 +31,11 @@
                                 <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                             </div>
                         {% endfor %}
-                    </div>
-                </div>
-            {% endif %}
-        {% endwith %}
+                    {% endif %}
+                {% endwith %}
 
-        <!-- Reports Dashboard -->
-        <div class="row">
+                <!-- Dashboard Content -->
+                <div class="row">
             <!-- Statistics Cards -->
             <div class="col-6 col-md-3 mb-4">
                 <div class="card bg-primary text-white h-100">
@@ -591,11 +141,15 @@
                     </div>
                 </div>
             </div>
+                </div>
+            </div>
         </div>
     </div>
 
-    <!-- Chart.js Library -->
+    <!-- Bootstrap JS and Chart.js Library -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
     
     <!-- Load Dashboard Data -->
     <script>
