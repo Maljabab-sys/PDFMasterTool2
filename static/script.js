@@ -1403,6 +1403,77 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 
+function handleBulkUpload(input) {
+    const files = input.files;
+    if (files.length === 0) return;
+
+    const formData = new FormData();
+    for (let i = 0; i < files.length; i++) {
+        formData.append('files[]', files[i]);
+    }
+
+    const progressDiv = document.getElementById('bulkUploadProgress');
+    const resultsDiv = document.getElementById('bulkUploadResults');
+    
+    progressDiv.style.display = 'block';
+    simulateProgressiveLoading(files.length);
+
+    fetch('/bulk_upload_categorize', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        updateProgressBar(100);
+        
+        setTimeout(() => {
+            progressDiv.style.display = 'none';
+            
+            if (data.success) {
+                updateLayoutGuideWithResults(data);
+                resultsDiv.style.display = 'block';
+                document.getElementById('classificationSummary').innerHTML = 
+                    `Successfully uploaded and organized ${data.files.length} images in the layout guide above.`;
+                document.getElementById('classificationSummary').style.display = 'block';
+            } else {
+                alert('Error: ' + (data.error || 'Upload failed'));
+            }
+        }, 500);
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        progressDiv.style.display = 'none';
+        alert('An error occurred during upload');
+    });
+}
+
+function updateLayoutGuideWithResults(data) {
+    const { files } = data;
+    
+    // Map classifications to placeholder IDs
+    const classificationMap = {
+        'extraoral_right_view': 'placeholder_extraoral_right',
+        'extraoral_frontal_view': 'placeholder_extraoral_frontal',
+        'extraoral_smiling_view': 'placeholder_extraoral_smiling',
+        'extraoral_teeth_smile_view': 'placeholder_extraoral_smiling', // Map teeth smile to smiling
+        'intraoral_right_view': 'placeholder_intraoral_right',
+        'intraoral_frontal_view': 'placeholder_intraoral_frontal',
+        'intraoral_left_view': 'placeholder_intraoral_left',
+        'intraoral_upper_occlusal_view': 'placeholder_intraoral_upper',
+        'intraoral_lower_occlusal_view': 'placeholder_intraoral_lower'
+    };
+    
+    // Update each classified image in its designated position
+    files.forEach((file, index) => {
+        const placeholderId = classificationMap[file.classification];
+        if (placeholderId) {
+            setTimeout(() => {
+                updatePlaceholderWithDirectImage(placeholderId, file);
+            }, index * 200); // Staggered placement for visual effect
+        }
+    });
+}
+
 function displayBulkUploadResults(data) {
     const { files, classification_summary } = data;
     
@@ -2207,14 +2278,14 @@ function resetPlaceholderToOriginal(placeholder, category) {
     };
     
     const labelMap = {
-        'extraoral_right': 'Right Side',
-        'extraoral_frontal': 'Frontal',
-        'extraoral_smiling': 'Smiling',
-        'intraoral_right': 'Right Side',
-        'intraoral_frontal': 'Frontal',
-        'intraoral_left': 'Left Side',
-        'intraoral_upper': 'Upper Occlusal',
-        'intraoral_lower': 'Lower Occlusal'
+        'extraoral_right': 'Right Side View',
+        'extraoral_frontal': 'Frontal View',
+        'extraoral_smiling': 'Frontal Smile View',
+        'intraoral_right': 'Right Side View',
+        'intraoral_frontal': 'Frontal View',
+        'intraoral_left': 'Left Side View',
+        'intraoral_upper': 'Upper Jaw View',
+        'intraoral_lower': 'Lower Jaw View'
     };
     
     const isOcclusal = category.includes('upper') || category.includes('lower');
