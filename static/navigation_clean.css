@@ -81,8 +81,8 @@
 
 /* Dropdown Styling */
 .dropdown-toggle {
-    background: rgba(124, 58, 237, 0.1) !important;
-    border: 1px solid rgba(124, 58, 237, 0.3) !important;
+    background: transparent !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
     color: white !important;
     border-radius: 8px;
     padding: 0.75rem 1rem;
@@ -90,7 +90,8 @@
 }
 
 .dropdown-toggle:hover {
-    background: var(--purple-primary) !important;
+    background: rgba(255, 255, 255, 0.05) !important;
+    border-color: rgba(255, 255, 255, 0.2) !important;
 }
 
 .dropdown-menu {
@@ -394,8 +395,8 @@
     }
     
     .navbar-nav .dropdown-toggle {
-        background: rgba(124, 58, 237, 0.1) !important;
-        border: 1px solid rgba(255, 255, 255, 0.2) !important;
+        background: transparent !important;
+        border: 1px solid rgba(255, 255, 255, 0.1) !important;
         width: 100%;
         text-align: left;
     }
