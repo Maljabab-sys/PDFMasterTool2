@@ -27,19 +27,25 @@ def classify_dental_image(image_path):
         Analyze this dental/orthodontic image and classify the view type. Pay careful attention to perspective and anatomical orientation.
 
         Classification criteria:
-        - LEFT VIEW: Patient's left side view - you can see the RIGHT side of their dental arch (patient's right molars/teeth visible from camera perspective)
-        - RIGHT VIEW: Patient's right side view - you can see the LEFT side of their dental arch (patient's left molars/teeth visible from camera perspective)  
-        - FRONT VIEW: Frontal view showing anterior teeth, both left and right sides visible, central incisors prominent
-        - OCCLUSAL: Top-down or bottom-up view of the bite surface/occlusal plane
+        - EXTRAORAL_LEFT: Patient's left side profile view (extraoral) - shows patient's left facial profile, right side of dental arch visible
+        - EXTRAORAL_RIGHT: Patient's right side profile view (extraoral) - shows patient's right facial profile, left side of dental arch visible  
+        - EXTRAORAL_FRONT: Frontal facial view (extraoral) - shows patient's face from front, both sides visible, lips may be open or closed
+        - INTRAORAL_LEFT: Intraoral view of patient's left side - direct view inside mouth showing left dental arch/quadrant
+        - INTRAORAL_RIGHT: Intraoral view of patient's right side - direct view inside mouth showing right dental arch/quadrant
+        - INTRAORAL_FRONT: Intraoral frontal view - direct view of front teeth from inside the mouth
+        - INTRAORAL_OCCLUSAL: Intraoral top-down or bottom-up view of the bite surface/occlusal plane
         - OTHER: Individual teeth, X-rays, instruments, or unclear views
 
-        Important: Consider the patient's anatomical orientation, not the camera angle. If you see molars on one side, determine which side of the patient's mouth they belong to.
+        Key distinctions:
+        - EXTRAORAL: Shows face/facial features, taken from outside the mouth
+        - INTRAORAL: Shows teeth/gums directly, taken from inside the mouth
+        - For LEFT/RIGHT: Determine which side of the patient's anatomy is being shown
 
         Respond with JSON in this exact format:
         {
-            "classification": "left|right|front|occlusal|other",
+            "classification": "extraoral_left|extraoral_right|extraoral_front|intraoral_left|intraoral_right|intraoral_front|intraoral_occlusal|other",
             "confidence": 0.85,
-            "reasoning": "Brief explanation of classification focusing on visible anatomical landmarks"
+            "reasoning": "Brief explanation focusing on intraoral vs extraoral and anatomical side identification"
         }
         """
 

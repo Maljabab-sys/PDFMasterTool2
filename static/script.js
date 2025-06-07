@@ -1447,11 +1447,14 @@ function displayBulkUploadResults(data) {
                         
                         <div class="mb-2">
                             <select class="form-select form-select-sm" id="select_${index}" onchange="updateClassificationDisplay(${index}, this.value)">
-                                <option value="${file.classification}" selected>${file.classification.charAt(0).toUpperCase() + file.classification.slice(1)}</option>
-                                <option value="left" ${file.classification === 'left' ? 'selected' : ''}>Left View</option>
-                                <option value="right" ${file.classification === 'right' ? 'selected' : ''}>Right View</option>
-                                <option value="front" ${file.classification === 'front' ? 'selected' : ''}>Front View</option>
-                                <option value="occlusal" ${file.classification === 'occlusal' ? 'selected' : ''}>Occlusal View</option>
+                                <option value="${file.classification}" selected>${file.classification.replace('_', ' ').toUpperCase()}</option>
+                                <option value="extraoral_left" ${file.classification === 'extraoral_left' ? 'selected' : ''}>Extraoral Left</option>
+                                <option value="extraoral_right" ${file.classification === 'extraoral_right' ? 'selected' : ''}>Extraoral Right</option>
+                                <option value="extraoral_front" ${file.classification === 'extraoral_front' ? 'selected' : ''}>Extraoral Front</option>
+                                <option value="intraoral_left" ${file.classification === 'intraoral_left' ? 'selected' : ''}>Intraoral Left</option>
+                                <option value="intraoral_right" ${file.classification === 'intraoral_right' ? 'selected' : ''}>Intraoral Right</option>
+                                <option value="intraoral_front" ${file.classification === 'intraoral_front' ? 'selected' : ''}>Intraoral Front</option>
+                                <option value="intraoral_occlusal" ${file.classification === 'intraoral_occlusal' ? 'selected' : ''}>Intraoral Occlusal</option>
                                 <option value="other" ${file.classification === 'other' ? 'selected' : ''}>Other</option>
                             </select>
                         </div>
@@ -1475,11 +1478,19 @@ function getConfidenceColor(confidence) {
 
 function getClassificationIcon(classification) {
     const icons = {
+        'extraoral_left': '👤←',
+        'extraoral_right': '👤→', 
+        'extraoral_front': '👤',
+        'intraoral_left': '🦷←',
+        'intraoral_right': '🦷→',
+        'intraoral_front': '🦷',
+        'intraoral_occlusal': '🦷⬇',
+        'other': '?',
+        // Legacy support
         'left': '←',
         'right': '→',
         'front': '↑',
-        'occlusal': '⬇',
-        'other': '?'
+        'occlusal': '⬇'
     };
     return icons[classification] || '?';
 }
@@ -1538,6 +1549,14 @@ function showImageModal(imageSrc, imageName) {
 
 function assignToCategory(filename, classification) {
     const fieldMapping = {
+        'extraoral_left': 'extra_oral_left',
+        'extraoral_right': 'extra_oral_right', 
+        'extraoral_front': 'extra_oral_front',
+        'intraoral_left': 'intra_oral_left',
+        'intraoral_right': 'intra_oral_right',
+        'intraoral_front': 'intra_oral_front',
+        'intraoral_occlusal': 'intra_oral_center',
+        // Legacy support
         'left': 'extra_oral_left',
         'right': 'extra_oral_right', 
         'front': 'extra_oral_front',
