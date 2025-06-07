@@ -1067,6 +1067,22 @@ function updateClinicDropdown(clinics) {
     });
 }
 
+// Load clinic options when page loads
+function loadClinicOptions() {
+    fetch('/api/user-settings')
+        .then(response => response.json())
+        .then(data => {
+            if (data.clinics) {
+                updateClinicDropdown(data.clinics);
+            }
+        })
+        .catch(error => {
+            console.log('Error loading clinic options:', error);
+            // Fallback to default clinics
+            updateClinicDropdown(['KFMC', 'DC']);
+        });
+}
+
 function showAbout() {
     alert('Patient Data Organizer v1.0\n\nA professional medical case presentation tool for healthcare professionals.\n\nDeveloped for organizing patient data and creating professional slide presentations.');
 }
