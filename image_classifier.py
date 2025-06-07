@@ -24,20 +24,22 @@ def classify_dental_image(image_path):
         
         # Create prompt for dental image classification
         prompt = """
-        Analyze this dental/orthodontic image and classify the view type. 
+        Analyze this dental/orthodontic image and classify the view type. Pay careful attention to perspective and anatomical orientation.
 
-        Look for these specific characteristics:
-        - LEFT VIEW: Shows patient's left side, right molars visible, profile from left
-        - RIGHT VIEW: Shows patient's right side, left molars visible, profile from right  
-        - FRONT VIEW: Shows frontal view of teeth, both sides visible, anterior teeth prominent
-        - OCCLUSAL: Top-down view of bite/occlusal surface
-        - OTHER: Any other view (individual tooth, X-ray, etc.)
+        Classification criteria:
+        - LEFT VIEW: Patient's left side view - you can see the RIGHT side of their dental arch (patient's right molars/teeth visible from camera perspective)
+        - RIGHT VIEW: Patient's right side view - you can see the LEFT side of their dental arch (patient's left molars/teeth visible from camera perspective)  
+        - FRONT VIEW: Frontal view showing anterior teeth, both left and right sides visible, central incisors prominent
+        - OCCLUSAL: Top-down or bottom-up view of the bite surface/occlusal plane
+        - OTHER: Individual teeth, X-rays, instruments, or unclear views
+
+        Important: Consider the patient's anatomical orientation, not the camera angle. If you see molars on one side, determine which side of the patient's mouth they belong to.
 
         Respond with JSON in this exact format:
         {
             "classification": "left|right|front|occlusal|other",
             "confidence": 0.85,
-            "reasoning": "Brief explanation of classification"
+            "reasoning": "Brief explanation of classification focusing on visible anatomical landmarks"
         }
         """
 

@@ -1428,18 +1428,29 @@ function displayBulkUploadResults(data) {
                             <small class="text-muted text-truncate" title="${file.original_name}">
                                 ${file.original_name}
                             </small>
-                            <button class="btn btn-sm btn-outline-primary" onclick="assignToCategory('${file.filename}', '${file.classification}')">
+                            <button class="btn btn-sm btn-outline-primary" onclick="assignToCategory('${file.filename}', document.getElementById('select_${index}').value)" id="use_btn_${index}">
                                 Use
                             </button>
                         </div>
                         
                         <div class="text-center mb-2">
-                            <span class="badge ${confidenceColor} mb-1">
+                            <span class="badge ${confidenceColor} mb-1" id="badge_${index}">
                                 ${classificationIcon} ${file.classification.toUpperCase()}
                             </span>
                             <div class="small text-muted">
                                 Confidence: ${Math.round(file.confidence * 100)}%
                             </div>
+                        </div>
+                        
+                        <div class="mb-2">
+                            <select class="form-select form-select-sm" id="select_${index}" onchange="updateClassificationDisplay(${index}, this.value)">
+                                <option value="${file.classification}" selected>${file.classification.charAt(0).toUpperCase() + file.classification.slice(1)}</option>
+                                <option value="left" ${file.classification === 'left' ? 'selected' : ''}>Left View</option>
+                                <option value="right" ${file.classification === 'right' ? 'selected' : ''}>Right View</option>
+                                <option value="front" ${file.classification === 'front' ? 'selected' : ''}>Front View</option>
+                                <option value="occlusal" ${file.classification === 'occlusal' ? 'selected' : ''}>Occlusal View</option>
+                                <option value="other" ${file.classification === 'other' ? 'selected' : ''}>Other</option>
+                            </select>
                         </div>
                         
                         ${file.reasoning ? `<div class="small text-muted">${file.reasoning}</div>` : ''}
@@ -1470,6 +1481,16 @@ function getClassificationIcon(classification) {
     return icons[classification] || '?';
 }
 
+function updateClassificationDisplay(index, newClassification) {
+    const badge = document.getElementById(`badge_${index}`);
+    const icon = getClassificationIcon(newClassification);
+    
+    if (badge) {
+        badge.innerHTML = `${icon} ${newClassification.toUpperCase()}`;
+        badge.className = `badge bg-info mb-1`; // Use info color for manually corrected
+    }
+}
+
 function assignToCategory(filename, classification) {
     const fieldMapping = {
         'left': 'extra_oral_left',
@@ -1494,7 +1515,7 @@ function assignToCategory(filename, classification) {
                     const previewImg = preview.querySelector('.preview-img');
                     if (previewImg) {
                         previewImg.src = '/uploads/' + filename;
-                        previewImg.alt = `AI Classified: ${classification}`;
+                        previewImg.alt = `Classified as: ${classification}`;
                     }
                     
                     container.setAttribute('data-ai-file', filename);
