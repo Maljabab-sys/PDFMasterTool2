@@ -151,6 +151,19 @@
                             </div>
 
                             <div class="mb-3">
+                                <label for="clinic_name" class="form-label">
+                                    <i class="bi bi-building me-2 medical-icon"></i>Clinic Name
+                                </label>
+                                <input type="text" class="form-control" id="clinic_name" name="clinic_name" 
+                                       placeholder="Enter your clinic or hospital name" required
+                                       value="{{ request.form.clinic_name if request.form.clinic_name }}">
+                                <div class="invalid-feedback">
+                                    Please provide your clinic name.
+                                </div>
+                                <small class="text-muted">This will be your default clinic for new cases</small>
+                            </div>
+
+                            <div class="mb-3">
                                 <label for="password" class="form-label">
                                     <i class="bi bi-lock me-2 medical-icon"></i>Password
                                 </label>

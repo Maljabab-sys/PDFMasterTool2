@@ -766,7 +766,7 @@ function loadUserSettings() {
             }
             
             // Update clinic dropdown in registration form
-            updateClinicDropdown(data.clinics || ['KFMC', 'DC']);
+            updateClinicDropdown(data.clinics || []);
         })
         .catch(error => {
             console.error('Error loading settings:', error);
@@ -820,15 +820,13 @@ function loadUserClinics(clinics) {
     console.log('Loading clinics:', clinics);
     clinicsList.innerHTML = '';
     
-    // If no clinics, add default ones
-    if (!clinics || clinics.length === 0) {
-        clinics = ['KFMC', 'DC'];
+    // Only load actual user clinics, no defaults
+    if (clinics && clinics.length > 0) {
+        clinics.forEach(clinic => {
+            console.log('Adding clinic to list:', clinic);
+            addClinicToList(clinic);
+        });
     }
-    
-    clinics.forEach(clinic => {
-        console.log('Adding clinic to list:', clinic);
-        addClinicToList(clinic);
-    });
 }
 
 function addClinicToList(clinicName) {

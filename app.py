@@ -734,11 +734,12 @@ def register():
         email = request.form.get('email', '').strip().lower()
         department = request.form.get('department', '').strip()
         position = request.form.get('position', '').strip()
+        clinic_name = request.form.get('clinic_name', '').strip()
         password = request.form.get('password', '')
         confirm_password = request.form.get('confirm_password', '')
         
         # Validation
-        if not all([first_name, last_name, email, department, position, password]):
+        if not all([first_name, last_name, email, department, position, clinic_name, password]):
             flash('Please fill in all required fields.', 'error')
             return render_template('register.html')
         
@@ -767,6 +768,18 @@ def register():
         
         try:
             db.session.add(user)
+            db.session.commit()
+            
+            # Create initial user settings with their clinic
+            user_settings = UserSettings(
+                user_id=user.id,
+                full_name=f"{first_name} {last_name}",
+                email=email,
+                position=position,
+                clinics_data=json.dumps([clinic_name])  # Store their clinic as JSON
+            )
+            
+            db.session.add(user_settings)
             db.session.commit()
             
             flash('Registration successful! Please log in.', 'success')
@@ -1425,7 +1438,7 @@ def api_user_settings():
             'email': '',
             'position': '',
             'gender': '',
-            'clinics': ['KFMC', 'DC']
+            'clinics': []
         }
     
     logging.info(f"Returning settings: {settings}")
