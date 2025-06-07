@@ -2636,16 +2636,22 @@ function initializeCropOverlay() {
 }
 
 function updateCropRatio() {
-    const selectedRatio = document.querySelector('input[name="cropRatio"]:checked').value;
+    const selectedRatioElement = document.querySelector('input[name="cropRatio"]:checked');
+    if (!selectedRatioElement) return;
+    
+    const selectedRatio = selectedRatioElement.value;
     const cropOverlay = document.getElementById('cropOverlay');
     const cropImage = document.getElementById('cropImage');
     
-    const currentWidth = parseFloat(cropOverlay.style.width);
+    if (!cropOverlay || !cropImage) return;
+    
+    const currentWidth = parseFloat(cropOverlay.style.width) || 100;
     let newWidth, newHeight;
     
     switch(selectedRatio) {
         case '1:1':
-            newWidth = newHeight = Math.min(currentWidth, parseFloat(cropOverlay.style.height));
+            newHeight = currentWidth;
+            newWidth = currentWidth;
             break;
         case '5:7':
             newHeight = currentWidth * (7/5);
@@ -2655,36 +2661,41 @@ function updateCropRatio() {
             newHeight = currentWidth * (16/9);
             newWidth = currentWidth;
             break;
+        default:
+            newHeight = currentWidth;
+            newWidth = currentWidth;
     }
     
     // Ensure crop area doesn't exceed image bounds
-    const maxWidth = cropImage.offsetWidth;
-    const maxHeight = cropImage.offsetHeight;
+    const maxWidth = cropImage.offsetWidth || 400;
+    const maxHeight = cropImage.offsetHeight || 400;
     
     if (newWidth > maxWidth) {
         newWidth = maxWidth;
         if (selectedRatio === '5:7') newHeight = newWidth * (7/5);
         if (selectedRatio === '9:16') newHeight = newWidth * (16/9);
+        if (selectedRatio === '1:1') newHeight = newWidth;
     }
     
     if (newHeight > maxHeight) {
         newHeight = maxHeight;
         if (selectedRatio === '5:7') newWidth = newHeight * (5/7);
         if (selectedRatio === '9:16') newWidth = newHeight * (9/16);
+        if (selectedRatio === '1:1') newWidth = newHeight;
     }
     
     cropOverlay.style.width = newWidth + 'px';
     cropOverlay.style.height = newHeight + 'px';
     
     // Center if needed
-    const currentLeft = parseFloat(cropOverlay.style.left);
-    const currentTop = parseFloat(cropOverlay.style.top);
+    const currentLeft = parseFloat(cropOverlay.style.left) || 0;
+    const currentTop = parseFloat(cropOverlay.style.top) || 0;
     
     if (currentLeft + newWidth > maxWidth) {
-        cropOverlay.style.left = (maxWidth - newWidth) + 'px';
+        cropOverlay.style.left = Math.max(0, maxWidth - newWidth) + 'px';
     }
     if (currentTop + newHeight > maxHeight) {
-        cropOverlay.style.top = (maxHeight - newHeight) + 'px';
+        cropOverlay.style.top = Math.max(0, maxHeight - newHeight) + 'px';
     }
 }
 
@@ -2804,7 +2815,7 @@ function applyCropToImage(cropData, placeholderId) {
             formData.append('cropped_image', blob, 'cropped_image.png');
             formData.append('placeholder_id', placeholderId);
             
-            fetch('/upload_single_files', {
+            fetch('/upload_cropped_image', {
                 method: 'POST',
                 body: formData
             })

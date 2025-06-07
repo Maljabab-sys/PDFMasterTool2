@@ -1362,6 +1362,45 @@ def upload_single_files():
         logging.error(f"Unexpected error in upload_single_files: {str(e)}")
         return jsonify({'success': False, 'error': f'Upload failed: {str(e)}'})
 
+@app.route('/upload_cropped_image', methods=['POST'])
+@login_required
+def upload_cropped_image():
+    """Handle cropped image uploads"""
+    try:
+        logging.info(f"Crop upload request from user {current_user.id}")
+        
+        if 'cropped_image' in request.files:
+            cropped_file = request.files['cropped_image']
+            placeholder_id = request.form.get('placeholder_id', '')
+            
+            if cropped_file and cropped_file.filename:
+                upload_folder = app.config['UPLOAD_FOLDER']
+                if not os.path.exists(upload_folder):
+                    os.makedirs(upload_folder)
+                
+                # Generate unique filename for cropped image
+                unique_filename = f"{uuid.uuid4()}_cropped.png"
+                filepath = os.path.join(upload_folder, unique_filename)
+                
+                try:
+                    cropped_file.save(filepath)
+                    optimize_image_for_pdf(filepath)
+                    
+                    logging.info(f"Successfully saved cropped image: {unique_filename}")
+                    return jsonify({'success': True, 'filename': unique_filename})
+                    
+                except Exception as e:
+                    logging.error(f"Error saving cropped image: {str(e)}")
+                    return jsonify({'success': False, 'error': f'Error saving cropped image: {str(e)}'})
+            else:
+                return jsonify({'success': False, 'error': 'No cropped image provided'})
+        else:
+            return jsonify({'success': False, 'error': 'No cropped image in request'})
+            
+    except Exception as e:
+        logging.error(f"Error in crop upload: {str(e)}")
+        return jsonify({'success': False, 'error': f'Crop upload failed: {str(e)}'})
+
 @app.route('/bulk_upload_categorize', methods=['POST'])
 @login_required
 def bulk_upload_categorize():
