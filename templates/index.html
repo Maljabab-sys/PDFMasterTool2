@@ -207,22 +207,38 @@
         function updateVisitTypeChart(cases) {
             const ctx = document.getElementById('visitTypeChart').getContext('2d');
             const visitTypes = {};
+            
+            // Function to format visit type labels
+            function formatVisitType(visitType) {
+                switch(visitType) {
+                    case 'orthodontic_visit':
+                        return 'Orthodontic Visit';
+                    case 'registration':
+                        return 'Registration';
+                    case 'debond':
+                        return 'Debond';
+                    default:
+                        return visitType.charAt(0).toUpperCase() + visitType.slice(1);
+                }
+            }
+            
             cases.forEach(case_ => {
-                visitTypes[case_.visit_type] = (visitTypes[case_.visit_type] || 0) + 1;
+                const formattedType = formatVisitType(case_.visit_type);
+                visitTypes[formattedType] = (visitTypes[formattedType] || 0) + 1;
             });
             
-            // Modern gradient backgrounds
+            // Modern gradient backgrounds with specific colors for each visit type
             const gradients = [];
-            const colors = [
-                { start: '#667eea', end: '#764ba2' },
-                { start: '#f093fb', end: '#f5576c' },
-                { start: '#4facfe', end: '#00f2fe' },
-                { start: '#43e97b', end: '#38f9d7' }
-            ];
+            const colors = {
+                'Registration': { start: '#28a745', end: '#20c997' },      // Green gradient
+                'Orthodontic Visit': { start: '#007bff', end: '#6610f2' }, // Blue gradient  
+                'Debond': { start: '#ffc107', end: '#fd7e14' },            // Orange gradient
+                'default': { start: '#6c757d', end: '#495057' }            // Gray gradient
+            };
             
-            Object.keys(visitTypes).forEach((_, index) => {
+            Object.keys(visitTypes).forEach((visitType) => {
                 const gradient = ctx.createLinearGradient(0, 0, 0, 300);
-                const color = colors[index % colors.length];
+                const color = colors[visitType] || colors['default'];
                 gradient.addColorStop(0, color.start);
                 gradient.addColorStop(1, color.end);
                 gradients.push(gradient);
@@ -421,24 +437,39 @@
             
             const isMobile = window.innerWidth < 768;
             
+            // Function to format visit type labels (same as chart function)
+            function formatVisitType(visitType) {
+                switch(visitType) {
+                    case 'orthodontic_visit':
+                        return 'Orthodontic Visit';
+                    case 'registration':
+                        return 'Registration';
+                    case 'debond':
+                        return 'Debond';
+                    default:
+                        return visitType.charAt(0).toUpperCase() + visitType.slice(1);
+                }
+            }
+            
             if (isMobile) {
                 // Mobile card layout
                 let html = '<div class="mobile-cases px-3">';
                 cases.forEach(case_ => {
                     const date = new Date(case_.created_at).toLocaleDateString();
+                    const formattedVisitType = formatVisitType(case_.visit_type);
                     const visitTypeColors = {
                         'Registration': 'bg-success',
-                        'Orthodontic Visit': 'bg-info', 
+                        'Orthodontic Visit': 'bg-primary', 
                         'Debond': 'bg-warning'
                     };
-                    const badgeColor = visitTypeColors[case_.visit_type] || 'bg-primary';
+                    const badgeColor = visitTypeColors[formattedVisitType] || 'bg-secondary';
                     
                     html += `
                         <div class="card mb-3">
                             <div class="card-body">
                                 <div class="d-flex justify-content-between align-items-start mb-2">
                                     <h6 class="card-title mb-0">${case_.title}</h6>
-                                    <span class="badge ${badgeColor}">${case_.visit_type}</span>
+                                    <span class="badge ${badgeColor}">${formattedVisitType}</span>
                                 </div>
                                 <div class="d-flex justify-content-between align-items-center">
                                     <small class="text-muted">${date}</small>
@@ -455,17 +486,18 @@
                 let html = '<div class="table-responsive"><table class="table table-hover"><thead><tr><th>Case Title</th><th>Visit Type</th><th>Created</th><th>Actions</th></tr></thead><tbody>';
                 cases.forEach(case_ => {
                     const date = new Date(case_.created_at).toLocaleDateString();
+                    const formattedVisitType = formatVisitType(case_.visit_type);
                     const visitTypeColors = {
                         'Registration': 'bg-success',
-                        'Orthodontic Visit': 'bg-info', 
+                        'Orthodontic Visit': 'bg-primary', 
                         'Debond': 'bg-warning'
                     };
-                    const badgeColor = visitTypeColors[case_.visit_type] || 'bg-primary';
+                    const badgeColor = visitTypeColors[formattedVisitType] || 'bg-secondary';
                     
                     html += `
                         <tr>
                             <td class="fw-medium">${case_.title}</td>
-                            <td><span class="badge ${badgeColor}">${case_.visit_type}</span></td>
+                            <td><span class="badge ${badgeColor}">${formattedVisitType}</span></td>
                             <td>${date}</td>
                             <td><a href="/case/${case_.id}" class="btn btn-sm btn-outline-primary rounded-pill">View Case</a></td>
                         </tr>
