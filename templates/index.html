@@ -449,61 +449,10 @@
             font-size: 0.875rem;
         }
     </style>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=2.0">
 </head>
 <body>
-    <!-- Navigation -->
-    <nav class="navbar navbar-expand-lg navbar-dark border-bottom">
-        <div class="container">
-            <a class="navbar-brand fw-bold" href="#">
-                <i class="bi bi-file-earmark-slides me-2"></i>Patient Data Organizer
-            </a>
-            
-            <!-- Profile Dropdown -->
-            <div class="dropdown">
-                <button class="btn btn-outline-light rounded-circle p-1" type="button" 
-                        id="profileDropdown" data-bs-toggle="dropdown" aria-expanded="false">
-                    <img id="navProfileImage" src="" alt="Profile" class="profile-image" style="display: none;">
-                    <i id="navProfileIcon" class="bi bi-person-circle" style="font-size: 1.2rem;"></i>
-                </button>
-                <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="profileDropdown">
-                    <li>
-                        <h6 class="dropdown-header">
-                            <i class="bi bi-person me-2"></i>User Profile
-                        </h6>
-                    </li>
-                    <li><hr class="dropdown-divider"></li>
-                    <li>
-                        <a class="dropdown-item" href="#" onclick="showSection('settings')">
-                            <i class="bi bi-gear me-2"></i>Settings
-                        </a>
-                    </li>
-                    <li>
-                        <a class="dropdown-item" href="#" onclick="showAbout()">
-                            <i class="bi bi-info-circle me-2"></i>About
-                        </a>
-                    </li>
-                </ul>
-            </div>
-        </div>
-    </nav>
-    
-    <!-- Centered Navigation Menu -->
-    <div class="container">
-        <div class="d-flex justify-content-center py-3 border-bottom">
-            <div class="nav nav-pills">
-                <a class="nav-link active me-3" href="#" onclick="showSection('new-case')">
-                    <i class="bi bi-plus-circle me-1"></i>New Case
-                </a>
-                <a class="nav-link me-3" href="#" onclick="showSection('patient-list')">
-                    <i class="bi bi-people me-1"></i>Patient List
-                </a>
-                <a class="nav-link" href="#" onclick="showSection('case-history')">
-                    <i class="bi bi-folder me-1"></i>Log
-                </a>
-            </div>
-        </div>
-    </div>
+    {% include 'navigation.html' %}
 
     <div class="container my-4">
         <!-- New Case Section -->
