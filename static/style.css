@@ -35,7 +35,7 @@
 /* Layout grid styling */
 .border-dashed {
     border-style: dashed !important;
-    background-color: #f8f9fa;
+    background-color: transparent;
 }
 
 .layout-placeholder {
@@ -65,7 +65,9 @@
 }
 
 #layoutGuide {
-    border: 2px solid #dee2e6;
+    border: 2px solid #007bff;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0, 123, 255, 0.2);
 }
 
 #categorizedGuide {
@@ -76,12 +78,21 @@
 /* Dynamic layout loading animations */
 .layout-placeholder-box {
     transition: all 0.4s ease;
-    border: 2px dashed #dee2e6 !important;
+    border: 2px dashed #007bff !important;
+    background-color: transparent !important;
+    border-radius: 8px;
+}
+
+.layout-placeholder-box:hover {
+    border-color: #0056b3 !important;
+    box-shadow: 0 4px 12px rgba(0, 123, 255, 0.3);
+    transform: translateY(-2px);
 }
 
 .layout-placeholder-box.border-success {
     border: 2px solid #28a745 !important;
     box-shadow: 0 4px 8px rgba(40, 167, 69, 0.2);
+    background-color: transparent !important;
 }
 
 .loading-content {
@@ -398,7 +409,7 @@
     
     /* Layout image container improvements */
     .layout-placeholder-box.border-success {
-        background: #f8f9fa !important;
+        background: transparent !important;
     }
     
     .layout-placeholder-box .layout-img {
