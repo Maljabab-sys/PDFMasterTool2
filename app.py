@@ -1054,9 +1054,9 @@ def search_patients():
     
     return jsonify({'patients': patients_data})
 
-@app.route('/cases')
+@app.route('/log')
 @login_required
-def cases():
+def log():
     """Display all submitted cases with search and filter functionality"""
     search_query = request.args.get('search', '').strip()
     filter_param = request.args.get('filter', '').strip()
@@ -1094,7 +1094,7 @@ def cases():
         )
     
     cases = query.order_by(Case.created_at.desc()).all()
-    return render_template('cases.html', cases=cases, search_query=search_query, current_filter=filter_param)
+    return render_template('log.html', cases=cases, search_query=search_query, current_filter=filter_param)
 
 @app.route('/case/<int:case_id>')
 @login_required
