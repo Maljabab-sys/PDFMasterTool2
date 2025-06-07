@@ -400,7 +400,37 @@ function checkUrlFragment() {
 // Initialize on page load
 document.addEventListener('DOMContentLoaded', function() {
     checkUrlFragment();
+    initializeNavigation();
 });
+
+// Initialize navigation functionality
+function initializeNavigation() {
+    const navbarToggler = document.querySelector('.navbar-toggler');
+    const navbarCollapse = document.querySelector('.navbar-collapse');
+    
+    if (navbarToggler && navbarCollapse) {
+        // Handle Bootstrap navbar toggle events
+        navbarCollapse.addEventListener('show.bs.collapse', function() {
+            navbarToggler.setAttribute('aria-expanded', 'true');
+            navbarToggler.classList.remove('collapsed');
+            document.body.style.overflow = 'hidden';
+        });
+        
+        navbarCollapse.addEventListener('hide.bs.collapse', function() {
+            navbarToggler.setAttribute('aria-expanded', 'false');
+            navbarToggler.classList.add('collapsed');
+            document.body.style.overflow = '';
+        });
+        
+        // Handle clicks outside the navigation to close it
+        document.addEventListener('click', function(event) {
+            const isClickInsideNav = navbarCollapse.contains(event.target) || navbarToggler.contains(event.target);
+            if (!isClickInsideNav && navbarCollapse.classList.contains('show')) {
+                closeMobileNav();
+            }
+        });
+    }
+}
 
 // Load case history via AJAX
 function loadCaseHistory() {
@@ -953,12 +983,16 @@ function closeMobileNav() {
     const navbarCollapse = document.querySelector('.navbar-collapse');
     
     if (navbarCollapse && navbarToggler) {
+        // Immediately update aria-expanded to trigger hamburger animation
+        navbarToggler.setAttribute('aria-expanded', 'false');
+        navbarToggler.classList.add('collapsed');
+        
+        // Start slide-out animation
         navbarCollapse.style.transform = 'translateX(100%)';
         navbarCollapse.style.transition = 'transform 0.3s ease-in-out';
         
         setTimeout(() => {
             navbarCollapse.classList.remove('show');
-            navbarToggler.setAttribute('aria-expanded', 'false');
             document.body.style.overflow = '';
             navbarCollapse.style.transform = '';
             navbarCollapse.style.transition = '';
