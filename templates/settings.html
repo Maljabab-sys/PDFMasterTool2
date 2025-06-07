@@ -259,6 +259,10 @@
             setTimeout(() => alert.remove(), 3000);
         }
 
+        // Load settings when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            loadUserSettings();
+        });
 
     </script>
     
