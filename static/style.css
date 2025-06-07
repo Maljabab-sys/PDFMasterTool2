@@ -82,6 +82,7 @@
     background-color: transparent !important;
     border-radius: 8px;
     overflow: hidden;
+    min-height: 120px;
 }
 
 .layout-placeholder-box:hover {
@@ -105,6 +106,62 @@
     height: 100% !important;
     padding: 0 !important;
     margin: 0 !important;
+}
+
+/* Mobile responsive styles */
+@media (max-width: 768px) {
+    .layout-placeholder-box {
+        min-height: 100px;
+        margin-bottom: 15px;
+    }
+    
+    /* Smaller buttons on mobile */
+    .layout-placeholder-box .btn-sm {
+        width: 20px !important;
+        height: 20px !important;
+        padding: 0.2rem 0.3rem !important;
+    }
+    
+    .layout-placeholder-box .btn-sm i {
+        font-size: 0.6rem !important;
+    }
+    
+    /* Smaller badges on mobile */
+    .layout-placeholder-box .badge {
+        font-size: 0.6rem !important;
+        padding: 0.2rem 0.3rem !important;
+    }
+    
+    /* Touch-friendly spacing */
+    .layout-placeholder-box .position-absolute.top-0.start-0 {
+        gap: 0.5rem !important;
+    }
+}
+
+@media (max-width: 576px) {
+    .layout-placeholder-box {
+        min-height: 80px;
+        margin-bottom: 10px;
+    }
+    
+    /* Even smaller elements on very small screens */
+    .layout-placeholder-box .btn-sm {
+        width: 18px !important;
+        height: 18px !important;
+    }
+    
+    .layout-placeholder-box .btn-sm i {
+        font-size: 0.5rem !important;
+    }
+    
+    /* Adjust icon sizes in placeholders */
+    .loading-content i {
+        font-size: 1rem !important;
+    }
+    
+    .loading-content .small {
+        font-size: 0.7rem !important;
+    }
 }
 
 .loading-content {

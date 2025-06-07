@@ -2236,7 +2236,14 @@ function updatePlaceholderWithDirectImage(placeholderId, file) {
         
         // For extraoral images (rotated), swap dimensions
         const effectiveAspectRatio = isExtraoral ? (1 / imageAspectRatio) : imageAspectRatio;
-        const containerHeight = containerWidth / effectiveAspectRatio;
+        let containerHeight = containerWidth / effectiveAspectRatio;
+        
+        // Apply mobile constraints for better mobile experience
+        const isMobile = window.innerWidth <= 768;
+        const maxHeight = isMobile ? 200 : 400;
+        const minHeight = isMobile ? 80 : 120;
+        
+        containerHeight = Math.max(minHeight, Math.min(maxHeight, containerHeight));
         
         // Update placeholder height to match image proportions
         placeholder.style.height = `${containerHeight}px`;
@@ -2251,11 +2258,11 @@ function updatePlaceholderWithDirectImage(placeholderId, file) {
                 ${Math.round(file.confidence * 100)}%
             </span>
             <div class="position-absolute top-0 start-0 m-1 d-flex flex-column gap-1">
-                <button type="button" class="btn btn-sm btn-danger" onclick="event.preventDefault(); event.stopPropagation(); removeDirectImage('${placeholderId}')" style="padding: 0.25rem 0.4rem; border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center;">
-                    <i class="bi bi-x" style="font-size: 0.8rem;"></i>
+                <button type="button" class="btn btn-sm btn-danger" onclick="event.preventDefault(); event.stopPropagation(); removeDirectImage('${placeholderId}')" style="padding: ${isMobile ? '0.2rem 0.3rem' : '0.25rem 0.4rem'}; border-radius: 50%; width: ${isMobile ? '20px' : '24px'}; height: ${isMobile ? '20px' : '24px'}; display: flex; align-items: center; justify-content: center;">
+                    <i class="bi bi-x" style="font-size: ${isMobile ? '0.6rem' : '0.8rem'};"></i>
                 </button>
-                <button type="button" class="btn btn-sm btn-warning" onclick="event.preventDefault(); event.stopPropagation(); replaceDirectImage('${placeholderId}')" style="padding: 0.25rem 0.4rem; border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center;" title="Replace image">
-                    <i class="bi bi-arrow-repeat" style="font-size: 0.7rem;"></i>
+                <button type="button" class="btn btn-sm btn-warning" onclick="event.preventDefault(); event.stopPropagation(); replaceDirectImage('${placeholderId}')" style="padding: ${isMobile ? '0.2rem 0.3rem' : '0.25rem 0.4rem'}; border-radius: 50%; width: ${isMobile ? '20px' : '24px'}; height: ${isMobile ? '20px' : '24px'}; display: flex; align-items: center; justify-content: center;" title="Replace image">
+                    <i class="bi bi-arrow-repeat" style="font-size: ${isMobile ? '0.5rem' : '0.7rem'};"></i>
                 </button>
             </div>
         </div>
@@ -2356,10 +2363,11 @@ function resetPlaceholderToOriginal(placeholder, category) {
         'intraoral_lower': 'Lower Jaw View'
     };
     
+    const isMobile = window.innerWidth <= 768;
     const isOcclusal = category.includes('upper') || category.includes('lower');
-    const minHeight = isOcclusal ? '100px' : '120px';
-    const mobileIconSize = isOcclusal ? '1rem' : '1.2rem';
-    const desktopIconSize = isOcclusal ? '1.2rem' : '1.5rem';
+    const minHeight = isMobile ? (isOcclusal ? '80px' : '100px') : (isOcclusal ? '100px' : '120px');
+    const mobileIconSize = isMobile ? (isOcclusal ? '0.8rem' : '1rem') : (isOcclusal ? '1rem' : '1.2rem');
+    const desktopIconSize = isMobile ? (isOcclusal ? '1rem' : '1.2rem') : (isOcclusal ? '1.2rem' : '1.5rem');
     
     placeholder.className = 'layout-placeholder-box text-center p-3 border border-dashed rounded bg-light position-relative';
     placeholder.style.cssText = `min-height: ${minHeight}; height: ${minHeight}; cursor: pointer;`;
@@ -2462,4 +2470,54 @@ function simulateUploadProgress(placeholderId) {
             progressText.textContent = 'Processing...';
         }
     }, 200);
+}
+
+// Mobile responsiveness handler
+function refreshLayoutResponsiveness() {
+    const placeholders = document.querySelectorAll('.layout-placeholder-box.border-success');
+    placeholders.forEach(placeholder => {
+        const img = placeholder.querySelector('img');
+        if (img) {
+            const isMobile = window.innerWidth <= 768;
+            const isExtraoral = img.classList.contains('extraoral');
+            
+            const tempImg = new Image();
+            tempImg.onload = function() {
+                const containerWidth = placeholder.offsetWidth;
+                const imageAspectRatio = this.naturalWidth / this.naturalHeight;
+                const effectiveAspectRatio = isExtraoral ? (1 / imageAspectRatio) : imageAspectRatio;
+                let containerHeight = containerWidth / effectiveAspectRatio;
+                
+                const maxHeight = isMobile ? 200 : 400;
+                const minHeight = isMobile ? 80 : 120;
+                containerHeight = Math.max(minHeight, Math.min(maxHeight, containerHeight));
+                
+                placeholder.style.height = `${containerHeight}px`;
+                placeholder.style.minHeight = `${containerHeight}px`;
+            };
+            tempImg.src = img.src;
+        }
+    });
+}
+
+// Window resize handler for mobile responsiveness
+let resizeTimeout;
+window.addEventListener('resize', function() {
+    clearTimeout(resizeTimeout);
+    resizeTimeout = setTimeout(refreshLayoutResponsiveness, 250);
+});
+
+// Add touch-friendly interactions for mobile
+if ('ontouchstart' in window) {
+    document.addEventListener('touchstart', function(e) {
+        if (e.target.closest('.layout-placeholder-box')) {
+            e.target.closest('.layout-placeholder-box').style.transform = 'scale(0.98)';
+        }
+    });
+    
+    document.addEventListener('touchend', function(e) {
+        if (e.target.closest('.layout-placeholder-box')) {
+            e.target.closest('.layout-placeholder-box').style.transform = 'scale(1)';
+        }
+    });
 }
