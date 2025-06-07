@@ -1669,7 +1669,7 @@ function initializeLayoutWithLoading() {
                     <div class="card h-100 border-dashed text-center p-4 layout-placeholder-box" id="placeholder_intraoral_frontal">
                         <div class="loading-content">
                             <div class="spinner-border text-success mb-2" role="status"></div>
-                            <p class="mb-0 small">Analyzing Frontal...</p>
+                            <p class="mb-0 small">Processing Frontal...</p>
                         </div>
                     </div>
                 </div>
@@ -1677,7 +1677,7 @@ function initializeLayoutWithLoading() {
                     <div class="card h-100 border-dashed text-center p-4 layout-placeholder-box" id="placeholder_intraoral_left">
                         <div class="loading-content">
                             <div class="spinner-border text-success mb-2" role="status"></div>
-                            <p class="mb-0 small">Analyzing Left Side...</p>
+                            <p class="mb-0 small">Processing Left Side...</p>
                         </div>
                     </div>
                 </div>
@@ -1848,7 +1848,7 @@ function updateProgressBar(percentage) {
         if (percentage < 30) {
             progressText.textContent = 'Uploading images...';
         } else if (percentage < 70) {
-            progressText.textContent = 'Analyzing with AI...';
+            progressText.textContent = 'Processing images...';
         } else if (percentage < 95) {
             progressText.textContent = 'Categorizing images...';
         } else {
@@ -2254,16 +2254,25 @@ function updatePlaceholderWithDirectImage(placeholderId, file) {
         
         let maxHeight, minHeight;
         if (isUpperLower) {
-            // Make upper/lower jaw images smaller
-            maxHeight = isMobile ? 100 : 120;
-            minHeight = isMobile ? 60 : 80;
+            // Make upper/lower jaw images smaller and more square
+            if (file.classification.includes('lower')) {
+                // Force lower jaw images to be square
+                containerHeight = containerWidth;
+                maxHeight = isMobile ? 100 : 120;
+                minHeight = isMobile ? 60 : 80;
+                containerHeight = Math.max(minHeight, Math.min(maxHeight, containerHeight));
+            } else {
+                // Upper jaw images
+                maxHeight = isMobile ? 100 : 120;
+                minHeight = isMobile ? 60 : 80;
+                containerHeight = Math.max(minHeight, Math.min(maxHeight, containerHeight));
+            }
         } else {
             // Regular constraints for other images
             maxHeight = isMobile ? 250 : 350;
             minHeight = isMobile ? 60 : 80;
+            containerHeight = Math.max(minHeight, Math.min(maxHeight, containerHeight));
         }
-        
-        containerHeight = Math.max(minHeight, Math.min(maxHeight, containerHeight));
         
         // Update placeholder to match image dimensions exactly
         placeholder.style.height = `${containerHeight}px`;
@@ -2520,14 +2529,23 @@ function refreshLayoutResponsiveness() {
                 
                 let maxHeight, minHeight;
                 if (isUpperLower) {
-                    maxHeight = isMobile ? 100 : 120;
-                    minHeight = isMobile ? 60 : 80;
+                    if (img.src.includes('lower') || img.classList.contains('lower')) {
+                        // Force lower jaw images to be square
+                        containerHeight = containerWidth;
+                        maxHeight = isMobile ? 100 : 120;
+                        minHeight = isMobile ? 60 : 80;
+                        containerHeight = Math.max(minHeight, Math.min(maxHeight, containerHeight));
+                    } else {
+                        // Upper jaw images
+                        maxHeight = isMobile ? 100 : 120;
+                        minHeight = isMobile ? 60 : 80;
+                        containerHeight = Math.max(minHeight, Math.min(maxHeight, containerHeight));
+                    }
                 } else {
                     maxHeight = isMobile ? 250 : 350;
                     minHeight = isMobile ? 60 : 80;
+                    containerHeight = Math.max(minHeight, Math.min(maxHeight, containerHeight));
                 }
-                
-                containerHeight = Math.max(minHeight, Math.min(maxHeight, containerHeight));
                 
                 placeholder.style.height = `${containerHeight}px`;
                 placeholder.style.minHeight = `${containerHeight}px`;
