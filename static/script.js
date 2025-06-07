@@ -2116,12 +2116,20 @@ function getPlaceholderIdFromClassification(classification) {
 }
 
 function showUploadingState(placeholder) {
+    const placeholderId = placeholder.id;
     placeholder.innerHTML = `
         <div class="loading-content d-flex flex-column align-items-center justify-content-center h-100">
-            <div class="spinner-border text-primary mb-2" role="status"></div>
+            <div class="spinner-border text-primary mb-2" role="status" style="width: 1.5rem; height: 1.5rem;"></div>
             <div class="small text-primary">Uploading...</div>
+            <div class="small text-muted mt-1" id="${placeholderId}_progress">0%</div>
+        </div>
+        <div class="upload-progress">
+            <div class="upload-progress-bar" id="${placeholderId}_bar"></div>
         </div>
     `;
+    
+    // Start progress animation
+    simulateUploadProgress(placeholderId);
 }
 
 function updatePlaceholderWithDirectImage(placeholderId, file) {
@@ -2298,4 +2306,27 @@ function addImageToCase(filename, originalName, classification) {
     
     // Show success message
     showSuccessPopup(`Added ${originalName} to case`);
+}
+
+function simulateUploadProgress(placeholderId) {
+    let progress = 0;
+    const progressText = document.getElementById(`${placeholderId}_progress`);
+    const progressBar = document.getElementById(`${placeholderId}_bar`);
+    
+    if (!progressText || !progressBar) return;
+    
+    const interval = setInterval(() => {
+        progress += Math.random() * 15 + 5; // Random increment between 5-20%
+        if (progress >= 100) {
+            progress = 100;
+            clearInterval(interval);
+        }
+        
+        progressText.textContent = Math.round(progress) + '%';
+        progressBar.style.width = progress + '%';
+        
+        if (progress >= 100) {
+            progressText.textContent = 'Processing...';
+        }
+    }, 200);
 }
