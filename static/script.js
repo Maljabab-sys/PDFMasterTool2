@@ -889,6 +889,12 @@ function addClinic() {
 function removeClinic(button) {
     const container = document.getElementById('clinicsContainer');
     const clinicEntry = button.closest('.clinic-entry');
+    const clinicName = clinicEntry.querySelector('input').value;
+    
+    if (clinicName.trim() && !confirm(`Are you sure you want to delete "${clinicName}" clinic?`)) {
+        return;
+    }
+    
     clinicEntry.remove();
     
     // Hide remove buttons if only one clinic left
@@ -896,6 +902,30 @@ function removeClinic(button) {
     if (remainingClinics.length === 1) {
         remainingClinics[0].querySelector('.remove-clinic').style.display = 'none';
     }
+    
+    // Update clinic dropdown in forms
+    updateClinicDropdown();
+}
+
+// Update patient statistics
+function updatePatientStats(patients) {
+    const totalPatients = patients.length;
+    const kfmcPatients = patients.filter(p => p.clinic === 'KFMC').length;
+    const dcPatients = patients.filter(p => p.clinic === 'DC').length;
+    const totalCases = patients.reduce((sum, p) => sum + p.cases_count, 0);
+    
+    // Update stats elements
+    const totalElement = document.getElementById('totalPatients');
+    const kfmcElement = document.getElementById('kfmcPatients');
+    const dcElement = document.getElementById('dcPatients');
+    const casesElement = document.getElementById('totalCases');
+    const countElement = document.getElementById('patientCount');
+    
+    if (totalElement) totalElement.textContent = totalPatients;
+    if (kfmcElement) kfmcElement.textContent = kfmcPatients;
+    if (dcElement) dcElement.textContent = dcPatients;
+    if (casesElement) casesElement.textContent = totalCases;
+    if (countElement) countElement.textContent = `${totalPatients} patients`;
 }
 
 function updateClinicDropdown(clinics) {
