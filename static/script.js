@@ -420,14 +420,15 @@ function loadCaseHistory() {
 
 // Load patient list via AJAX
 function loadPatientList() {
-    const content = document.getElementById('patient-list-content');
+    const content = document.getElementById('patientListContainer');
     if (!content) return;
-    content.innerHTML = '<div class="text-center"><div class="spinner-border" role="status"></div></div>';
+    content.innerHTML = '<div class="text-center py-5"><div class="spinner-border text-primary" role="status"></div><p class="mt-3 text-muted">Loading patients...</p></div>';
     
     fetch('/api/patients')
         .then(response => response.json())
         .then(data => {
             content.innerHTML = renderPatientList(data.patients);
+            updatePatientStats(data.patients);
         })
         .catch(error => {
             content.innerHTML = '<div class="alert alert-danger">Error loading patient list</div>';
