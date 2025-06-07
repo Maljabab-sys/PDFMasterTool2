@@ -211,14 +211,37 @@
                 visitTypes[case_.visit_type] = (visitTypes[case_.visit_type] || 0) + 1;
             });
             
+            // Modern gradient backgrounds
+            const gradients = [];
+            const colors = [
+                { start: '#667eea', end: '#764ba2' },
+                { start: '#f093fb', end: '#f5576c' },
+                { start: '#4facfe', end: '#00f2fe' },
+                { start: '#43e97b', end: '#38f9d7' }
+            ];
+            
+            Object.keys(visitTypes).forEach((_, index) => {
+                const gradient = ctx.createLinearGradient(0, 0, 0, 300);
+                const color = colors[index % colors.length];
+                gradient.addColorStop(0, color.start);
+                gradient.addColorStop(1, color.end);
+                gradients.push(gradient);
+            });
+            
             visitTypeChartInstance = new Chart(ctx, {
                 type: 'bar',
                 data: {
                     labels: Object.keys(visitTypes),
                     datasets: [{
-                        label: 'Number of Cases',
+                        label: 'Cases',
                         data: Object.values(visitTypes),
-                        backgroundColor: ['#0d6efd', '#198754', '#ffc107']
+                        backgroundColor: gradients,
+                        borderRadius: 8,
+                        borderSkipped: false,
+                        borderWidth: 0,
+                        hoverBackgroundColor: gradients.map(g => g),
+                        hoverBorderWidth: 2,
+                        hoverBorderColor: 'rgba(255, 255, 255, 0.3)'
                     }]
                 },
                 options: {
@@ -226,26 +249,63 @@
                     maintainAspectRatio: false,
                     plugins: {
                         legend: {
-                            display: window.innerWidth > 768
+                            display: false
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                            titleColor: '#ffffff',
+                            bodyColor: '#ffffff',
+                            borderColor: 'rgba(124, 58, 237, 0.3)',
+                            borderWidth: 1,
+                            cornerRadius: 8,
+                            displayColors: false,
+                            callbacks: {
+                                title: function(tooltipItems) {
+                                    return tooltipItems[0].label;
+                                },
+                                label: function(context) {
+                                    return `${context.parsed.y} case${context.parsed.y !== 1 ? 's' : ''}`;
+                                }
+                            }
                         }
                     },
                     scales: {
                         y: {
                             beginAtZero: true,
+                            grid: {
+                                color: 'rgba(255, 255, 255, 0.1)',
+                                lineWidth: 1
+                            },
                             ticks: {
+                                color: 'rgba(255, 255, 255, 0.7)',
                                 font: {
-                                    size: window.innerWidth > 768 ? 12 : 10
-                                }
+                                    size: window.innerWidth > 768 ? 12 : 10,
+                                    weight: '500'
+                                },
+                                stepSize: 1
                             }
                         },
                         x: {
+                            grid: {
+                                display: false
+                            },
                             ticks: {
+                                color: 'rgba(255, 255, 255, 0.8)',
                                 font: {
-                                    size: window.innerWidth > 768 ? 12 : 10
+                                    size: window.innerWidth > 768 ? 12 : 10,
+                                    weight: '600'
                                 },
                                 maxRotation: window.innerWidth > 768 ? 0 : 45
                             }
                         }
+                    },
+                    animation: {
+                        duration: 1200,
+                        easing: 'easeInOutQuart'
+                    },
+                    interaction: {
+                        intersect: false,
+                        mode: 'index'
                     }
                 }
             });
@@ -258,27 +318,95 @@
                 clinics[patient.clinic] = (clinics[patient.clinic] || 0) + 1;
             });
             
+            // Modern gradient colors for pie segments
+            const gradientColors = [
+                { start: '#667eea', end: '#764ba2' },
+                { start: '#f093fb', end: '#f5576c' },
+                { start: '#4facfe', end: '#00f2fe' },
+                { start: '#43e97b', end: '#38f9d7' },
+                { start: '#fa709a', end: '#fee140' },
+                { start: '#a8edea', end: '#fed6e3' }
+            ];
+            
+            const gradients = [];
+            Object.keys(clinics).forEach((_, index) => {
+                const gradient = ctx.createRadialGradient(150, 150, 0, 150, 150, 150);
+                const color = gradientColors[index % gradientColors.length];
+                gradient.addColorStop(0, color.start);
+                gradient.addColorStop(1, color.end);
+                gradients.push(gradient);
+            });
+            
             clinicChartInstance = new Chart(ctx, {
                 type: 'doughnut',
                 data: {
                     labels: Object.keys(clinics),
                     datasets: [{
                         data: Object.values(clinics),
-                        backgroundColor: ['#0d6efd', '#198754']
+                        backgroundColor: gradients,
+                        borderWidth: 3,
+                        borderColor: 'rgba(255, 255, 255, 0.1)',
+                        hoverBorderWidth: 4,
+                        hoverBorderColor: 'rgba(255, 255, 255, 0.3)',
+                        hoverOffset: 8
                     }]
                 },
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
+                    cutout: '60%',
                     plugins: {
                         legend: {
                             position: window.innerWidth > 768 ? 'right' : 'bottom',
                             labels: {
+                                usePointStyle: true,
+                                pointStyle: 'circle',
+                                padding: 20,
                                 font: {
-                                    size: window.innerWidth > 768 ? 12 : 10
+                                    size: window.innerWidth > 768 ? 13 : 11,
+                                    weight: '600'
+                                },
+                                color: 'rgba(255, 255, 255, 0.9)',
+                                generateLabels: function(chart) {
+                                    const original = Chart.defaults.plugins.legend.labels.generateLabels;
+                                    const labels = original.call(this, chart);
+                                    
+                                    labels.forEach((label, index) => {
+                                        const value = chart.data.datasets[0].data[index];
+                                        const total = chart.data.datasets[0].data.reduce((a, b) => a + b, 0);
+                                        const percentage = Math.round((value / total) * 100);
+                                        label.text = `${label.text} (${percentage}%)`;
+                                    });
+                                    
+                                    return labels;
+                                }
+                            }
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                            titleColor: '#ffffff',
+                            bodyColor: '#ffffff',
+                            borderColor: 'rgba(124, 58, 237, 0.3)',
+                            borderWidth: 1,
+                            cornerRadius: 8,
+                            displayColors: true,
+                            callbacks: {
+                                label: function(context) {
+                                    const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                    const percentage = Math.round((context.parsed / total) * 100);
+                                    return `${context.label}: ${context.parsed} patients (${percentage}%)`;
                                 }
                             }
                         }
+                    },
+                    animation: {
+                        animateRotate: true,
+                        animateScale: true,
+                        duration: 1500,
+                        easing: 'easeInOutQuart'
+                    },
+                    interaction: {
+                        intersect: false
                     }
                 }
             });
