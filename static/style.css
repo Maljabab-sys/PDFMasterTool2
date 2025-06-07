@@ -124,8 +124,8 @@ img.layout-img.extraoral {
     transform: rotate(-90deg) !important;
     transform-origin: center center !important;
     width: 100% !important;
-    height: 120px !important;
-    object-fit: cover !important;
+    height: 100% !important;
+    object-fit: contain !important;
 }
 
 .layout-img.extraoral-right,
@@ -133,8 +133,8 @@ img.layout-img.extraoral-right {
     transform: rotate(-90deg) !important;
     transform-origin: center center !important;
     width: 100% !important;
-    height: 120px !important;
-    object-fit: cover !important;
+    height: 100% !important;
+    object-fit: contain !important;
 }
 
 .layout-img.extraoral-front,
@@ -142,8 +142,8 @@ img.layout-img.extraoral-front {
     transform: rotate(-90deg) !important;
     transform-origin: center center !important;
     width: 100% !important;
-    height: 120px !important;
-    object-fit: cover !important;
+    height: 100% !important;
+    object-fit: contain !important;
 }
 
 .layout-img.extraoral-smile,
@@ -151,8 +151,8 @@ img.layout-img.extraoral-smile {
     transform: rotate(-90deg) !important;
     transform-origin: center center !important;
     width: 100% !important;
-    height: 120px !important;
-    object-fit: cover !important;
+    height: 100% !important;
+    object-fit: contain !important;
 }
 
 

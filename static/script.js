@@ -1752,11 +1752,9 @@ function updatePlaceholderWithImage(placeholderId, file, index) {
     const isExtraoral = file.classification.startsWith('extraoral');
     const isMobile = window.innerWidth <= 768;
     
-    // Apply CSS classes for proper sizing with 2:3 ratio for extraoral
+    // Apply CSS classes for proper sizing - preserve full image
     const imageClasses = isExtraoral ? 'layout-img extraoral' : 'layout-img';
-    const imageStyle = isExtraoral 
-        ? `cursor: pointer; margin: 0 auto; display: block;` 
-        : `height: ${isMobile ? '80px' : '120px'}; width: 100%; object-fit: cover; cursor: pointer;`;
+    const imageStyle = `height: 100%; width: 100%; object-fit: contain; cursor: pointer;`;
     
     // Animate the transition
     placeholder.style.transition = 'all 0.3s ease';
@@ -2213,11 +2211,9 @@ function updatePlaceholderWithDirectImage(placeholderId, file) {
     const isExtraoral = file.classification.startsWith('extraoral');
     const isMobile = window.innerWidth <= 768;
     
-    // Apply proper sizing with 2:3 ratio for extraoral images
+    // Apply proper sizing - preserve full image without cropping
     const imageClasses = isExtraoral ? 'layout-img extraoral' : 'layout-img';
-    const imageStyle = isExtraoral 
-        ? `cursor: pointer; border-radius: 0.375rem;`
-        : `height: 100%; width: 100%; object-fit: cover; cursor: pointer; border-radius: 0.375rem;`;
+    const imageStyle = `height: 100%; width: 100%; object-fit: contain; cursor: pointer; border-radius: 0.375rem;`;
     
     // Animate the transition
     placeholder.style.transition = 'all 0.3s ease';
