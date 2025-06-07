@@ -806,40 +806,39 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 function loadUserClinics(clinics) {
-    // Handle primary clinics (KFMC and DC)
-    const kfmcCheckbox = document.getElementById('kfmc');
-    const dcCheckbox = document.getElementById('dc');
+    const clinicsList = document.getElementById('clinicsList');
+    if (!clinicsList) return;
     
-    if (kfmcCheckbox) kfmcCheckbox.checked = clinics.includes('KFMC');
-    if (dcCheckbox) dcCheckbox.checked = clinics.includes('DC');
+    clinicsList.innerHTML = '';
     
-    // Handle custom clinics
-    const customClinics = document.getElementById('customClinics');
-    if (customClinics) {
-        customClinics.innerHTML = '';
-        
-        clinics.forEach(clinic => {
-            if (clinic !== 'KFMC' && clinic !== 'DC') {
-                const clinicHtml = `
-                    <div class="custom-clinic-entry mb-3">
-                        <div class="d-flex align-items-center justify-content-between p-3 bg-secondary bg-opacity-25 rounded">
-                            <div class="form-check flex-grow-1">
-                                <input class="form-check-input" type="checkbox" id="clinic_${Date.now()}" name="clinics" value="${clinic}" checked>
-                                <label class="form-check-label" for="clinic_${Date.now()}">
-                                    ${clinic}
-                                </label>
-                            </div>
-                            <button type="button" class="btn btn-outline-danger btn-sm" 
-                                    onclick="removeClinic(this)" title="Remove clinic">
-                                <i class="bi bi-trash"></i>
-                            </button>
-                        </div>
-                    </div>
-                `;
-                customClinics.insertAdjacentHTML('beforeend', clinicHtml);
-            }
-        });
+    // If no clinics, add default ones
+    if (!clinics || clinics.length === 0) {
+        clinics = ['KFMC', 'DC'];
     }
+    
+    clinics.forEach(clinic => {
+        addClinicToList(clinic);
+    });
+}
+
+function addClinicToList(clinicName) {
+    const clinicsList = document.getElementById('clinicsList');
+    const clinicId = `clinic_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    
+    const clinicHtml = `
+        <div class="clinic-item d-flex align-items-center justify-content-between p-3 mb-2 bg-secondary bg-opacity-25 rounded" data-clinic="${clinicName}">
+            <div class="d-flex align-items-center">
+                <i class="bi bi-building me-2 text-primary"></i>
+                <span class="fw-medium">${clinicName}</span>
+                <input type="hidden" name="clinics" value="${clinicName}">
+            </div>
+            <button type="button" class="btn btn-outline-danger btn-sm" onclick="removeClinicFromList(this)" title="Delete clinic">
+                <i class="bi bi-trash"></i>
+            </button>
+        </div>
+    `;
+    
+    clinicsList.insertAdjacentHTML('beforeend', clinicHtml);
 }
 
 function addClinic() {
@@ -927,35 +926,25 @@ function addNewClinic() {
     }
     
     // Check if clinic already exists
-    const existingClinics = document.querySelectorAll('#customClinics input[type="text"]');
-    for (let input of existingClinics) {
-        if (input.value.toLowerCase() === clinicName.toLowerCase()) {
+    const existingClinics = document.querySelectorAll('.clinic-item');
+    for (let item of existingClinics) {
+        if (item.dataset.clinic.toLowerCase() === clinicName.toLowerCase()) {
             alert('This clinic already exists');
             return;
         }
     }
     
-    const customClinics = document.getElementById('customClinics');
-    const clinicHtml = `
-        <div class="custom-clinic-entry mb-3">
-            <div class="d-flex align-items-center justify-content-between p-3 bg-secondary bg-opacity-25 rounded">
-                <div class="form-check flex-grow-1">
-                    <input class="form-check-input" type="checkbox" id="clinic_${Date.now()}" name="clinics" value="${clinicName}" checked>
-                    <label class="form-check-label" for="clinic_${Date.now()}">
-                        ${clinicName}
-                    </label>
-                </div>
-                <button type="button" class="btn btn-outline-danger btn-sm" 
-                        onclick="removeClinic(this)" title="Remove clinic">
-                    <i class="bi bi-trash"></i>
-                </button>
-            </div>
-        </div>
-    `;
-    
-    customClinics.insertAdjacentHTML('beforeend', clinicHtml);
+    addClinicToList(clinicName);
     newClinicInput.value = '';
-    updateClinicDropdowns();
+}
+
+function removeClinicFromList(button) {
+    const clinicItem = button.closest('.clinic-item');
+    const clinicName = clinicItem.dataset.clinic;
+    
+    if (confirm(`Are you sure you want to delete "${clinicName}"?`)) {
+        clinicItem.remove();
+    }
 }
 
 // Filter patients based on search input
@@ -1082,34 +1071,62 @@ function showAbout() {
     alert('Patient Data Organizer v1.0\n\nA professional medical case presentation tool for healthcare professionals.\n\nDeveloped for organizing patient data and creating professional slide presentations.');
 }
 
-function showSuccessPopup(message = 'Settings saved successfully!') {
+function showSuccessPopup(message = 'Changes saved successfully!') {
     // Remove any existing popup
-    const existing = document.querySelector('.success-popup');
+    const existing = document.querySelector('.success-popup-overlay');
     if (existing) {
         existing.remove();
     }
     
-    // Create popup element
-    const popup = document.createElement('div');
-    popup.className = 'success-popup';
-    popup.innerHTML = `
-        <div class="success-icon">
-            <i class="bi bi-check" style="color: white; font-size: 14px; font-weight: bold;"></i>
-        </div>
-        <div class="success-text">${message}</div>
+    // Create overlay
+    const overlay = document.createElement('div');
+    overlay.className = 'success-popup-overlay position-fixed top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center';
+    overlay.style.cssText = `
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 9999;
+        backdrop-filter: blur(3px);
+        opacity: 0;
+        transition: all 0.3s ease;
     `;
     
-    // Add to page
-    document.body.appendChild(popup);
+    // Create popup
+    const popup = document.createElement('div');
+    popup.className = 'bg-success text-white p-4 rounded-4 shadow-lg text-center';
+    popup.style.cssText = `
+        max-width: 350px;
+        transform: scale(0.8) translateY(-20px);
+        transition: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+    `;
     
-    // Trigger animation
-    setTimeout(() => popup.classList.add('show'), 100);
+    popup.innerHTML = `
+        <div class="mb-3">
+            <div class="bg-white bg-opacity-20 rounded-circle d-inline-flex align-items-center justify-content-center" style="width: 60px; height: 60px;">
+                <i class="bi bi-check-lg text-white" style="font-size: 2rem; font-weight: bold;"></i>
+            </div>
+        </div>
+        <h5 class="fw-bold mb-2">Success!</h5>
+        <p class="mb-0">${message}</p>
+    `;
     
-    // Auto hide after 3 seconds
+    overlay.appendChild(popup);
+    document.body.appendChild(overlay);
+    
+    // Trigger entrance animation
     setTimeout(() => {
-        popup.classList.add('hide');
-        setTimeout(() => popup.remove(), 400);
-    }, 3000);
+        overlay.style.opacity = '1';
+        popup.style.transform = 'scale(1) translateY(0)';
+    }, 10);
+    
+    // Auto hide after 2.5 seconds
+    setTimeout(() => {
+        overlay.style.opacity = '0';
+        popup.style.transform = 'scale(0.9) translateY(-10px)';
+        setTimeout(() => {
+            if (document.body.contains(overlay)) {
+                overlay.remove();
+            }
+        }, 300);
+    }, 2500);
 }
 
 function handleProfileImageUpload(input) {
