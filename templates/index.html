@@ -621,7 +621,12 @@
         
         function loadDashboardData() {
             // Load statistics
-            fetch('/api/cases')
+            fetch('/api/cases', {
+                credentials: 'same-origin',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            })
                 .then(response => response.json())
                 .then(data => {
                     document.getElementById('totalCases').textContent = data.length;
@@ -640,7 +645,12 @@
                 .catch(error => console.error('Error loading cases:', error));
             
             // Load patients
-            fetch('/api/patients')
+            fetch('/api/patients', {
+                credentials: 'same-origin',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            })
                 .then(response => response.json())
                 .then(data => {
                     document.getElementById('totalPatients').textContent = data.length;
