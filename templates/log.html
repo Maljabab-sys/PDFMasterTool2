@@ -43,10 +43,7 @@
                     </div>
                 </div>
 
-                <div class="alert alert-info" id="searchInfo" style="display: none;">
-                    <i class="bi bi-search me-2"></i>
-                    <span id="searchResults"></span>
-                </div>
+
 
                 {% if cases %}
                     <div class="minimal-cases-list">
@@ -128,14 +125,10 @@
                 const searchInput = document.getElementById('caseSearch');
                 const searchValue = searchInput.value.toLowerCase().trim();
                 const clearButton = document.getElementById('clearSearch');
-                const searchInfo = document.getElementById('searchInfo');
-                const searchResults = document.getElementById('searchResults');
                 const caseCards = document.querySelectorAll('.minimal-case-card');
                 
                 // Show/hide clear button with animation
                 clearButton.style.display = searchValue ? 'block' : 'none';
-                
-                let visibleCount = 0;
                 
                 caseCards.forEach((card, index) => {
                     const title = card.querySelector('.case-title').textContent.toLowerCase();
@@ -153,7 +146,6 @@
                             card.style.display = 'flex';
                             card.style.opacity = '1';
                             card.style.transform = 'translateY(0)';
-                            visibleCount++;
                         } else {
                             card.style.opacity = '0';
                             card.style.transform = 'translateY(-10px)';
@@ -166,36 +158,16 @@
                     }, index * 50); // Stagger animation
                 });
                 
-                // Show/hide search info with animation
-                setTimeout(() => {
-                    if (searchValue) {
-                        searchInfo.style.display = 'block';
-                        searchInfo.classList.add('show');
-                        searchResults.textContent = `Showing ${visibleCount} result${visibleCount !== 1 ? 's' : ''} for "${searchValue}"`;
-                    } else {
-                        searchInfo.classList.remove('show');
-                        setTimeout(() => {
-                            searchInfo.style.display = 'none';
-                        }, 300);
-                    }
-                }, 100);
-                
             }, 300); // 300ms debounce delay
         }
         
         function clearCaseSearch() {
             const searchInput = document.getElementById('caseSearch');
             const clearButton = document.getElementById('clearSearch');
-            const searchInfo = document.getElementById('searchInfo');
             const caseCards = document.querySelectorAll('.minimal-case-card');
             
             searchInput.value = '';
             clearButton.style.display = 'none';
-            searchInfo.classList.remove('show');
-            
-            setTimeout(() => {
-                searchInfo.style.display = 'none';
-            }, 300);
             
             // Show all cases with staggered animation
             caseCards.forEach((card, index) => {
