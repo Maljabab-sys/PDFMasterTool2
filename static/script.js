@@ -2257,11 +2257,11 @@ function updatePlaceholderWithDirectImage(placeholderId, file) {
             // Make upper/lower jaw images square with fixed dimensions
             if (file.classification.includes('lower')) {
                 // Lower jaw images - perfect squares
-                containerHeight = isMobile ? 70 : 90;
+                containerHeight = isMobile ? 60 : 75;
                 containerWidth = containerHeight; // Force square
             } else {
                 // Upper jaw images - also perfect squares
-                containerHeight = isMobile ? 70 : 90;
+                containerHeight = isMobile ? 60 : 75;
                 containerWidth = containerHeight; // Force square
             }
         } else {
