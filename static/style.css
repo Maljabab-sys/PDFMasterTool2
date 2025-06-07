@@ -93,6 +93,44 @@ body {
     border-color: var(--bs-success);
 }
 
+/* Profile Dropdown Enhancements */
+.dropdown-menu {
+    border: 1px solid var(--border-color);
+    background: var(--preview-bg);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+    border-radius: 12px;
+    overflow: hidden;
+    min-width: 200px;
+}
+
+.dropdown-item {
+    color: var(--bs-light);
+    transition: all 0.2s ease;
+    padding: 0.75rem 1rem;
+}
+
+.dropdown-item:hover,
+.dropdown-item:focus {
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+}
+
+.dropdown-item.active {
+    background: var(--bs-primary);
+    color: white;
+}
+
+.dropdown-header {
+    color: var(--bs-light);
+    background: rgba(255, 255, 255, 0.05);
+    border-bottom: 1px solid var(--border-color);
+}
+
+.dropdown-divider {
+    border-color: var(--border-color);
+    margin: 0;
+}
+
 /* Mobile optimizations */
 @media (max-width: 768px) {
     .container {
@@ -110,6 +148,38 @@ body {
     .preview-image {
         height: 100px;
     }
+    
+    /* Mobile dropdown improvements */
+    .dropdown-menu {
+        width: 100%;
+        position: static !important;
+        transform: none !important;
+        border-radius: 8px;
+        margin-top: 0.5rem;
+    }
+    
+    .navbar-collapse {
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 8px;
+        margin-top: 1rem;
+        padding: 1rem;
+    }
+    
+    .nav-link {
+        padding: 0.75rem 1rem;
+        border-radius: 6px;
+        margin-bottom: 0.25rem;
+        transition: all 0.2s ease;
+    }
+    
+    .nav-link:hover {
+        background: rgba(255, 255, 255, 0.1);
+    }
+    
+    .nav-link.active {
+        background: var(--bs-primary);
+        color: white;
+    }
 }
 
 @media (max-width: 576px) {
@@ -125,6 +195,90 @@ body {
     .btn-lg {
         font-size: 1rem;
         padding: 0.75rem 1rem;
+    }
+    
+    /* Enhanced mobile form styling */
+    .container-fluid {
+        padding-left: 0.75rem !important;
+        padding-right: 0.75rem !important;
+    }
+    
+    .card {
+        border-radius: 12px;
+        margin-bottom: 1rem;
+    }
+    
+    .card-header {
+        padding: 1rem;
+        border-radius: 12px 12px 0 0 !important;
+    }
+    
+    .card-body {
+        padding: 1rem !important;
+    }
+    
+    .row > div {
+        margin-bottom: 0.75rem;
+    }
+    
+    .btn {
+        width: 100%;
+        margin-bottom: 0.5rem;
+        padding: 0.75rem;
+        font-size: 1rem;
+    }
+    
+    .btn-group {
+        flex-direction: column;
+        width: 100%;
+    }
+    
+    .btn-group .btn {
+        border-radius: 6px !important;
+        margin-bottom: 0.25rem;
+    }
+    
+    /* Mobile form labels */
+    .form-label {
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+        font-size: 0.95rem;
+    }
+    
+    /* Mobile input styling */
+    .form-control,
+    .form-select {
+        padding: 0.75rem;
+        font-size: 1rem;
+        border-radius: 8px;
+    }
+    
+    /* Mobile image upload areas */
+    .image-upload-container {
+        margin-bottom: 1rem;
+        padding: 1rem;
+        border-radius: 12px;
+    }
+    
+    /* Mobile text inputs */
+    textarea.form-control {
+        min-height: 100px;
+    }
+    
+    /* Mobile navigation brand text */
+    .navbar-brand {
+        font-size: 1.1rem;
+    }
+    
+    /* Mobile heading adjustments */
+    h1.display-5 {
+        font-size: 1.75rem;
+        margin-bottom: 0.5rem;
+    }
+    
+    .lead {
+        font-size: 1rem;
+        margin-bottom: 1.5rem;
     }
 }
 
