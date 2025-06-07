@@ -1519,21 +1519,21 @@ function createLayoutCard(file, colClass = 'col-md-4', label = '') {
     const confidenceColor = getConfidenceColor(file.confidence);
     const index = file.originalIndex;
     
-    // Determine image display style based on classification
+    // Responsive image styles
     const isExtraoral = file.classification.startsWith('extraoral');
     const imageStyle = isExtraoral 
         ? "height: 200px; width: 150px; object-fit: cover; cursor: pointer; margin: 0 auto; display: block; transform: rotate(-90deg);" 
         : "height: 150px; width: 100%; object-fit: cover; cursor: pointer;";
     
     return `
-        <div class="${colClass}">
+        <div class="${colClass} layout-card-mobile">
             <div class="card h-100 shadow-sm image-card-hover">
                 <div class="position-relative d-flex justify-content-center">
-                    <img src="/uploads/${file.filename}" alt="${file.original_name}" class="card-img-top" style="${imageStyle}" onclick="showImageModal('/uploads/${file.filename}', '${file.original_name}', '${file.classification}')">
+                    <img src="/uploads/${file.filename}" alt="${file.original_name}" class="card-img-top layout-img" style="${imageStyle}" onclick="showImageModal('/uploads/${file.filename}', '${file.original_name}', '${file.classification}')">
                     <span class="badge ${confidenceColor} position-absolute top-0 end-0 m-1" id="badge_${index}">
                         ${Math.round(file.confidence * 100)}%
                     </span>
-                    ${label ? `<div class="badge bg-dark position-absolute bottom-0 start-0 m-1">${label}</div>` : ''}
+                    ${label ? `<div class="badge bg-dark position-absolute bottom-0 start-0 m-1 layout-label">${label}</div>` : ''}
                 </div>
                 <div class="card-body p-2">
                     <div class="mb-2">

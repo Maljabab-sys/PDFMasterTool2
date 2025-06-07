@@ -134,6 +134,26 @@
         flex: 0 0 50%;
         max-width: 50%;
     }
+    
+    /* Structured layout mobile adjustments */
+    .col-md-4 {
+        flex: 0 0 100%;
+        max-width: 100%;
+        margin-bottom: 1rem;
+    }
+    
+    /* Layout images mobile sizing */
+    .image-card-hover img {
+        height: 120px !important;
+        width: 100% !important;
+        transform: none !important;
+    }
+    
+    /* Section headers mobile */
+    h5.text-primary, h5.text-success {
+        font-size: 1.1rem;
+        margin-bottom: 1rem !important;
+    }
 }
 
 @media (max-width: 576px) {
@@ -168,6 +188,26 @@
         flex: 0 0 100%;
         max-width: 100%;
         margin-bottom: 0.75rem;
+    }
+    
+    /* Structured layout mobile - single column */
+    .col-md-4 {
+        flex: 0 0 100%;
+        max-width: 100%;
+        margin-bottom: 0.75rem;
+    }
+    
+    /* Mobile image adjustments for structured layout */
+    .layout-card-mobile .layout-img {
+        height: 100px !important;
+        width: 100% !important;
+        transform: none !important;
+        object-fit: cover;
+    }
+    
+    .layout-label {
+        font-size: 0.7rem !important;
+        padding: 0.2rem 0.4rem !important;
     }
     
     .image-card-hover .card-body {
