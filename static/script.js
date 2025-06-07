@@ -2316,8 +2316,7 @@ function resetPlaceholderToOriginal(placeholder, category) {
     };
     
     const isOcclusal = category.includes('upper') || category.includes('lower');
-    const isExtraoral = category.includes('extraoral');
-    const minHeight = isOcclusal ? '100px' : (isExtraoral ? '180px' : '120px');
+    const minHeight = isOcclusal ? '100px' : '120px';
     const mobileIconSize = isOcclusal ? '1rem' : '1.2rem';
     const desktopIconSize = isOcclusal ? '1.2rem' : '1.5rem';
     
