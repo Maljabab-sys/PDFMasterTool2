@@ -113,9 +113,13 @@
 
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="{{ url_for('static', filename='script.js') }}"></script>
+    <script src="{{ url_for('static', filename='script.js') }}?v=2.0"></script>
     <script>
         let searchTimeout;
+        
+        // Override global search result functions to prevent interference
+        function displaySearchResults() { return; }
+        function searchResults() { return; }
         
         function filterCases() {
             // Clear existing timeout to debounce rapid typing
@@ -191,6 +195,15 @@
                     this.parentElement.parentElement.style.borderColor = 'rgba(255, 255, 255, 0.1)';
                 });
             }
+            
+            // Remove any existing search result displays
+            const searchResultElements = document.querySelectorAll('[id*="search"], [class*="search-result"], .alert');
+            searchResultElements.forEach(element => {
+                if (element.textContent.includes('result') || element.textContent.includes('Showing')) {
+                    element.style.display = 'none';
+                    element.remove();
+                }
+            });
         });
     </script>
 </body>
