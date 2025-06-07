@@ -2623,16 +2623,18 @@ function initializeCropOverlay() {
         const imageWidth = cropImage.offsetWidth;
         const imageHeight = cropImage.offsetHeight;
         
-        // Position overlay relative to image
-        const overlaySize = Math.min(imageWidth, imageHeight) * 0.6;
-        const startX = (imageWidth - overlaySize) / 2;
-        const startY = (imageHeight - overlaySize) / 2;
+        // Start with crop box fitting the full image
+        const margin = 20; // Small margin from edges
+        const startX = margin;
+        const startY = margin;
+        const startWidth = imageWidth - (margin * 2);
+        const startHeight = imageHeight - (margin * 2);
         
         cropOverlay.style.display = 'block';
         cropOverlay.style.left = startX + 'px';
         cropOverlay.style.top = startY + 'px';
-        cropOverlay.style.width = overlaySize + 'px';
-        cropOverlay.style.height = overlaySize + 'px';
+        cropOverlay.style.width = startWidth + 'px';
+        cropOverlay.style.height = startHeight + 'px';
         
         updateCropRatio();
         setupCropHandlers();
@@ -2718,6 +2720,9 @@ function updateCropRatio() {
     let newWidth, newHeight;
     
     switch(selectedRatio) {
+        case 'free':
+            // Free transform - no aspect ratio constraints
+            return; // Exit early, no ratio adjustment needed
         case '1:1':
             newHeight = currentWidth;
             newWidth = currentWidth;
@@ -2726,13 +2731,12 @@ function updateCropRatio() {
             newHeight = currentWidth * (7/5);
             newWidth = currentWidth;
             break;
-        case '9:16':
-            newHeight = currentWidth * (16/9);
+        case '16:9':
+            newHeight = currentWidth * (9/16); // Horizontal widescreen
             newWidth = currentWidth;
             break;
         default:
-            newHeight = currentWidth;
-            newWidth = currentWidth;
+            return; // No ratio constraint for unknown values
     }
     
     // Ensure crop area doesn't exceed image bounds
@@ -2843,9 +2847,10 @@ function setupCropHandlers() {
             let newHeight = startHeight;
             
             const selectedRatio = document.querySelector('input[name="cropRatio"]:checked').value;
+            const isFree = selectedRatio === 'free';
             const isSquare = selectedRatio === '1:1';
             const ratio57 = selectedRatio === '5:7' ? 7/5 : null;
-            const ratio916 = selectedRatio === '9:16' ? 16/9 : null;
+            const ratio169 = selectedRatio === '16:9' ? 9/16 : null; // Horizontal widescreen
             
             // Handle different resize directions
             if (currentHandle.classList.contains('nw-handle')) {
@@ -2876,14 +2881,16 @@ function setupCropHandlers() {
                 newWidth = startWidth + deltaX;
             }
             
-            // Apply aspect ratio constraints
-            if (isSquare) {
-                const size = Math.min(newWidth, newHeight);
-                newWidth = newHeight = size;
-            } else if (ratio57) {
-                newHeight = newWidth * ratio57;
-            } else if (ratio916) {
-                newHeight = newWidth * ratio916;
+            // Apply aspect ratio constraints (skip for free transform)
+            if (!isFree) {
+                if (isSquare) {
+                    const size = Math.min(newWidth, newHeight);
+                    newWidth = newHeight = size;
+                } else if (ratio57) {
+                    newHeight = newWidth * ratio57;
+                } else if (ratio169) {
+                    newHeight = newWidth * ratio169; // Horizontal format
+                }
             }
             
             // Enforce minimum and maximum bounds

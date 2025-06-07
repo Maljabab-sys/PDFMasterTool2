@@ -683,7 +683,12 @@
                     <div class="mb-3">
                         <label class="form-label fw-semibold">Crop Ratio</label>
                         <div class="btn-group w-100" role="group" aria-label="Crop ratios">
-                            <input type="radio" class="btn-check" name="cropRatio" id="ratio-square" value="1:1" checked>
+                            <input type="radio" class="btn-check" name="cropRatio" id="ratio-free" value="free" checked>
+                            <label class="btn btn-outline-primary" for="ratio-free">
+                                <i class="bi bi-crop me-1"></i>Free Transform
+                            </label>
+                            
+                            <input type="radio" class="btn-check" name="cropRatio" id="ratio-square" value="1:1">
                             <label class="btn btn-outline-primary" for="ratio-square">
                                 <i class="bi bi-square me-1"></i>Square (1:1)
                             </label>
@@ -693,9 +698,9 @@
                                 <i class="bi bi-rectangle me-1"></i>Portrait (5:7)
                             </label>
                             
-                            <input type="radio" class="btn-check" name="cropRatio" id="ratio-9-16" value="9:16">
-                            <label class="btn btn-outline-primary" for="ratio-9-16">
-                                <i class="bi bi-phone me-1"></i>Vertical (9:16)
+                            <input type="radio" class="btn-check" name="cropRatio" id="ratio-16-9" value="16:9">
+                            <label class="btn btn-outline-primary" for="ratio-16-9">
+                                <i class="bi bi-camera-video me-1"></i>Widescreen (16:9)
                             </label>
                         </div>
                     </div>
