@@ -734,13 +734,16 @@ def register():
         email = request.form.get('email', '').strip().lower()
         department = request.form.get('department', '').strip()
         position = request.form.get('position', '').strip()
-        clinic_name = request.form.get('clinic_name', '').strip()
+        clinic_names = request.form.getlist('clinic_names[]')
         password = request.form.get('password', '')
         confirm_password = request.form.get('confirm_password', '')
         
+        # Filter out empty clinic names and strip whitespace
+        clinic_names = [name.strip() for name in clinic_names if name.strip()]
+        
         # Validation
-        if not all([first_name, last_name, email, department, position, clinic_name, password]):
-            flash('Please fill in all required fields.', 'error')
+        if not all([first_name, last_name, email, department, position, password]) or not clinic_names:
+            flash('Please fill in all required fields including at least one clinic.', 'error')
             return render_template('register.html')
         
         if password != confirm_password:
@@ -770,13 +773,13 @@ def register():
             db.session.add(user)
             db.session.commit()
             
-            # Create initial user settings with their clinic
+            # Create initial user settings with their clinics
             user_settings = UserSettings(
                 user_id=user.id,
                 full_name=f"{first_name} {last_name}",
                 email=email,
                 position=position,
-                clinics_data=json.dumps([clinic_name])  # Store their clinic as JSON
+                clinics_data=json.dumps(clinic_names)  # Store all clinics as JSON
             )
             
             db.session.add(user_settings)

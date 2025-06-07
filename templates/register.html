@@ -151,16 +151,24 @@
                             </div>
 
                             <div class="mb-3">
-                                <label for="clinic_name" class="form-label">
-                                    <i class="bi bi-building me-2 medical-icon"></i>Clinic Name
+                                <label class="form-label">
+                                    <i class="bi bi-building me-2 medical-icon"></i>Your Clinics
                                 </label>
-                                <input type="text" class="form-control" id="clinic_name" name="clinic_name" 
-                                       placeholder="Enter your clinic or hospital name" required
-                                       value="{{ request.form.clinic_name if request.form.clinic_name }}">
-                                <div class="invalid-feedback">
-                                    Please provide your clinic name.
+                                <div id="clinicsContainer">
+                                    <div class="clinic-input-group mb-2">
+                                        <div class="input-group">
+                                            <input type="text" class="form-control" name="clinic_names[]" 
+                                                   placeholder="Enter clinic or hospital name" required>
+                                            <button type="button" class="btn btn-outline-success" onclick="addClinicInput()" title="Add another clinic">
+                                                <i class="bi bi-plus-lg"></i>
+                                            </button>
+                                        </div>
+                                    </div>
                                 </div>
-                                <small class="text-muted">This will be your default clinic for new cases</small>
+                                <div class="invalid-feedback">
+                                    Please provide at least one clinic name.
+                                </div>
+                                <small class="text-muted">Add all clinics where you work. You can add more later in settings.</small>
                             </div>
 
                             <div class="mb-3">
@@ -287,6 +295,48 @@
             } else {
                 confirmField.setCustomValidity('');
             }
+        }
+
+        // Add clinic input field
+        function addClinicInput() {
+            const container = document.getElementById('clinicsContainer');
+            const clinicCount = container.querySelectorAll('.clinic-input-group').length;
+            
+            if (clinicCount >= 10) {
+                alert('You can add a maximum of 10 clinics during registration');
+                return;
+            }
+            
+            const newGroup = document.createElement('div');
+            newGroup.className = 'clinic-input-group mb-2';
+            newGroup.innerHTML = `
+                <div class="input-group">
+                    <input type="text" class="form-control" name="clinic_names[]" 
+                           placeholder="Enter clinic or hospital name" required>
+                    <button type="button" class="btn btn-outline-danger" onclick="removeClinicInput(this)" title="Remove clinic">
+                        <i class="bi bi-dash-lg"></i>
+                    </button>
+                </div>
+            `;
+            
+            container.appendChild(newGroup);
+            
+            // Focus on the new input
+            newGroup.querySelector('input').focus();
+        }
+
+        // Remove clinic input field
+        function removeClinicInput(button) {
+            const container = document.getElementById('clinicsContainer');
+            const clinicGroups = container.querySelectorAll('.clinic-input-group');
+            
+            // Don't remove if it's the only one
+            if (clinicGroups.length <= 1) {
+                alert('You must have at least one clinic');
+                return;
+            }
+            
+            button.closest('.clinic-input-group').remove();
         }
     </script>
 </body>
