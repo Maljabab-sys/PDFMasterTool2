@@ -172,6 +172,53 @@ body {
     box-shadow: none;
 }
 
+/* Center navigation styling */
+.nav-pills .nav-link {
+    background: transparent;
+    border: 2px solid transparent;
+    margin: 0 0.5rem;
+    padding: 0.75rem 1.5rem;
+    border-radius: 50px;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    color: rgba(255, 255, 255, 0.8);
+}
+
+.nav-pills .nav-link:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.3);
+    color: white;
+    transform: translateY(-2px);
+}
+
+.nav-pills .nav-link.active {
+    background: var(--bs-primary);
+    border-color: var(--bs-primary);
+    color: white;
+    box-shadow: 0 4px 15px rgba(13, 110, 253, 0.4);
+}
+
+/* Profile dropdown styling */
+.dropdown-toggle.rounded-circle {
+    width: 45px;
+    height: 45px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    transition: all 0.3s ease;
+}
+
+.dropdown-toggle.rounded-circle:hover {
+    border-color: var(--bs-primary);
+    background: rgba(13, 110, 253, 0.1);
+    transform: scale(1.05);
+}
+
+.dropdown-toggle.rounded-circle::after {
+    display: none;
+}
+
 /* Mobile optimizations */
 @media (max-width: 768px) {
     .container {

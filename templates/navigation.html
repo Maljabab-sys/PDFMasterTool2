@@ -1,14 +1,63 @@
 <!-- Navigation Component -->
 <nav class="navbar navbar-expand-lg navbar-dark border-bottom">
-    <div class="container">
+    <div class="container-fluid">
+        <!-- Logo -->
         <a class="navbar-brand fw-bold" href="{{ url_for('index') }}">
             <i class="bi bi-file-medical me-2"></i>
             <span class="d-none d-sm-inline">Medical Case Manager</span>
             <span class="d-sm-none">MCM</span>
         </a>
         
+        <!-- Center Navigation - Desktop -->
+        <div class="d-none d-lg-flex justify-content-center flex-grow-1">
+            <div class="nav nav-pills">
+                <a class="nav-link {% if request.endpoint == 'new_case' %}active{% endif %}" href="{{ url_for('new_case') }}">
+                    <i class="bi bi-plus-circle me-2"></i>New Case
+                </a>
+                <a class="nav-link {% if request.endpoint == 'patient_list' %}active{% endif %}" href="{{ url_for('patient_list') }}">
+                    <i class="bi bi-people me-2"></i>Patients
+                </a>
+                <a class="nav-link {% if request.endpoint == 'cases' %}active{% endif %}" href="{{ url_for('cases') }}">
+                    <i class="bi bi-journal-text me-2"></i>Log
+                </a>
+            </div>
+        </div>
+        
+        <!-- Profile Icon - Desktop -->
+        <div class="d-none d-lg-block">
+            <div class="dropdown">
+                <button class="btn btn-outline-light dropdown-toggle rounded-circle p-2" 
+                        type="button" 
+                        id="profileDropdown"
+                        data-bs-toggle="dropdown" 
+                        aria-expanded="false">
+                    <i class="bi bi-person-circle fs-5"></i>
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end shadow" aria-labelledby="profileDropdown">
+                    <li>
+                        <div class="dropdown-header py-2">
+                            <div class="fw-bold">{{ current_user.first_name }} {{ current_user.last_name }}</div>
+                            <small class="text-muted">{{ current_user.email }}</small>
+                        </div>
+                    </li>
+                    <li><hr class="dropdown-divider my-1"></li>
+                    <li>
+                        <a class="dropdown-item py-2" href="{{ url_for('settings') }}">
+                            <i class="bi bi-gear me-2"></i>Settings
+                        </a>
+                    </li>
+                    <li><hr class="dropdown-divider my-1"></li>
+                    <li>
+                        <a class="dropdown-item py-2 text-danger" href="{{ url_for('logout') }}">
+                            <i class="bi bi-box-arrow-right me-2"></i>Logout
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+        
         <!-- Mobile toggle button -->
-        <button class="navbar-toggler" type="button" aria-expanded="false">
+        <button class="navbar-toggler d-lg-none" type="button" aria-expanded="false">
             <span class="hamburger-icon">
                 <span class="line"></span>
                 <span class="line"></span>
@@ -16,10 +65,11 @@
             </span>
         </button>
         
+        <!-- Mobile Navigation -->
         <div class="collapse navbar-collapse" id="navbarNav">
-            <div class="navbar-nav ms-auto d-flex align-items-lg-center">
+            <div class="navbar-nav w-100">
                 <!-- User Profile Section - First on mobile -->
-                <div class="d-lg-none w-100 mb-3 p-3 bg-dark rounded">
+                <div class="w-100 mb-3 p-3 bg-dark rounded">
                     <div class="d-flex align-items-center justify-content-between mb-2">
                         <div class="d-flex align-items-center">
                             <i class="bi bi-person-circle fs-4 me-2 text-primary"></i>
@@ -39,43 +89,16 @@
                     </div>
                 </div>
                 
-                <!-- Navigation Links -->
+                <!-- Navigation Links - Mobile -->
                 <a class="nav-link {% if request.endpoint == 'new_case' %}active{% endif %}" href="{{ url_for('new_case') }}">
-                    <i class="bi bi-plus-circle me-1"></i>New Case
+                    <i class="bi bi-plus-circle me-2"></i>New Case
                 </a>
                 <a class="nav-link {% if request.endpoint == 'patient_list' %}active{% endif %}" href="{{ url_for('patient_list') }}">
-                    <i class="bi bi-people me-1"></i>Patients
+                    <i class="bi bi-people me-2"></i>Patients
                 </a>
                 <a class="nav-link {% if request.endpoint == 'cases' %}active{% endif %}" href="{{ url_for('cases') }}">
-                    <i class="bi bi-folder me-1"></i>Case History
+                    <i class="bi bi-journal-text me-2"></i>Log
                 </a>
-                
-                <!-- User Profile Dropdown - Desktop Only -->
-                <div class="dropdown ms-lg-3 mt-2 mt-lg-0 d-none d-lg-block">
-                    <button class="btn btn-outline-light dropdown-toggle d-flex align-items-center" 
-                            type="button" 
-                            id="profileDropdown"
-                            data-bs-toggle="dropdown" 
-                            aria-expanded="false">
-                        <div class="d-flex align-items-center">
-                            <i class="bi bi-person-circle fs-5 me-2"></i>
-                            <span>{{ current_user.first_name }}</span>
-                        </div>
-                    </button>
-                    <ul class="dropdown-menu dropdown-menu-end shadow" aria-labelledby="profileDropdown">
-                        <li>
-                            <a class="dropdown-item py-2" href="{{ url_for('settings') }}">
-                                <i class="bi bi-gear me-2"></i>Settings
-                            </a>
-                        </li>
-                        <li><hr class="dropdown-divider my-1"></li>
-                        <li>
-                            <a class="dropdown-item py-2 text-danger" href="{{ url_for('logout') }}">
-                                <i class="bi bi-box-arrow-right me-2"></i>Logout
-                            </a>
-                        </li>
-                    </ul>
-                </div>
             </div>
         </div>
     </div>
