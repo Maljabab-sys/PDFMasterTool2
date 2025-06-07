@@ -166,6 +166,8 @@
         });
         
         function loadDashboardData() {
+            console.log('Loading dashboard data...');
+            
             // Load statistics
             fetch('/api/cases', {
                 credentials: 'same-origin',
@@ -173,23 +175,45 @@
                     'Content-Type': 'application/json',
                 }
             })
-                .then(response => response.json())
+                .then(response => {
+                    console.log('Cases API response status:', response.status);
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}`);
+                    }
+                    return response.json();
+                })
                 .then(data => {
-                    document.getElementById('totalCases').textContent = data.length;
+                    console.log('Cases data loaded:', data);
+                    
+                    const totalCasesEl = document.getElementById('totalCases');
+                    const thisMonthEl = document.getElementById('thisMonth');
+                    
+                    if (totalCasesEl) totalCasesEl.textContent = data.length;
                     
                     const thisMonth = new Date().getMonth();
                     const thisMonthCases = data.filter(case_ => {
                         const caseDate = new Date(case_.created_at);
                         return caseDate.getMonth() === thisMonth;
                     });
-                    document.getElementById('thisMonth').textContent = thisMonthCases.length;
+                    if (thisMonthEl) thisMonthEl.textContent = thisMonthCases.length;
                     
-                    // Update charts
-                    updateVisitTypeChart(data);
-                    updateRecentCases(data.slice(0, 5));
+                    // Update charts if functions exist
+                    if (typeof updateVisitTypeChart === 'function') {
+                        updateVisitTypeChart(data);
+                    }
+                    if (typeof updateRecentCases === 'function') {
+                        updateRecentCases(data.slice(0, 5));
+                    }
                     isLoaded = true;
                 })
-                .catch(error => console.error('Error loading cases:', error));
+                .catch(error => {
+                    console.error('Error loading cases:', error);
+                    // Set fallback values
+                    const totalCasesEl = document.getElementById('totalCases');
+                    const thisMonthEl = document.getElementById('thisMonth');
+                    if (totalCasesEl) totalCasesEl.textContent = '0';
+                    if (thisMonthEl) thisMonthEl.textContent = '0';
+                });
             
             // Load patients
             fetch('/api/patients', {
@@ -198,13 +222,34 @@
                     'Content-Type': 'application/json',
                 }
             })
-                .then(response => response.json())
-                .then(data => {
-                    document.getElementById('totalPatients').textContent = data.length;
-                    document.getElementById('activePatients').textContent = data.filter(p => p.cases_count > 0).length;
-                    updateClinicChart(data);
+                .then(response => {
+                    console.log('Patients API response status:', response.status);
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}`);
+                    }
+                    return response.json();
                 })
-                .catch(error => console.error('Error loading patients:', error));
+                .then(data => {
+                    console.log('Patients data loaded:', data);
+                    
+                    const totalPatientsEl = document.getElementById('totalPatients');
+                    const activePatientsEl = document.getElementById('activePatients');
+                    
+                    if (totalPatientsEl) totalPatientsEl.textContent = data.length;
+                    if (activePatientsEl) activePatientsEl.textContent = data.filter(p => p.cases_count > 0).length;
+                    
+                    if (typeof updateClinicChart === 'function') {
+                        updateClinicChart(data);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading patients:', error);
+                    // Set fallback values
+                    const totalPatientsEl = document.getElementById('totalPatients');
+                    const activePatientsEl = document.getElementById('activePatients');
+                    if (totalPatientsEl) totalPatientsEl.textContent = '0';
+                    if (activePatientsEl) activePatientsEl.textContent = '0';
+                });
         }
         
         function updateVisitTypeChart(cases) {
