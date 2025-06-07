@@ -119,44 +119,48 @@
 }
 
 /* Extraoral image display - anticlockwise 90-degree rotation with 2:3 ratio */
-.layout-img.extraoral {
-    transform: rotate(-90deg);
-    transform-origin: center center;
+.layout-img.extraoral,
+img.layout-img.extraoral {
+    transform: rotate(-90deg) !important;
+    transform-origin: center center !important;
     width: 90px !important;
     height: 135px !important;
-    object-fit: cover;
-    margin: 22px auto;
-    display: block;
+    object-fit: cover !important;
+    margin: 22px auto !important;
+    display: block !important;
 }
 
-.layout-img.extraoral-right {
-    transform: rotate(-90deg);
-    transform-origin: center center;
+.layout-img.extraoral-right,
+img.layout-img.extraoral-right {
+    transform: rotate(-90deg) !important;
+    transform-origin: center center !important;
     width: 90px !important;
     height: 135px !important;
-    object-fit: cover;
-    margin: 22px auto;
-    display: block;
+    object-fit: cover !important;
+    margin: 22px auto !important;
+    display: block !important;
 }
 
-.layout-img.extraoral-front {
-    transform: rotate(-90deg);
-    transform-origin: center center;
+.layout-img.extraoral-front,
+img.layout-img.extraoral-front {
+    transform: rotate(-90deg) !important;
+    transform-origin: center center !important;
     width: 90px !important;
     height: 135px !important;
-    object-fit: cover;
-    margin: 22px auto;
-    display: block;
+    object-fit: cover !important;
+    margin: 22px auto !important;
+    display: block !important;
 }
 
-.layout-img.extraoral-smile {
-    transform: rotate(-90deg);
-    transform-origin: center center;
+.layout-img.extraoral-smile,
+img.layout-img.extraoral-smile {
+    transform: rotate(-90deg) !important;
+    transform-origin: center center !important;
     width: 90px !important;
     height: 135px !important;
-    object-fit: cover;
-    margin: 22px auto;
-    display: block;
+    object-fit: cover !important;
+    margin: 22px auto !important;
+    display: block !important;
 }
 
 /* Container adjustments for extraoral images with 2:3 ratio */
@@ -280,7 +284,11 @@
     .image-card-hover img {
         height: 120px !important;
         width: 100% !important;
-        transform: none !important;
+    }
+    
+    /* Preserve extraoral rotation on mobile */
+    .image-card-hover img.extraoral {
+        transform: rotate(-90deg) !important;
     }
     
     /* Section headers mobile */
@@ -512,8 +520,12 @@
     .layout-card-mobile .layout-img {
         height: 100px !important;
         width: 100% !important;
-        transform: none !important;
         object-fit: cover;
+    }
+    
+    /* Preserve extraoral rotation on mobile structured layout */
+    .layout-card-mobile .layout-img.extraoral {
+        transform: rotate(-90deg) !important;
     }
     
     .layout-label {
