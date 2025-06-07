@@ -887,24 +887,43 @@ function addClinic() {
 }
 
 function removeClinic(button) {
-    const container = document.getElementById('clinicsContainer');
-    const clinicEntry = button.closest('.clinic-entry');
-    const clinicName = clinicEntry.querySelector('input').value;
+    const customClinics = document.getElementById('customClinics');
+    const clinicEntry = button.closest('.custom-clinic-entry');
+    const clinicInput = clinicEntry.querySelector('input[type="text"]');
+    const clinicName = clinicInput ? clinicInput.value.trim() : 'this clinic';
     
-    if (clinicName.trim() && !confirm(`Are you sure you want to delete "${clinicName}" clinic?`)) {
+    if (clinicName && !confirm(`Are you sure you want to delete "${clinicName}"?`)) {
         return;
     }
     
     clinicEntry.remove();
+    updateClinicDropdowns();
+}
+
+// Add custom clinic function for settings page
+function addCustomClinic() {
+    const customClinics = document.getElementById('customClinics');
+    const clinicCount = customClinics.querySelectorAll('.custom-clinic-entry').length;
     
-    // Hide remove buttons if only one clinic left
-    const remainingClinics = container.querySelectorAll('.clinic-entry');
-    if (remainingClinics.length === 1) {
-        remainingClinics[0].querySelector('.remove-clinic').style.display = 'none';
-    }
+    const clinicHtml = `
+        <div class="custom-clinic-entry mb-3">
+            <div class="row">
+                <div class="col-md-8">
+                    <label class="form-label">Custom Clinic Name</label>
+                    <input type="text" class="form-control" name="custom_clinics[]" 
+                           placeholder="Enter clinic name...">
+                </div>
+                <div class="col-md-4 d-flex align-items-end">
+                    <button type="button" class="btn btn-outline-danger btn-sm" 
+                            onclick="removeClinic(this)" title="Remove clinic">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    `;
     
-    // Update clinic dropdown in forms
-    updateClinicDropdown();
+    customClinics.insertAdjacentHTML('beforeend', clinicHtml);
 }
 
 // Update patient statistics
@@ -926,6 +945,25 @@ function updatePatientStats(patients) {
     if (dcElement) dcElement.textContent = dcPatients;
     if (casesElement) casesElement.textContent = totalCases;
     if (countElement) countElement.textContent = `${totalPatients} patients`;
+}
+
+// Mobile navigation close function with transition animation
+function closeMobileNav() {
+    const navbarToggler = document.querySelector('.navbar-toggler');
+    const navbarCollapse = document.querySelector('.navbar-collapse');
+    
+    if (navbarCollapse && navbarToggler) {
+        navbarCollapse.style.transform = 'translateX(100%)';
+        navbarCollapse.style.transition = 'transform 0.3s ease-in-out';
+        
+        setTimeout(() => {
+            navbarCollapse.classList.remove('show');
+            navbarToggler.setAttribute('aria-expanded', 'false');
+            document.body.style.overflow = '';
+            navbarCollapse.style.transform = '';
+            navbarCollapse.style.transition = '';
+        }, 300);
+    }
 }
 
 function updateClinicDropdown(clinics) {

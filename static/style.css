@@ -238,6 +238,29 @@ body {
         background: rgba(255, 255, 255, 0.1);
         border: 1px solid rgba(255, 255, 255, 0.2);
     }
+    
+    /* Mobile close button styling */
+    .navbar-collapse .btn-close {
+        position: absolute;
+        top: 1rem;
+        right: 1rem;
+        z-index: 1052;
+        opacity: 0.8;
+        transition: opacity 0.3s ease;
+    }
+    
+    .navbar-collapse .btn-close:hover {
+        opacity: 1;
+    }
+    
+    /* Mobile nav transition */
+    .navbar-collapse {
+        transition: transform 0.3s ease-in-out;
+    }
+    
+    .navbar-collapse.show {
+        transform: translateX(0);
+    }
 }
 
 @media (max-width: 576px) {
