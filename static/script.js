@@ -2249,9 +2249,20 @@ function updatePlaceholderWithDirectImage(placeholderId, file) {
         // Calculate height based on container width and image aspect ratio
         let containerHeight = containerWidth / effectiveAspectRatio;
         
-        // Apply reasonable limits to prevent extreme sizes
-        const maxHeight = isMobile ? 250 : 350;
-        const minHeight = isMobile ? 60 : 80;
+        // Apply specific size constraints for different image types
+        const isUpperLower = file.classification.includes('upper') || file.classification.includes('lower');
+        
+        let maxHeight, minHeight;
+        if (isUpperLower) {
+            // Make upper/lower jaw images smaller
+            maxHeight = isMobile ? 100 : 120;
+            minHeight = isMobile ? 60 : 80;
+        } else {
+            // Regular constraints for other images
+            maxHeight = isMobile ? 250 : 350;
+            minHeight = isMobile ? 60 : 80;
+        }
+        
         containerHeight = Math.max(minHeight, Math.min(maxHeight, containerHeight));
         
         // Update placeholder to match image dimensions exactly
@@ -2504,8 +2515,18 @@ function refreshLayoutResponsiveness() {
                 
                 let containerHeight = containerWidth / effectiveAspectRatio;
                 
-                const maxHeight = isMobile ? 250 : 350;
-                const minHeight = isMobile ? 60 : 80;
+                const isUpperLower = img.src.includes('upper') || img.src.includes('lower') || 
+                                   img.classList.contains('upper') || img.classList.contains('lower');
+                
+                let maxHeight, minHeight;
+                if (isUpperLower) {
+                    maxHeight = isMobile ? 100 : 120;
+                    minHeight = isMobile ? 60 : 80;
+                } else {
+                    maxHeight = isMobile ? 250 : 350;
+                    minHeight = isMobile ? 60 : 80;
+                }
+                
                 containerHeight = Math.max(minHeight, Math.min(maxHeight, containerHeight));
                 
                 placeholder.style.height = `${containerHeight}px`;
