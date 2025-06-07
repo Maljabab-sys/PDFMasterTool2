@@ -10,6 +10,7 @@
         </button>
         
         <div class="collapse navbar-collapse" id="navbarContent">
+            <!-- Debug: Current endpoint is {{ request.endpoint }} -->
             <ul class="navbar-nav me-auto">
                 <li class="nav-item">
                     <a class="nav-link {% if request.endpoint in ['dashboard', 'index'] %}active{% endif %}" href="{{ url_for('dashboard') }}">
