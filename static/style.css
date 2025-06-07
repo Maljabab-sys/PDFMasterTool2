@@ -6,6 +6,81 @@
     --border-color: hsl(210, 11%, 25%);
 }
 
+/* Mobile Responsiveness */
+@media (max-width: 768px) {
+    .container {
+        padding-left: 15px;
+        padding-right: 15px;
+    }
+    
+    .display-4 {
+        font-size: 1.8rem;
+    }
+    
+    .display-5 {
+        font-size: 1.5rem;
+    }
+    
+    .card-body {
+        padding: 1rem;
+    }
+    
+    .btn {
+        font-size: 0.875rem;
+        padding: 0.375rem 0.75rem;
+    }
+    
+    .badge {
+        font-size: 0.75rem;
+    }
+    
+    .chart-container {
+        height: 250px !important;
+    }
+    
+    .table-responsive {
+        font-size: 0.875rem;
+    }
+    
+    .mobile-cases .card {
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    
+    .mobile-cases .card-title {
+        font-size: 1rem;
+        font-weight: 600;
+    }
+}
+
+@media (max-width: 576px) {
+    .container {
+        padding-left: 10px;
+        padding-right: 10px;
+    }
+    
+    .display-4 {
+        font-size: 1.5rem;
+    }
+    
+    .display-5 {
+        font-size: 1.3rem;
+    }
+    
+    .card-body {
+        padding: 0.75rem;
+    }
+    
+    .chart-container {
+        height: 200px !important;
+    }
+    
+    .btn-sm {
+        font-size: 0.75rem;
+        padding: 0.25rem 0.5rem;
+    }
+}
+
 body {
     min-height: 100vh;
     background: var(--bs-body-bg);
