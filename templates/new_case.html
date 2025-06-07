@@ -279,7 +279,7 @@
                                 <i class="bi bi-save me-2"></i>Save as Draft
                             </button>
                             <button type="submit" class="btn btn-primary btn-lg px-4">
-                                <i class="bi bi-file-earmark-pdf me-2"></i>Generate Case PDF
+                                <i class="bi bi-save me-2"></i>Save
                             </button>
                         </div>
                     </div>
@@ -371,23 +371,36 @@
         
         // Save draft functionality
         function saveDraft() {
-            const formData = new FormData(document.querySelector('form'));
-            formData.append('save_as_draft', 'true');
+            const form = document.querySelector('form');
+            const formData = new FormData(form);
             
-            fetch('/save-draft', {
+            // Show loading state
+            const draftBtn = document.querySelector('button[onclick="saveDraft()"]');
+            const originalText = draftBtn.innerHTML;
+            draftBtn.innerHTML = '<i class="bi bi-hourglass-split me-2"></i>Saving...';
+            draftBtn.disabled = true;
+            
+            fetch('/save_draft', {
                 method: 'POST',
-                body: formData
+                body: formData,
+                credentials: 'same-origin'
             })
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    showSuccessMessage('Draft saved successfully!');
+                    showModernSuccessMessage('Draft saved successfully! You can modify it later in the Patients section.');
                 } else {
                     showErrorMessage('Error saving draft: ' + data.message);
                 }
             })
             .catch(error => {
-                showErrorMessage('Error saving draft');
+                console.error('Error saving draft:', error);
+                showErrorMessage('Error saving draft. Please try again.');
+            })
+            .finally(() => {
+                // Restore button state
+                draftBtn.innerHTML = originalText;
+                draftBtn.disabled = false;
             });
         }
         
@@ -407,6 +420,65 @@
             alert.innerHTML = `${message}<button type="button" class="btn-close" data-bs-dismiss="alert"></button>`;
             document.body.appendChild(alert);
             setTimeout(() => alert.remove(), 3000);
+        }
+        
+        // Modern success popup function
+        function showModernSuccessMessage(message) {
+            // Remove any existing popup
+            const existing = document.querySelector('.success-popup-overlay');
+            if (existing) {
+                existing.remove();
+            }
+            
+            // Create overlay
+            const overlay = document.createElement('div');
+            overlay.className = 'success-popup-overlay position-fixed top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center';
+            overlay.style.cssText = `
+                background: rgba(0, 0, 0, 0.5);
+                z-index: 9999;
+                backdrop-filter: blur(3px);
+                opacity: 0;
+                transition: all 0.3s ease;
+            `;
+            
+            // Create popup
+            const popup = document.createElement('div');
+            popup.className = 'bg-success text-white p-4 rounded-4 shadow-lg text-center';
+            popup.style.cssText = `
+                max-width: 450px;
+                transform: scale(0.8) translateY(-20px);
+                transition: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            `;
+            
+            popup.innerHTML = `
+                <div class="mb-3">
+                    <div class="bg-white bg-opacity-20 rounded-circle d-inline-flex align-items-center justify-content-center" style="width: 60px; height: 60px;">
+                        <i class="bi bi-check-lg text-white" style="font-size: 2rem; font-weight: bold;"></i>
+                    </div>
+                </div>
+                <h5 class="fw-bold mb-2">Draft Saved!</h5>
+                <p class="mb-0">${message}</p>
+            `;
+            
+            overlay.appendChild(popup);
+            document.body.appendChild(overlay);
+            
+            // Trigger entrance animation
+            setTimeout(() => {
+                overlay.style.opacity = '1';
+                popup.style.transform = 'scale(1) translateY(0)';
+            }, 10);
+            
+            // Auto hide after 4 seconds
+            setTimeout(() => {
+                overlay.style.opacity = '0';
+                popup.style.transform = 'scale(0.9) translateY(-10px)';
+                setTimeout(() => {
+                    if (document.body.contains(overlay)) {
+                        overlay.remove();
+                    }
+                }, 300);
+            }, 4000);
         }
 
         function showSuccessAnimation() {
