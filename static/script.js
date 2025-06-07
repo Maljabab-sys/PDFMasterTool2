@@ -2223,6 +2223,23 @@ function updatePlaceholderWithDirectImage(placeholderId, file) {
     placeholder.classList.remove('border-dashed');
     placeholder.classList.add('border-success');
     
+    // Create image element to get natural dimensions
+    const tempImg = new Image();
+    tempImg.onload = function() {
+        // Calculate container dimensions based on image aspect ratio
+        const containerWidth = placeholder.offsetWidth;
+        const imageAspectRatio = this.naturalWidth / this.naturalHeight;
+        
+        // For extraoral images (rotated), swap dimensions
+        const effectiveAspectRatio = isExtraoral ? (1 / imageAspectRatio) : imageAspectRatio;
+        const containerHeight = containerWidth / effectiveAspectRatio;
+        
+        // Update placeholder height to match image proportions
+        placeholder.style.height = `${containerHeight}px`;
+        placeholder.style.minHeight = `${containerHeight}px`;
+    };
+    tempImg.src = `/uploads/${file.filename}`;
+    
     placeholder.innerHTML = `
         <div class="position-relative w-100 h-100">
             <img src="/uploads/${file.filename}" alt="${file.original_name}" class="${imageClasses}" style="${imageStyle}" onclick="showImageModal('/uploads/${file.filename}', '${file.original_name}', '${file.classification}')">
@@ -2257,10 +2274,10 @@ function replaceDirectImage(placeholderId) {
     // Trigger file upload for the specific category
     const categoryMap = {
         'placeholder_extraoral_right': 'extraoral_right',
-        'placeholder_extraoral_front': 'extraoral_front', 
-        'placeholder_extraoral_smile': 'extraoral_smile',
+        'placeholder_extraoral_frontal': 'extraoral_frontal', 
+        'placeholder_extraoral_smiling': 'extraoral_smiling',
         'placeholder_intraoral_right': 'intraoral_right',
-        'placeholder_intraoral_front': 'intraoral_front',
+        'placeholder_intraoral_frontal': 'intraoral_frontal',
         'placeholder_intraoral_left': 'intraoral_left',
         'placeholder_intraoral_upper': 'intraoral_upper',
         'placeholder_intraoral_lower': 'intraoral_lower'
@@ -2268,7 +2285,17 @@ function replaceDirectImage(placeholderId) {
     
     const category = categoryMap[placeholderId];
     if (category) {
-        triggerFileUpload(category);
+        // Find and click the hidden file input for this category
+        const fileInput = document.getElementById(`upload_${category}`);
+        if (fileInput) {
+            fileInput.click();
+        } else {
+            console.log('File input not found for category:', category);
+            // Fallback: trigger file upload function
+            triggerFileUpload(category);
+        }
+    } else {
+        console.log('Category not found for placeholder:', placeholderId);
     }
 }
 
@@ -2323,7 +2350,7 @@ function resetPlaceholderToOriginal(placeholder, category) {
     const desktopIconSize = isOcclusal ? '1.2rem' : '1.5rem';
     
     placeholder.className = 'layout-placeholder-box text-center p-3 border border-dashed rounded bg-light position-relative';
-    placeholder.style.cssText = `min-height: ${minHeight}; cursor: pointer;`;
+    placeholder.style.cssText = `min-height: ${minHeight}; height: ${minHeight}; cursor: pointer;`;
     placeholder.setAttribute('onclick', `triggerFileUpload('${category}')`);
     
     placeholder.innerHTML = `
