@@ -2257,11 +2257,11 @@ function updatePlaceholderWithDirectImage(placeholderId, file) {
             // Make upper/lower jaw images square with fixed dimensions
             if (file.classification.includes('lower')) {
                 // Lower jaw images - perfect squares
-                containerHeight = isMobile ? 100 : 120;
+                containerHeight = isMobile ? 70 : 90;
                 containerWidth = containerHeight; // Force square
             } else {
                 // Upper jaw images - also perfect squares
-                containerHeight = isMobile ? 100 : 120;
+                containerHeight = isMobile ? 70 : 90;
                 containerWidth = containerHeight; // Force square
             }
         } else {
@@ -2532,11 +2532,11 @@ function refreshLayoutResponsiveness() {
                 if (isUpperLower) {
                     if (img.src.includes('lower') || img.classList.contains('lower')) {
                         // Lower jaw images - fixed square dimensions
-                        containerHeight = isMobile ? 100 : 120;
+                        containerHeight = isMobile ? 70 : 90;
                         containerWidth = containerHeight;
                     } else {
                         // Upper jaw images - also fixed square dimensions
-                        containerHeight = isMobile ? 100 : 120;
+                        containerHeight = isMobile ? 70 : 90;
                         containerWidth = containerHeight;
                     }
                 } else {
