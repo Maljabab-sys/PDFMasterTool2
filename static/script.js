@@ -2615,19 +2615,28 @@ function initializeCropOverlay() {
         
         if (!cropImage || !cropOverlay) return;
         
-        // Get image dimensions after it's loaded
-        const imageWidth = cropImage.offsetWidth;
-        const imageHeight = cropImage.offsetHeight;
+        // Wait for image to fully load and get accurate dimensions
+        const waitForImageLoad = () => {
+            if (cropImage.offsetWidth === 0 || cropImage.offsetHeight === 0) {
+                setTimeout(waitForImageLoad, 50);
+                return;
+            }
+            
+            const imageWidth = cropImage.offsetWidth;
+            const imageHeight = cropImage.offsetHeight;
+            
+            // Start with crop box covering the entire image (maximum size)
+            cropOverlay.style.display = 'block';
+            cropOverlay.style.left = '0px';
+            cropOverlay.style.top = '0px';
+            cropOverlay.style.width = imageWidth + 'px';
+            cropOverlay.style.height = imageHeight + 'px';
+            
+            updateCropRatio();
+            setupCropHandlers();
+        };
         
-        // Start with crop box covering the entire image
-        cropOverlay.style.display = 'block';
-        cropOverlay.style.left = '0px';
-        cropOverlay.style.top = '0px';
-        cropOverlay.style.width = imageWidth + 'px';
-        cropOverlay.style.height = imageHeight + 'px';
-        
-        updateCropRatio();
-        setupCropHandlers();
+        waitForImageLoad();
     }, 100);
 }
 
@@ -2753,15 +2762,19 @@ function setupCropHandlers() {
         const imageHeight = cropImage.offsetHeight;
         
         if (isDragging) {
-            // Move the crop overlay
+            // Move the crop overlay with strict boundary enforcement
             const newLeft = e.clientX - startX;
             const newTop = e.clientY - startY;
             
-            const maxLeft = imageWidth - cropOverlay.offsetWidth;
-            const maxTop = imageHeight - cropOverlay.offsetHeight;
+            const cropWidth = cropOverlay.offsetWidth;
+            const cropHeight = cropOverlay.offsetHeight;
             
-            cropOverlay.style.left = Math.max(0, Math.min(maxLeft, newLeft)) + 'px';
-            cropOverlay.style.top = Math.max(0, Math.min(maxTop, newTop)) + 'px';
+            // Ensure crop box stays completely within image boundaries
+            const constrainedLeft = Math.max(0, Math.min(imageWidth - cropWidth, newLeft));
+            const constrainedTop = Math.max(0, Math.min(imageHeight - cropHeight, newTop));
+            
+            cropOverlay.style.left = constrainedLeft + 'px';
+            cropOverlay.style.top = constrainedTop + 'px';
             
         } else if (isResizing && currentHandle) {
             // Resize the crop overlay
@@ -2820,19 +2833,19 @@ function setupCropHandlers() {
                 }
             }
             
-            // Enforce minimum and maximum bounds
-            newWidth = Math.max(50, Math.min(imageWidth, newWidth));
-            newHeight = Math.max(50, Math.min(imageHeight, newHeight));
+            // Enforce strict boundary constraints
+            // First, constrain position to image boundaries
+            newLeft = Math.max(0, Math.min(newLeft, imageWidth - 50)); // minimum 50px width
+            newTop = Math.max(0, Math.min(newTop, imageHeight - 50)); // minimum 50px height
             
-            // Adjust position if needed
-            if (newLeft < 0) {
-                newWidth += newLeft;
-                newLeft = 0;
-            }
-            if (newTop < 0) {
-                newHeight += newTop;
-                newTop = 0;
-            }
+            // Then, constrain dimensions to fit within remaining space
+            const maxAllowedWidth = imageWidth - newLeft;
+            const maxAllowedHeight = imageHeight - newTop;
+            
+            newWidth = Math.max(50, Math.min(maxAllowedWidth, newWidth));
+            newHeight = Math.max(50, Math.min(maxAllowedHeight, newHeight));
+            
+            // Final check: ensure crop box doesn't exceed image boundaries
             if (newLeft + newWidth > imageWidth) {
                 newWidth = imageWidth - newLeft;
             }
