@@ -770,8 +770,7 @@ function loadUserSettings() {
         })
         .catch(error => {
             console.error('Error loading settings:', error);
-            // Load default clinics if API fails
-            loadUserClinics(['KFMC', 'DC']);
+            // Don't load defaults on error - let user manually add clinics
         });
 }
 
