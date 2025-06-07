@@ -315,15 +315,19 @@
         z-index: 1040;
         overflow-y: auto;
         will-change: transform;
+        visibility: hidden;
     }
     
     .navbar-collapse.show {
         transform: translateX(0);
+        visibility: visible;
+        transition: transform 0.35s cubic-bezier(0.4, 0.0, 0.2, 1), visibility 0s;
     }
     
     .navbar-collapse.hiding {
         transform: translateX(100%);
-        transition: transform 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
+        visibility: visible;
+        transition: transform 0.3s cubic-bezier(0.4, 0.0, 0.2, 1), visibility 0s 0.3s;
     }
     
 
