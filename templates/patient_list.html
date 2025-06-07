@@ -134,53 +134,15 @@
         </div>
     </div>
 
+    <script>
+        // Load patient data on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            loadPatientList();
+        });
+    </script>
+    
     <!-- Bootstrap JavaScript -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="{{ url_for('static', filename='script.js') }}"></script>
-    <script>
-        // Mobile navigation enhancement
-        document.addEventListener('DOMContentLoaded', function() {
-            // Load patient data
-            loadPatientList();
-            
-            // Mobile nav functionality
-            const navbarToggler = document.querySelector('.navbar-toggler');
-            const navbarCollapse = document.querySelector('.navbar-collapse');
-            
-            if (navbarToggler && navbarCollapse) {
-                navbarToggler.addEventListener('click', function() {
-                    const isExpanded = this.getAttribute('aria-expanded') === 'true';
-                    
-                    if (!isExpanded) {
-                        navbarCollapse.classList.add('show');
-                        this.setAttribute('aria-expanded', 'true');
-                        document.body.style.overflow = 'hidden';
-                    } else {
-                        navbarCollapse.classList.remove('show');
-                        this.setAttribute('aria-expanded', 'false');
-                        document.body.style.overflow = '';
-                    }
-                });
-
-                navbarCollapse.addEventListener('click', function(e) {
-                    if (e.target === this) {
-                        navbarCollapse.classList.remove('show');
-                        navbarToggler.setAttribute('aria-expanded', 'false');
-                        document.body.style.overflow = '';
-                    }
-                });
-
-                document.querySelectorAll('.nav-link').forEach(link => {
-                    link.addEventListener('click', function() {
-                        if (window.innerWidth < 992) {
-                            navbarCollapse.classList.remove('show');
-                            navbarToggler.setAttribute('aria-expanded', 'false');
-                            document.body.style.overflow = '';
-                        }
-                    });
-                });
-            }
-        });
-    </script>
 </body>
 </html>
