@@ -2240,8 +2240,17 @@ function updatePlaceholderWithDirectImage(placeholderId, file) {
         
         // Apply mobile constraints for better mobile experience
         const isMobile = window.innerWidth <= 768;
-        const maxHeight = isMobile ? 200 : 400;
-        const minHeight = isMobile ? 80 : 120;
+        const isUpperLower = file.classification.includes('upper') || file.classification.includes('lower');
+        
+        // Set specific constraints for upper/lower jaw images
+        let maxHeight, minHeight;
+        if (isUpperLower) {
+            maxHeight = isMobile ? 120 : 180;
+            minHeight = isMobile ? 60 : 100;
+        } else {
+            maxHeight = isMobile ? 200 : 400;
+            minHeight = isMobile ? 80 : 120;
+        }
         
         containerHeight = Math.max(minHeight, Math.min(maxHeight, containerHeight));
         
@@ -2488,8 +2497,18 @@ function refreshLayoutResponsiveness() {
                 const effectiveAspectRatio = isExtraoral ? (1 / imageAspectRatio) : imageAspectRatio;
                 let containerHeight = containerWidth / effectiveAspectRatio;
                 
-                const maxHeight = isMobile ? 200 : 400;
-                const minHeight = isMobile ? 80 : 120;
+                const isUpperLower = img.src.includes('upper') || img.src.includes('lower') || 
+                                   img.classList.contains('upper') || img.classList.contains('lower');
+                
+                let maxHeight, minHeight;
+                if (isUpperLower) {
+                    maxHeight = isMobile ? 120 : 180;
+                    minHeight = isMobile ? 60 : 100;
+                } else {
+                    maxHeight = isMobile ? 200 : 400;
+                    minHeight = isMobile ? 80 : 120;
+                }
+                
                 containerHeight = Math.max(minHeight, Math.min(maxHeight, containerHeight));
                 
                 placeholder.style.height = `${containerHeight}px`;
