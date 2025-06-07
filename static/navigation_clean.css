@@ -310,21 +310,24 @@
         border-left: 1px solid rgba(255, 255, 255, 0.1);
         box-shadow: -10px 0 25px rgba(0, 0, 0, 0.3);
         padding: 2rem 1.5rem;
-        transform: translateX(240px); /* Move completely off-screen by panel width */
-        transition: transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        transform: translateX(100%);
+        transition: transform 0.35s cubic-bezier(0.4, 0.0, 0.2, 1);
         z-index: 1040;
         overflow-y: auto;
         will-change: transform;
-        display: block;
+        visibility: hidden;
     }
     
     .navbar-collapse.show {
-        transform: translateX(0); /* Slide into view */
+        transform: translateX(0);
+        visibility: visible;
+        transition: transform 0.35s cubic-bezier(0.4, 0.0, 0.2, 1), visibility 0s;
     }
     
     .navbar-collapse.hiding {
-        transform: translateX(240px); /* Slide back out */
-        transition: transform 0.3s cubic-bezier(0.55, 0.06, 0.68, 0.19);
+        transform: translateX(100%);
+        visibility: visible;
+        transition: transform 0.3s cubic-bezier(0.4, 0.0, 0.2, 1), visibility 0s 0.3s;
     }
     
 

@@ -100,11 +100,15 @@ document.addEventListener('DOMContentLoaded', function() {
                     document.body.style.overflow = '';
                 }, 300);
             } else {
-                // Open navigation - add show class directly
+                // Open navigation with proper animation trigger
                 navbarContent.classList.remove('hiding');
-                navbarContent.classList.add('show');
                 hamburgerIcon.classList.add('active');
                 document.body.style.overflow = 'hidden';
+                
+                // Force reflow to ensure initial state, then trigger animation
+                requestAnimationFrame(() => {
+                    navbarContent.classList.add('show');
+                });
             }
         }
         
