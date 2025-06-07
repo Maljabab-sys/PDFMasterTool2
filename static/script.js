@@ -2223,6 +2223,10 @@ function updatePlaceholderWithDirectImage(placeholderId, file) {
     placeholder.classList.remove('border-dashed');
     placeholder.classList.add('border-success');
     
+    // Remove padding to eliminate space between border and image
+    placeholder.classList.remove('p-3');
+    placeholder.style.padding = '0';
+    
     // Create image element to get natural dimensions
     const tempImg = new Image();
     tempImg.onload = function() {
@@ -2247,10 +2251,10 @@ function updatePlaceholderWithDirectImage(placeholderId, file) {
                 ${Math.round(file.confidence * 100)}%
             </span>
             <div class="position-absolute top-0 start-0 m-1 d-flex flex-column gap-1">
-                <button class="btn btn-sm btn-danger" onclick="event.stopPropagation(); removeDirectImage('${placeholderId}')" style="padding: 0.25rem 0.4rem; border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center;">
+                <button type="button" class="btn btn-sm btn-danger" onclick="event.preventDefault(); event.stopPropagation(); removeDirectImage('${placeholderId}')" style="padding: 0.25rem 0.4rem; border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center;">
                     <i class="bi bi-x" style="font-size: 0.8rem;"></i>
                 </button>
-                <button class="btn btn-sm btn-warning" onclick="event.stopPropagation(); replaceDirectImage('${placeholderId}')" style="padding: 0.25rem 0.4rem; border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center;" title="Replace image">
+                <button type="button" class="btn btn-sm btn-warning" onclick="event.preventDefault(); event.stopPropagation(); replaceDirectImage('${placeholderId}')" style="padding: 0.25rem 0.4rem; border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center;" title="Replace image">
                     <i class="bi bi-arrow-repeat" style="font-size: 0.7rem;"></i>
                 </button>
             </div>
@@ -2285,17 +2289,25 @@ function replaceDirectImage(placeholderId) {
     
     const category = categoryMap[placeholderId];
     if (category) {
-        // Find and click the hidden file input for this category
-        const fileInput = document.getElementById(`upload_${category}`);
-        if (fileInput) {
-            fileInput.click();
-        } else {
-            console.log('File input not found for category:', category);
-            // Fallback: trigger file upload function
-            triggerFileUpload(category);
-        }
-    } else {
-        console.log('Category not found for placeholder:', placeholderId);
+        // Create a new file input element
+        const fileInput = document.createElement('input');
+        fileInput.type = 'file';
+        fileInput.accept = 'image/*';
+        fileInput.style.display = 'none';
+        
+        // Add event listener for file selection
+        fileInput.onchange = function(event) {
+            handleDirectUpload(this, getClassificationFromCategory(category));
+        };
+        
+        // Add to document and trigger click
+        document.body.appendChild(fileInput);
+        fileInput.click();
+        
+        // Clean up after a short delay
+        setTimeout(() => {
+            document.body.removeChild(fileInput);
+        }, 1000);
     }
 }
 

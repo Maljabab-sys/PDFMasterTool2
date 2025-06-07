@@ -100,6 +100,13 @@
     justify-content: center;
 }
 
+.layout-placeholder-box.border-success .position-relative {
+    width: 100% !important;
+    height: 100% !important;
+    padding: 0 !important;
+    margin: 0 !important;
+}
+
 .loading-content {
     display: flex;
     flex-direction: column;
