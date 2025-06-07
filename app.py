@@ -1303,6 +1303,65 @@ def upload_files():
         flash('An error occurred while processing your request.', 'error')
         return redirect(url_for('index'))
 
+@app.route('/upload_files', methods=['POST'])
+@login_required
+def upload_single_files():
+    """Handle single file uploads for direct placement"""
+    try:
+        logging.info(f"Upload request received from user {current_user.id}")
+        logging.info(f"Request files: {list(request.files.keys())}")
+        
+        if 'files' not in request.files:
+            logging.warning("No 'files' key in request.files")
+            return jsonify({'success': False, 'error': 'No files selected'})
+        
+        files = request.files.getlist('files')
+        logging.info(f"Found {len(files)} files")
+        
+        if not files or all(f.filename == '' for f in files):
+            logging.warning("No valid files found")
+            return jsonify({'success': False, 'error': 'No files selected'})
+        
+        uploaded_filenames = []
+        upload_folder = app.config['UPLOAD_FOLDER']
+        
+        # Create upload directory if it doesn't exist
+        if not os.path.exists(upload_folder):
+            os.makedirs(upload_folder)
+            logging.info(f"Created upload directory: {upload_folder}")
+        
+        for file in files:
+            if file and file.filename and allowed_file(file.filename):
+                filename = secure_filename(file.filename)
+                unique_filename = f"{uuid.uuid4()}_{filename}"
+                filepath = os.path.join(upload_folder, unique_filename)
+                
+                logging.info(f"Saving file: {filename} as {unique_filename}")
+                
+                try:
+                    file.save(filepath)
+                    # Optimize the image
+                    if optimize_image_for_pdf(filepath):
+                        uploaded_filenames.append(unique_filename)
+                        logging.info(f"Successfully uploaded and optimized: {unique_filename}")
+                    else:
+                        logging.warning(f"Failed to optimize image: {unique_filename}")
+                        uploaded_filenames.append(unique_filename)  # Still add it
+                except Exception as e:
+                    logging.error(f"Error uploading file {filename}: {str(e)}")
+                    return jsonify({'success': False, 'error': f'Error uploading {filename}: {str(e)}'})
+            else:
+                error_msg = f"Invalid file: {file.filename if file else 'None'}"
+                logging.warning(error_msg)
+                return jsonify({'success': False, 'error': 'Invalid file type or empty file'})
+        
+        logging.info(f"Upload completed successfully: {uploaded_filenames}")
+        return jsonify({'success': True, 'filenames': uploaded_filenames})
+        
+    except Exception as e:
+        logging.error(f"Unexpected error in upload_single_files: {str(e)}")
+        return jsonify({'success': False, 'error': f'Upload failed: {str(e)}'})
+
 @app.route('/bulk_upload_categorize', methods=['POST'])
 @login_required
 def bulk_upload_categorize():
