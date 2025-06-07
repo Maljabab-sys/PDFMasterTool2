@@ -43,9 +43,9 @@ def classify_dental_image(image_path):
         Analyze this dental/orthodontic image and classify the view type. Pay careful attention to perspective and anatomical orientation.
 
         Classification criteria:
-        - EXTRAORAL_LEFT: Patient's left side profile view (extraoral) - portrait orientation showing patient's left facial profile and smile from the side
-        - EXTRAORAL_RIGHT: Patient's right side profile view (extraoral) - portrait orientation showing patient's right facial profile and smile from the side  
-        - EXTRAORAL_FRONT: Frontal facial view (extraoral) - portrait orientation showing patient's face from front, both sides visible, full smile or lips closed
+        - EXTRAORAL_LEFT: Patient's left side profile view (extraoral) - portrait orientation showing patient's left facial profile with visible smile/teeth from the side
+        - EXTRAORAL_RIGHT: Patient's right side profile view (extraoral) - portrait orientation showing patient's right facial profile with visible smile/teeth from the side  
+        - EXTRAORAL_FRONT: Frontal facial view (extraoral) - portrait orientation showing patient's face from front with clear smile displaying teeth, both sides visible
         - INTRAORAL_LEFT: Intraoral view of patient's LEFT side - molars appear on the LEFT side of the image (not mirrored)
         - INTRAORAL_RIGHT: Intraoral view of patient's RIGHT side - molars appear on the RIGHT side of the image (not mirrored)
         - INTRAORAL_FRONT: Intraoral frontal view - direct view of front teeth from inside the mouth, showing anterior teeth
@@ -53,14 +53,15 @@ def classify_dental_image(image_path):
         - OTHER: Individual teeth, X-rays, instruments, or unclear views
 
         Important distinctions:
-        - EXTRAORAL: Shows face/facial features in portrait orientation, taken from outside the mouth, usually showing full face or profile
-        - INTRAORAL: Shows teeth/gums directly, taken from inside the mouth with dental instruments, closer view of oral structures
+        - EXTRAORAL: Shows face/facial features in portrait orientation with VISIBLE SMILE/TEETH, taken from outside the mouth, patient is smiling to display teeth
+        - INTRAORAL: Shows teeth/gums directly, taken from inside the mouth with dental instruments, closer view of oral structures without facial features
         - CRITICAL RULE FOR LEFT/RIGHT: Intraoral photos are NOT mirrored - they show the actual anatomical view
           * If molars (large back teeth) appear on the LEFT side of the image = INTRAORAL_LEFT
           * If molars (large back teeth) appear on the RIGHT side of the image = INTRAORAL_RIGHT
         - Molars are large, broad back teeth; Incisors are small, narrow front teeth
         - Only classify ONE image as left and ONE as right per batch
-        - Extraoral photos are portrait orientation (taller than wide)
+        - Extraoral photos are portrait orientation (taller than wide) and show the patient SMILING with teeth visible
+        - Look for facial features (nose, lips, cheeks) in extraoral images vs just teeth/gums in intraoral
         - Focus on direct molar positioning in the image frame (not mirrored)
 
         Respond with JSON in this exact format:
