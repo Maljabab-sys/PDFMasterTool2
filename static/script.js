@@ -1439,6 +1439,22 @@ function displayBulkUploadResults(data) {
     // Display in specific layout format
     let layoutHTML = '';
     
+    // Hide the initial template guide and show categorized results
+    const layoutGuide = document.getElementById('layoutGuide');
+    if (layoutGuide) {
+        layoutGuide.style.display = 'none';
+    }
+    
+    // Show updated guide with actual categorized images
+    layoutHTML += `
+        <div class="alert alert-success border mb-4" id="categorizedGuide">
+            <h6 class="text-success mb-3">
+                <i class="bi bi-check-circle me-2"></i>Your Images Organized
+            </h6>
+            <p class="small text-muted mb-3">Review the AI categorization below. You can adjust classifications if needed before saving:</p>
+        </div>
+    `;
+    
     // Extraoral section - 3 in a row
     const extraoralCategories = ['extraoral_right_view', 'extraoral_frontal_view', 'extraoral_smiling_view'];
     const extraoralFiles = extraoralCategories.map(cat => categorizedFiles[cat][0] || null);
@@ -1490,6 +1506,18 @@ function displayBulkUploadResults(data) {
             `;
         }
     });
+    
+    // Add final submission guide
+    layoutHTML += `
+        <div class="col-12 mt-4">
+            <div class="alert alert-info">
+                <h6 class="mb-2">
+                    <i class="bi bi-info-circle me-2"></i>Ready to Save
+                </h6>
+                <p class="mb-0 small">Your images have been organized according to dental photography standards. Make any final adjustments using the dropdowns above, then click "Add to Case" for each image you want to include.</p>
+            </div>
+        </div>
+    `;
     
     imageResults.innerHTML = layoutHTML;
     bulkUploadResults.style.display = 'block';
