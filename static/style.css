@@ -397,6 +397,32 @@
         transition: width 0.3s ease;
     }
     
+    /* Layout image container improvements */
+    .layout-placeholder-box.border-success {
+        background: #f8f9fa !important;
+    }
+    
+    .layout-placeholder-box .layout-img {
+        border-radius: 0.375rem;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    
+    .layout-placeholder-box .btn-outline-danger {
+        background: rgba(255,255,255,0.9);
+        border: none;
+        border-radius: 50%;
+        width: 24px;
+        height: 24px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .layout-placeholder-box .badge {
+        background: rgba(0,123,255,0.9) !important;
+        border-radius: 0.375rem;
+    }
+    
     /* Mobile image adjustments for structured layout */
     .layout-card-mobile .layout-img {
         height: 100px !important;

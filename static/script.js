@@ -2140,9 +2140,10 @@ function updatePlaceholderWithDirectImage(placeholderId, file) {
     const isExtraoral = file.classification.startsWith('extraoral');
     const isMobile = window.innerWidth <= 768;
     
+    // Improved image sizing to fit the container properly
     const imageStyle = isExtraoral 
-        ? `height: ${isMobile ? '100px' : '150px'}; width: ${isMobile ? '80px' : '100px'}; object-fit: cover; cursor: pointer; margin: 0 auto; display: block; transform: rotate(-90deg);` 
-        : `height: ${isMobile ? '80px' : '120px'}; width: 100%; object-fit: cover; cursor: pointer;`;
+        ? `height: 100%; width: 100%; object-fit: cover; cursor: pointer; border-radius: 0.375rem;` 
+        : `height: 100%; width: 100%; object-fit: cover; cursor: pointer; border-radius: 0.375rem;`;
     
     // Animate the transition
     placeholder.style.transition = 'all 0.3s ease';
@@ -2150,25 +2151,16 @@ function updatePlaceholderWithDirectImage(placeholderId, file) {
     placeholder.classList.add('border-success');
     
     placeholder.innerHTML = `
-        <div class="position-relative d-flex justify-content-center">
+        <div class="position-relative w-100 h-100 d-flex align-items-center justify-content-center">
             <img src="/uploads/${file.filename}" alt="${file.original_name}" class="layout-img" style="${imageStyle}" onclick="showImageModal('/uploads/${file.filename}', '${file.original_name}', '${file.classification}')">
-            <span class="badge ${confidenceColor} position-absolute top-0 end-0 m-1">
+            <span class="badge ${confidenceColor} position-absolute top-0 end-0 m-1" style="font-size: 0.7rem;">
                 ${Math.round(file.confidence * 100)}%
             </span>
-            <button class="btn btn-sm btn-outline-danger position-absolute top-0 start-0 m-1" onclick="removeDirectImage('${placeholderId}')">
-                <i class="bi bi-x"></i>
+            <button class="btn btn-sm btn-outline-danger position-absolute top-0 start-0 m-1" onclick="removeDirectImage('${placeholderId}')" style="padding: 0.25rem 0.4rem;">
+                <i class="bi bi-x" style="font-size: 0.8rem;"></i>
             </button>
         </div>
-        <div class="p-2">
-            <div class="mb-2">
-                <small class="text-muted text-truncate d-block" title="${file.original_name}">
-                    ${file.original_name.length > 15 ? file.original_name.substring(0, 15) + '...' : file.original_name}
-                </small>
-            </div>
-            <button class="btn btn-success btn-sm w-100" onclick="addImageToCase('${file.filename}', '${file.original_name}', '${file.classification}')">
-                <i class="bi bi-plus me-1"></i>Add to Case
-            </button>
-        </div>
+        <input type="hidden" name="image_files" value="${file.filename}">
     `;
     
     // Animate appearance
@@ -2227,7 +2219,8 @@ function resetPlaceholderToOriginal(placeholder, category) {
     
     const isOcclusal = category.includes('upper') || category.includes('lower');
     const minHeight = isOcclusal ? '100px' : '120px';
-    const iconSize = isOcclusal ? '1.2rem' : '1.5rem';
+    const mobileIconSize = isOcclusal ? '1rem' : '1.2rem';
+    const desktopIconSize = isOcclusal ? '1.2rem' : '1.5rem';
     
     placeholder.className = 'layout-placeholder-box text-center p-3 border border-dashed rounded bg-light position-relative';
     placeholder.style.cssText = `min-height: ${minHeight}; cursor: pointer;`;
@@ -2235,7 +2228,8 @@ function resetPlaceholderToOriginal(placeholder, category) {
     
     placeholder.innerHTML = `
         <div class="loading-content d-flex flex-column align-items-center justify-content-center h-100">
-            <i class="${iconMap[category]} text-muted" style="font-size: ${iconSize};"></i>
+            <i class="${iconMap[category]} text-muted d-block d-md-none" style="font-size: ${mobileIconSize};"></i>
+            <i class="${iconMap[category]} text-muted d-none d-md-block" style="font-size: ${desktopIconSize};"></i>
             <div class="small text-muted mt-1">${labelMap[category]}</div>
             <div class="small text-info mt-1">Click to upload</div>
         </div>
