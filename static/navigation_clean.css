@@ -296,27 +296,7 @@
         right: 0;
     }
     
-    /* Mobile backdrop */
-    .navbar-collapse::before {
-        content: '';
-        position: fixed;
-        top: 0;
-        left: -100vw;
-        width: 100vw;
-        height: 100vh;
-        background: rgba(0, 0, 0, 0.5);
-        backdrop-filter: blur(4px);
-        opacity: 0;
-        transition: all 0.3s ease;
-        pointer-events: none;
-        z-index: -1;
-    }
-    
-    .navbar-collapse.show::before {
-        left: -320px;
-        opacity: 1;
-        pointer-events: all;
-    }
+
     
     /* Mobile nav header */
     .mobile-nav-header {
