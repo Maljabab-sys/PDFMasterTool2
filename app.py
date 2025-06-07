@@ -596,7 +596,82 @@ def create_pdf(images, case_title, notes, output_path, template='classic', orien
 def index():
     if current_user.is_authenticated:
         return redirect(url_for('dashboard'))
-    return redirect(url_for('login'))
+    
+    # For demo purposes, create and auto-login a demo user
+    demo_user = User.query.filter_by(email='demo@example.com').first()
+    if not demo_user:
+        demo_user = User(
+            email='demo@example.com',
+            first_name='Demo',
+            last_name='User',
+            department='Orthodontics',
+            position='Doctor'
+        )
+        demo_user.set_password('demo123')
+        db.session.add(demo_user)
+        db.session.commit()
+    
+    login_user(demo_user)
+    
+    # Create demo data if none exists
+    existing_patients = Patient.query.filter_by(user_id=demo_user.id).count()
+    if existing_patients == 0:
+        # Create demo patients
+        patient1 = Patient(
+            mrn='12345',
+            first_name='John',
+            last_name='Smith',
+            clinic='KFMC',
+            user_id=demo_user.id
+        )
+        patient2 = Patient(
+            mrn='67890',
+            first_name='Sarah',
+            last_name='Johnson',
+            clinic='DC',
+            user_id=demo_user.id
+        )
+        db.session.add(patient1)
+        db.session.add(patient2)
+        db.session.commit()
+        
+        # Create demo cases
+        case1 = Case(
+            title='Initial Orthodontic Consultation',
+            visit_type='Registration',
+            template='medical',
+            orientation='portrait',
+            notes='Initial consultation and treatment planning',
+            user_id=demo_user.id,
+            patient_id=patient1.id,
+            image_count=3
+        )
+        case2 = Case(
+            title='Progress Check - Month 6',
+            visit_type='Orthodontic Visit',
+            template='modern',
+            orientation='portrait', 
+            notes='6-month progress evaluation',
+            user_id=demo_user.id,
+            patient_id=patient1.id,
+            image_count=5
+        )
+        case3 = Case(
+            title='Treatment Completion',
+            visit_type='Debond',
+            template='classic',
+            orientation='portrait',
+            notes='Final treatment results',
+            user_id=demo_user.id,
+            patient_id=patient2.id,
+            image_count=4
+        )
+        db.session.add(case1)
+        db.session.add(case2)
+        db.session.add(case3)
+        db.session.commit()
+    
+    return redirect(url_for('dashboard'))
 
 @app.route('/dashboard')
 @login_required
@@ -1246,7 +1321,7 @@ def api_cases():
             
         cases_data.append(case_data)
     
-    return jsonify({'cases': cases_data})
+    return jsonify(cases_data)
 
 @app.route('/api/patients')
 @login_required
@@ -1284,7 +1359,7 @@ def api_patients():
         
         patients_data.append(patient_data)
     
-    return jsonify({'patients': patients_data})
+    return jsonify(patients_data)
 
 @app.route('/api/user-settings', methods=['GET'])
 def api_user_settings():
