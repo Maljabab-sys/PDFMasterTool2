@@ -2615,6 +2615,10 @@ function initializeCropOverlay() {
         
         if (!cropImage || !cropOverlay) return;
         
+        // Set initial zoom and fit image
+        window.cropZoom = 1;
+        fitImageToContainer();
+        
         // Get image dimensions after it's loaded
         const imageWidth = cropImage.offsetWidth;
         const imageHeight = cropImage.offsetHeight;
@@ -2632,7 +2636,72 @@ function initializeCropOverlay() {
         
         updateCropRatio();
         setupCropHandlers();
+        setupZoomControls();
     }, 100);
+}
+
+function fitImageToContainer() {
+    const cropImage = document.getElementById('cropImage');
+    const container = cropImage.parentElement;
+    
+    if (!cropImage || !container) return;
+    
+    // Reset transform to get natural dimensions
+    cropImage.style.transform = 'scale(1)';
+    cropImage.style.maxWidth = '100%';
+    cropImage.style.maxHeight = '100%';
+    cropImage.style.width = 'auto';
+    cropImage.style.height = 'auto';
+    
+    window.cropZoom = 1;
+}
+
+function setupZoomControls() {
+    const zoomInBtn = document.getElementById('zoomIn');
+    const zoomOutBtn = document.getElementById('zoomOut');
+    const resetZoomBtn = document.getElementById('resetZoom');
+    const cropImage = document.getElementById('cropImage');
+    
+    if (!zoomInBtn || !zoomOutBtn || !resetZoomBtn || !cropImage) return;
+    
+    // Remove existing listeners
+    zoomInBtn.removeEventListener('click', handleZoomIn);
+    zoomOutBtn.removeEventListener('click', handleZoomOut);
+    resetZoomBtn.removeEventListener('click', handleResetZoom);
+    
+    // Add new listeners
+    zoomInBtn.addEventListener('click', handleZoomIn);
+    zoomOutBtn.addEventListener('click', handleZoomOut);
+    resetZoomBtn.addEventListener('click', handleResetZoom);
+    
+    // Add mouse wheel zoom
+    const container = cropImage.parentElement;
+    container.addEventListener('wheel', function(e) {
+        e.preventDefault();
+        const delta = e.deltaY > 0 ? -0.1 : 0.1;
+        adjustZoom(delta);
+    });
+}
+
+function handleZoomIn() {
+    adjustZoom(0.2);
+}
+
+function handleZoomOut() {
+    adjustZoom(-0.2);
+}
+
+function handleResetZoom() {
+    fitImageToContainer();
+}
+
+function adjustZoom(delta) {
+    const cropImage = document.getElementById('cropImage');
+    if (!cropImage) return;
+    
+    window.cropZoom = Math.max(0.5, Math.min(3, window.cropZoom + delta));
+    cropImage.style.transform = `scale(${window.cropZoom})`;
+    cropImage.style.cursor = window.cropZoom > 1 ? 'move' : 'grab';
 }
 
 function updateCropRatio() {
@@ -2711,41 +2780,148 @@ function setupCropHandlers() {
         radio.addEventListener('change', updateCropRatio);
     });
     
-    // Simple dragging functionality
+    // Enhanced dragging and resizing functionality
     let isDragging = false;
-    let startX, startY;
+    let isResizing = false;
+    let currentHandle = null;
+    let startX, startY, startLeft, startTop, startWidth, startHeight;
     
     const handleMouseDown = function(e) {
-        if (e.target === cropOverlay) {
+        const target = e.target;
+        
+        if (target.classList.contains('crop-handle')) {
+            // Handle resizing
+            isResizing = true;
+            currentHandle = target;
+            const rect = cropOverlay.getBoundingClientRect();
+            const containerRect = cropOverlay.parentElement.getBoundingClientRect();
+            
+            startX = e.clientX;
+            startY = e.clientY;
+            startLeft = rect.left - containerRect.left;
+            startTop = rect.top - containerRect.top;
+            startWidth = rect.width;
+            startHeight = rect.height;
+            
+        } else if (target === cropOverlay) {
+            // Handle dragging
             isDragging = true;
             startX = e.clientX - cropOverlay.offsetLeft;
             startY = e.clientY - cropOverlay.offsetTop;
-            e.preventDefault();
         }
+        
+        e.preventDefault();
+        e.stopPropagation();
     };
     
     const handleMouseMove = function(e) {
+        const cropImage = document.getElementById('cropImage');
+        if (!cropImage) return;
+        
+        const imageWidth = cropImage.offsetWidth;
+        const imageHeight = cropImage.offsetHeight;
+        
         if (isDragging) {
-            const cropImage = document.getElementById('cropImage');
-            if (!cropImage) return;
-            
+            // Move the crop overlay
             const newLeft = e.clientX - startX;
             const newTop = e.clientY - startY;
             
-            const maxLeft = cropImage.offsetWidth - cropOverlay.offsetWidth;
-            const maxTop = cropImage.offsetHeight - cropOverlay.offsetHeight;
+            const maxLeft = imageWidth - cropOverlay.offsetWidth;
+            const maxTop = imageHeight - cropOverlay.offsetHeight;
             
             cropOverlay.style.left = Math.max(0, Math.min(maxLeft, newLeft)) + 'px';
             cropOverlay.style.top = Math.max(0, Math.min(maxTop, newTop)) + 'px';
+            
+        } else if (isResizing && currentHandle) {
+            // Resize the crop overlay
+            const deltaX = e.clientX - startX;
+            const deltaY = e.clientY - startY;
+            
+            let newLeft = startLeft;
+            let newTop = startTop;
+            let newWidth = startWidth;
+            let newHeight = startHeight;
+            
+            const selectedRatio = document.querySelector('input[name="cropRatio"]:checked').value;
+            const isSquare = selectedRatio === '1:1';
+            const ratio57 = selectedRatio === '5:7' ? 7/5 : null;
+            const ratio916 = selectedRatio === '9:16' ? 16/9 : null;
+            
+            // Handle different resize directions
+            if (currentHandle.classList.contains('nw-handle')) {
+                newLeft = startLeft + deltaX;
+                newTop = startTop + deltaY;
+                newWidth = startWidth - deltaX;
+                newHeight = startHeight - deltaY;
+            } else if (currentHandle.classList.contains('ne-handle')) {
+                newTop = startTop + deltaY;
+                newWidth = startWidth + deltaX;
+                newHeight = startHeight - deltaY;
+            } else if (currentHandle.classList.contains('sw-handle')) {
+                newLeft = startLeft + deltaX;
+                newWidth = startWidth - deltaX;
+                newHeight = startHeight + deltaY;
+            } else if (currentHandle.classList.contains('se-handle')) {
+                newWidth = startWidth + deltaX;
+                newHeight = startHeight + deltaY;
+            } else if (currentHandle.classList.contains('n-handle')) {
+                newTop = startTop + deltaY;
+                newHeight = startHeight - deltaY;
+            } else if (currentHandle.classList.contains('s-handle')) {
+                newHeight = startHeight + deltaY;
+            } else if (currentHandle.classList.contains('w-handle')) {
+                newLeft = startLeft + deltaX;
+                newWidth = startWidth - deltaX;
+            } else if (currentHandle.classList.contains('e-handle')) {
+                newWidth = startWidth + deltaX;
+            }
+            
+            // Apply aspect ratio constraints
+            if (isSquare) {
+                const size = Math.min(newWidth, newHeight);
+                newWidth = newHeight = size;
+            } else if (ratio57) {
+                newHeight = newWidth * ratio57;
+            } else if (ratio916) {
+                newHeight = newWidth * ratio916;
+            }
+            
+            // Enforce minimum and maximum bounds
+            newWidth = Math.max(50, Math.min(imageWidth, newWidth));
+            newHeight = Math.max(50, Math.min(imageHeight, newHeight));
+            
+            // Adjust position if needed
+            if (newLeft < 0) {
+                newWidth += newLeft;
+                newLeft = 0;
+            }
+            if (newTop < 0) {
+                newHeight += newTop;
+                newTop = 0;
+            }
+            if (newLeft + newWidth > imageWidth) {
+                newWidth = imageWidth - newLeft;
+            }
+            if (newTop + newHeight > imageHeight) {
+                newHeight = imageHeight - newTop;
+            }
+            
+            // Apply the new dimensions
+            cropOverlay.style.left = newLeft + 'px';
+            cropOverlay.style.top = newTop + 'px';
+            cropOverlay.style.width = newWidth + 'px';
+            cropOverlay.style.height = newHeight + 'px';
         }
     };
     
     const handleMouseUp = function() {
         isDragging = false;
+        isResizing = false;
+        currentHandle = null;
     };
     
     // Remove existing event listeners
-    cropOverlay.removeEventListener('mousedown', handleMouseDown);
+    document.removeEventListener('mousedown', handleMouseDown);
     document.removeEventListener('mousemove', handleMouseMove);
     document.removeEventListener('mouseup', handleMouseUp);
     
