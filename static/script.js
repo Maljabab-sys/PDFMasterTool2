@@ -959,9 +959,11 @@ function removeClinicFromList(button) {
     const clinicItem = button.closest('.clinic-item');
     const clinicName = clinicItem.dataset.clinic;
     
-    if (confirm(`Are you sure you want to delete "${clinicName}"?`)) {
+    // Show custom confirmation modal
+    showDeleteConfirmation(clinicName, () => {
         clinicItem.remove();
-    }
+        showSuccessPopup(`Clinic "${clinicName}" deleted successfully!`);
+    });
 }
 
 // Filter patients based on search input
@@ -1227,4 +1229,68 @@ function updateDefaultProfileIcon() {
     if (!preview || preview.style.display === 'none') {
         updateNavProfileImage(null, gender);
     }
+}
+
+function showDeleteConfirmation(itemName, onConfirm) {
+    // Create modal HTML
+    const modalHtml = `
+        <div class="modal fade" id="deleteConfirmModal" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header border-0 pb-0">
+                        <h5 class="modal-title text-danger">
+                            <i class="bi bi-exclamation-triangle me-2"></i>Confirm Deletion
+                        </h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <p class="mb-3">Are you sure you want to delete "<strong>${itemName}</strong>"?</p>
+                        <p class="text-muted small mb-0">This action cannot be undone.</p>
+                    </div>
+                    <div class="modal-footer border-0 pt-0">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="button" class="btn btn-danger" id="confirmDeleteBtn">
+                            <i class="bi bi-trash me-1"></i>Delete
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // Remove existing modal if any
+    const existingModal = document.getElementById('deleteConfirmModal');
+    if (existingModal) {
+        existingModal.remove();
+    }
+    
+    // Add modal to body
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+    
+    // Show modal
+    const modal = new bootstrap.Modal(document.getElementById('deleteConfirmModal'));
+    modal.show();
+    
+    // Handle confirm button click
+    document.getElementById('confirmDeleteBtn').onclick = function() {
+        onConfirm();
+        modal.hide();
+        // Clean up modal after hiding
+        setTimeout(() => {
+            const modalElement = document.getElementById('deleteConfirmModal');
+            if (modalElement) {
+                modalElement.remove();
+            }
+        }, 300);
+    };
+    
+    // Clean up modal when dismissed
+    document.getElementById('deleteConfirmModal').addEventListener('hidden.bs.modal', function() {
+        setTimeout(() => {
+            const modalElement = document.getElementById('deleteConfirmModal');
+            if (modalElement) {
+                modalElement.remove();
+            }
+        }, 100);
+    });
 }
