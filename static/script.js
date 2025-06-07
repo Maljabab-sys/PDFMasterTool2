@@ -1423,7 +1423,7 @@ function displayBulkUploadResults(data) {
         // Determine image display style based on classification
         const isExtraoral = file.classification.startsWith('extraoral');
         const imageStyle = isExtraoral 
-            ? "height: 180px; width: 120px; object-fit: cover; cursor: pointer; margin: 0 auto; display: block;" 
+            ? "height: 180px; width: 120px; object-fit: cover; cursor: pointer; margin: 0 auto; display: block; transform: rotate(-90deg);" 
             : "height: 120px; width: 100%; object-fit: cover; cursor: pointer;";
         
         const imageHTML = `
