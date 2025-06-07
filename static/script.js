@@ -966,6 +966,61 @@ function closeMobileNav() {
     }
 }
 
+// Update clinic dropdowns throughout the application
+function updateClinicDropdowns() {
+    const clinicSelects = document.querySelectorAll('#clinic, .clinic-dropdown');
+    
+    // Get all available clinics
+    const primaryClinics = [];
+    const customClinics = [];
+    
+    // Check primary clinics
+    const kfmcCheckbox = document.getElementById('kfmc');
+    const dcCheckbox = document.getElementById('dc');
+    
+    if (kfmcCheckbox && kfmcCheckbox.checked) {
+        primaryClinics.push('KFMC');
+    }
+    if (dcCheckbox && dcCheckbox.checked) {
+        primaryClinics.push('DC');
+    }
+    
+    // Get custom clinics
+    const customClinicInputs = document.querySelectorAll('#customClinics input[type="text"]');
+    customClinicInputs.forEach(input => {
+        if (input.value.trim()) {
+            customClinics.push(input.value.trim());
+        }
+    });
+    
+    // Update all clinic dropdowns
+    clinicSelects.forEach(select => {
+        const currentValue = select.value;
+        select.innerHTML = '<option value="">Select a clinic</option>';
+        
+        // Add primary clinics
+        primaryClinics.forEach(clinic => {
+            const option = document.createElement('option');
+            option.value = clinic;
+            option.textContent = clinic === 'KFMC' ? 'King Fahd Medical City (KFMC)' : 'Dental Center (DC)';
+            select.appendChild(option);
+        });
+        
+        // Add custom clinics
+        customClinics.forEach(clinic => {
+            const option = document.createElement('option');
+            option.value = clinic;
+            option.textContent = clinic;
+            select.appendChild(option);
+        });
+        
+        // Restore previous selection if still valid
+        if (currentValue && [...primaryClinics, ...customClinics].includes(currentValue)) {
+            select.value = currentValue;
+        }
+    });
+}
+
 function updateClinicDropdown(clinics) {
     const clinicSelect = document.getElementById('clinic');
     if (!clinicSelect) return;
