@@ -18,6 +18,8 @@ import tempfile
 import uuid
 from datetime import datetime
 from image_classifier import classify_bulk_images, get_classification_summary
+from dental_ai_model import get_dental_classifier, initialize_dental_classifier
+from training_setup import TrainingDataManager
 
 # Configure logging
 logging.basicConfig(level=logging.DEBUG)
@@ -1709,6 +1711,135 @@ def save_settings():
         db.session.rollback()
         logging.error(f"Error saving settings: {str(e)}")
         return jsonify({'success': False, 'message': 'Error saving settings. Please try again.'}), 500
+
+@app.route('/ai_training')
+@login_required
+def ai_training():
+    """AI Training Management Interface"""
+    try:
+        # Initialize training data manager
+        trainer = TrainingDataManager()
+        
+        # Get training statistics
+        stats = trainer.get_training_stats()
+        
+        # Get dental classifier info
+        classifier = get_dental_classifier()
+        
+        # Get available unlabeled images from user uploads
+        user_upload_dir = os.path.join('uploads', str(current_user.id))
+        unlabeled_images = []
+        
+        if os.path.exists(user_upload_dir):
+            for filename in os.listdir(user_upload_dir):
+                if filename.lower().endswith(('.jpg', '.jpeg', '.png')):
+                    image_path = os.path.join(user_upload_dir, filename)
+                    unlabeled_images.append({
+                        'filename': filename,
+                        'path': image_path,
+                        'url': url_for('serve_uploaded_file', filename=filename)
+                    })
+        
+        return render_template('ai_training.html', 
+                             stats=stats,
+                             classifier_info={
+                                 'is_trained': classifier.is_trained,
+                                 'categories': classifier.categories
+                             },
+                             unlabeled_images=unlabeled_images[:20])  # Limit to 20 for UI
+        
+    except Exception as e:
+        flash(f'Error loading training interface: {str(e)}', 'error')
+        logging.error(f"Error in ai_training: {e}")
+        return redirect(url_for('dashboard'))
+
+@app.route('/label_image', methods=['POST'])
+@login_required
+def label_image():
+    """Label an image for training data"""
+    try:
+        data = request.get_json()
+        image_filename = data.get('filename')
+        category = data.get('category')
+        
+        if not image_filename or not category:
+            return jsonify({'success': False, 'error': 'Missing filename or category'})
+        
+        # Get the full image path
+        user_upload_dir = os.path.join('uploads', str(current_user.id))
+        image_path = os.path.join(user_upload_dir, image_filename)
+        
+        if not os.path.exists(image_path):
+            return jsonify({'success': False, 'error': 'Image file not found'})
+        
+        # Initialize training data manager
+        trainer = TrainingDataManager()
+        
+        # Add image to training data
+        trainer.add_training_image(image_path, category, correct_classification=True)
+        
+        return jsonify({'success': True, 'message': f'Image labeled as {category}'})
+        
+    except Exception as e:
+        logging.error(f"Error labeling image: {e}")
+        return jsonify({'success': False, 'error': str(e)})
+
+@app.route('/train_model', methods=['POST'])
+@login_required
+def train_model():
+    """Train the custom AI model"""
+    try:
+        # Initialize training data manager
+        trainer = TrainingDataManager()
+        stats = trainer.get_training_stats()
+        
+        # Check if we have enough training data
+        if stats['total_images'] < 10:
+            return jsonify({
+                'success': False, 
+                'error': f'Need at least 10 labeled images. Currently have {stats["total_images"]}'
+            })
+        
+        # Get dental classifier
+        classifier = get_dental_classifier()
+        
+        # Train the model
+        training_data_path = trainer.base_path
+        results = classifier.train(training_data_path)
+        
+        # Save the trained model
+        model_save_path = "models/dental_classifier.pkl"
+        os.makedirs("models", exist_ok=True)
+        classifier.save_model(model_save_path)
+        
+        return jsonify({
+            'success': True,
+            'message': 'Model trained successfully!',
+            'results': results
+        })
+        
+    except Exception as e:
+        logging.error(f"Error training model: {e}")
+        return jsonify({'success': False, 'error': str(e)})
+
+@app.route('/training_stats')
+@login_required
+def training_stats():
+    """Get current training statistics"""
+    try:
+        trainer = TrainingDataManager()
+        stats = trainer.get_training_stats()
+        classifier = get_dental_classifier()
+        
+        return jsonify({
+            'success': True,
+            'stats': stats,
+            'model_trained': classifier.is_trained
+        })
+        
+    except Exception as e:
+        logging.error(f"Error getting training stats: {e}")
+        return jsonify({'success': False, 'error': str(e)})
 
 @app.errorhandler(500)
 def server_error(e):

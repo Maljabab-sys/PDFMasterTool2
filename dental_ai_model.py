@@ -355,6 +355,10 @@ class DentalImageClassifier:
     
     def load_model(self):
         """Load a saved model"""
+        if not self.model_path:
+            logging.warning("No model path specified")
+            return
+            
         try:
             with open(self.model_path, 'rb') as f:
                 model_data = pickle.load(f)
