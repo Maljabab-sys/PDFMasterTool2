@@ -1889,6 +1889,38 @@ def upload_training_image():
         logging.error(f"Error uploading training image: {e}")
         return jsonify({'success': False, 'error': str(e)})
 
+@app.route('/remove_training_image', methods=['POST'])
+@login_required
+def remove_training_image():
+    """Remove image from training data"""
+    try:
+        data = request.get_json()
+        filename = data.get('filename')
+        
+        if not filename:
+            return jsonify({'success': False, 'error': 'No filename provided'})
+        
+        # Get user upload directory
+        user_upload_dir = os.path.join('uploads', str(current_user.id))
+        file_path = os.path.join(user_upload_dir, filename)
+        
+        # Remove from filesystem
+        if os.path.exists(file_path):
+            os.remove(file_path)
+        
+        # Remove from training data
+        trainer = TrainingDataManager()
+        trainer.remove_training_image(file_path)
+        
+        return jsonify({
+            'success': True,
+            'message': 'Image removed from training data'
+        })
+        
+    except Exception as e:
+        logging.error(f"Error removing training image: {e}")
+        return jsonify({'success': False, 'error': str(e)})
+
 @app.errorhandler(500)
 def server_error(e):
     logging.error(f"Server error: {str(e)}")

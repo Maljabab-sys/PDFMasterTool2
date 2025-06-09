@@ -315,10 +315,20 @@ class DentalImageClassifier:
         
         logging.info(f"Loaded {len(X)} training samples")
         
-        # Split data
-        X_train, X_val, y_train, y_val = train_test_split(
-            X, y, test_size=validation_split, random_state=42, stratify=y
-        )
+        # Check if we have enough data for proper validation split
+        unique_labels, label_counts = np.unique(y, return_counts=True)
+        min_samples = min(label_counts)
+        
+        if len(X) < 10 or min_samples < 2:
+            # Not enough data for validation split - train on all data
+            logging.info(f"Limited data ({len(X)} samples, min {min_samples} per class). Training on all data.")
+            X_train, X_val, y_train, y_val = X, X, y, y
+            validation_split = 0  # No actual validation split
+        else:
+            # Enough data for proper train/validation split
+            X_train, X_val, y_train, y_val = train_test_split(
+                X, y, test_size=validation_split, random_state=42, stratify=y
+            )
         
         # Scale features
         X_train_scaled = self.scaler.fit_transform(X_train)

@@ -83,6 +83,25 @@ class TrainingDataManager:
         except Exception as e:
             logging.error(f"Failed to add training image: {e}")
     
+    def remove_training_image(self, image_path: str):
+        """
+        Remove an image from training data
+        
+        Args:
+            image_path: Path to the image to remove
+        """
+        filename = os.path.basename(image_path)
+        
+        # Search for the image in all category directories
+        for category in self.categories:
+            category_dir = os.path.join(self.base_path, category)
+            training_image_path = os.path.join(category_dir, filename)
+            
+            if os.path.exists(training_image_path):
+                os.remove(training_image_path)
+                logging.info(f"Removed training image: {training_image_path}")
+                break
+    
     def _log_training_addition(self, image_path: str, category: str, correct: bool):
         """Log training data additions for tracking"""
         log_file = os.path.join(self.base_path, "training_log.json")

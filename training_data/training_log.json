@@ -185,6 +185,78 @@
       "image_path": "training_data/other/20250609_220528_IMG_7380.png",
       "category": "other",
       "correctly_classified": true
+    },
+    {
+      "timestamp": "2025-06-09T22:07:44.338138",
+      "image_path": "training_data/extraoral_zoomed_smile/20250609_220744_training_20250609_220744_IMG_2216_-_Mhanna_Aljabab.jpeg",
+      "category": "extraoral_zoomed_smile",
+      "correctly_classified": true
+    },
+    {
+      "timestamp": "2025-06-09T22:08:10.797132",
+      "image_path": "training_data/extraoral_frontal/20250609_220810_training_20250609_220810_IMG_2218_-_Mhanna_Aljabab.jpeg",
+      "category": "extraoral_frontal",
+      "correctly_classified": true
+    },
+    {
+      "timestamp": "2025-06-09T22:08:24.948889",
+      "image_path": "training_data/extraoral_full_face_smile/20250609_220824_training_20250609_220824_IMG_2219_-_Mhanna_Aljabab.jpeg",
+      "category": "extraoral_full_face_smile",
+      "correctly_classified": true
+    },
+    {
+      "timestamp": "2025-06-09T22:08:39.600392",
+      "image_path": "training_data/extraoral_right/20250609_220839_training_20250609_220839_IMG_2220_-_Mhanna_Aljabab.jpeg",
+      "category": "extraoral_right",
+      "correctly_classified": true
+    },
+    {
+      "timestamp": "2025-06-09T22:08:52.306310",
+      "image_path": "training_data/intraoral_right/20250609_220852_training_20250609_220852_IMG_2223_-_Mhanna_Aljabab.jpeg",
+      "category": "intraoral_right",
+      "correctly_classified": true
+    },
+    {
+      "timestamp": "2025-06-09T22:09:35.060435",
+      "image_path": "training_data/intraoral_left/20250609_220935_training_20250609_220935_IMG_2224_-_Mhanna_Aljabab.jpeg",
+      "category": "intraoral_left",
+      "correctly_classified": true
+    },
+    {
+      "timestamp": "2025-06-09T22:09:54.742183",
+      "image_path": "training_data/extraoral_zoomed_smile/20250609_220954_training_20250609_220744_IMG_2216_-_Mhanna_Aljabab.jpeg",
+      "category": "extraoral_zoomed_smile",
+      "correctly_classified": true
+    },
+    {
+      "timestamp": "2025-06-09T22:10:02.374927",
+      "image_path": "training_data/extraoral_frontal/20250609_221002_training_20250609_220810_IMG_2218_-_Mhanna_Aljabab.jpeg",
+      "category": "extraoral_frontal",
+      "correctly_classified": true
+    },
+    {
+      "timestamp": "2025-06-09T22:10:05.490856",
+      "image_path": "training_data/extraoral_full_face_smile/20250609_221005_training_20250609_220824_IMG_2219_-_Mhanna_Aljabab.jpeg",
+      "category": "extraoral_full_face_smile",
+      "correctly_classified": true
+    },
+    {
+      "timestamp": "2025-06-09T22:10:07.122156",
+      "image_path": "training_data/extraoral_right/20250609_221007_training_20250609_220839_IMG_2220_-_Mhanna_Aljabab.jpeg",
+      "category": "extraoral_right",
+      "correctly_classified": true
+    },
+    {
+      "timestamp": "2025-06-09T22:10:09.185673",
+      "image_path": "training_data/intraoral_right/20250609_221009_training_20250609_220852_IMG_2223_-_Mhanna_Aljabab.jpeg",
+      "category": "intraoral_right",
+      "correctly_classified": true
+    },
+    {
+      "timestamp": "2025-06-09T22:10:10.447377",
+      "image_path": "training_data/intraoral_left/20250609_221010_training_20250609_220935_IMG_2224_-_Mhanna_Aljabab.jpeg",
+      "category": "intraoral_left",
+      "correctly_classified": true
     }
   ]
 }
