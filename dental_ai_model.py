@@ -243,16 +243,30 @@ class DentalImageClassifier:
             best_category = max(probabilities.keys(), key=lambda k: probabilities[k])
             confidence = probabilities[best_category]
             
+            # Ensure classification matches our 9 categories
+            if best_category not in self.categories:
+                # Map old categories to new ones or default to front view
+                old_to_new_mapping = {
+                    'left_view': 'intraoral_left',
+                    'right_view': 'intraoral_right',
+                    'front_view': 'intraoral_front',
+                    'extraoral': 'extraoral_frontal',
+                    'radiograph': 'intraoral_front',  # Default radiographs to front view
+                    'other': 'intraoral_front'
+                }
+                best_category = old_to_new_mapping.get(best_category, 'intraoral_front')
+            
             # Map to user-friendly names
             category_names = {
-                'left_view': 'Left View',
-                'right_view': 'Right View', 
-                'front_view': 'Front View',
+                'intraoral_left': 'Intraoral Left',
+                'intraoral_right': 'Intraoral Right',
+                'intraoral_front': 'Intraoral Front',
                 'upper_occlusal': 'Upper Occlusal',
                 'lower_occlusal': 'Lower Occlusal',
-                'extraoral': 'Extraoral',
-                'radiograph': 'Radiograph',
-                'other': 'Other'
+                'extraoral_frontal': 'Extraoral Frontal',
+                'extraoral_right': 'Extraoral Right',
+                'extraoral_full_face_smile': 'Extraoral Full Face Smile',
+                'extraoral_zoomed_smile': 'Extraoral Zoomed Smile'
             }
             
             return {
