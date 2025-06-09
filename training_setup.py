@@ -13,14 +13,15 @@ class TrainingDataManager:
     def __init__(self, base_path: str = "training_data"):
         self.base_path = base_path
         self.categories = {
-            'left': 'Left View',
-            'right': 'Right View',
-            'front': 'Front View',
+            'intraoral_left': 'Intraoral Left',
+            'intraoral_right': 'Intraoral Right',
+            'intraoral_front': 'Intraoral Front',
             'upper_occlusal': 'Upper Occlusal',
             'lower_occlusal': 'Lower Occlusal',
-            'extraoral': 'Extraoral',
-            'radiograph': 'Radiograph',
-            'other': 'Other'
+            'extraoral_frontal': 'Extraoral Frontal',
+            'extraoral_right': 'Extraoral Right',
+            'extraoral_full_face_smile': 'Extraoral Full Face Smile',
+            'extraoral_zoomed_smile': 'Extraoral Zoomed Smile'
         }
         self.setup_directories()
     

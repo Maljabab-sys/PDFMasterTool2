@@ -95,10 +95,48 @@
                     </div>
                 </div>
 
+                <!-- Direct Upload Interface -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5><i class="bi bi-cloud-upload me-2"></i>Upload Training Images</h5>
+                    </div>
+                    <div class="card-body">
+                        <form id="trainingUploadForm" enctype="multipart/form-data">
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="trainingImage" class="form-label">Select Dental Image</label>
+                                    <input type="file" class="form-control" id="trainingImage" name="image" accept="image/*" required>
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <label for="imageCategory" class="form-label">Category</label>
+                                    <select class="form-select" id="imageCategory" name="category" required>
+                                        <option value="">Select Category...</option>
+                                        <option value="intraoral_left">Intraoral Left</option>
+                                        <option value="intraoral_right">Intraoral Right</option>
+                                        <option value="intraoral_front">Intraoral Front</option>
+                                        <option value="upper_occlusal">Upper Occlusal</option>
+                                        <option value="lower_occlusal">Lower Occlusal</option>
+                                        <option value="extraoral_frontal">Extraoral Frontal</option>
+                                        <option value="extraoral_right">Extraoral Right</option>
+                                        <option value="extraoral_full_face_smile">Extraoral Full Face Smile</option>
+                                        <option value="extraoral_zoomed_smile">Extraoral Zoomed Smile</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-2 mb-3">
+                                    <label class="form-label">&nbsp;</label>
+                                    <button type="submit" class="btn btn-primary w-100">
+                                        <i class="bi bi-upload me-1"></i>Upload & Label
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
                 <!-- Image Labeling Interface -->
                 <div class="card">
                     <div class="card-header">
-                        <h5><i class="bi bi-tags me-2"></i>Label Images for Training</h5>
+                        <h5><i class="bi bi-tags me-2"></i>Label Existing Images</h5>
                     </div>
                     <div class="card-body">
                         {% if unlabeled_images %}
@@ -110,14 +148,15 @@
                                     <div class="card-body p-2">
                                         <h6 class="card-title text-truncate mb-2">{{ image.filename }}</h6>
                                         <div class="d-grid gap-1">
-                                            <button class="btn btn-outline-primary btn-sm label-btn" data-category="left_view">Left View</button>
-                                            <button class="btn btn-outline-primary btn-sm label-btn" data-category="right_view">Right View</button>
-                                            <button class="btn btn-outline-primary btn-sm label-btn" data-category="front_view">Front View</button>
+                                            <button class="btn btn-outline-primary btn-sm label-btn" data-category="intraoral_left">Intraoral Left</button>
+                                            <button class="btn btn-outline-primary btn-sm label-btn" data-category="intraoral_right">Intraoral Right</button>
+                                            <button class="btn btn-outline-primary btn-sm label-btn" data-category="intraoral_front">Intraoral Front</button>
                                             <button class="btn btn-outline-success btn-sm label-btn" data-category="upper_occlusal">Upper Occlusal</button>
                                             <button class="btn btn-outline-success btn-sm label-btn" data-category="lower_occlusal">Lower Occlusal</button>
-                                            <button class="btn btn-outline-info btn-sm label-btn" data-category="extraoral">Extraoral</button>
-                                            <button class="btn btn-outline-dark btn-sm label-btn" data-category="radiograph">Radiograph</button>
-                                            <button class="btn btn-outline-secondary btn-sm label-btn" data-category="other">Other</button>
+                                            <button class="btn btn-outline-info btn-sm label-btn" data-category="extraoral_frontal">Extraoral Frontal</button>
+                                            <button class="btn btn-outline-info btn-sm label-btn" data-category="extraoral_right">Extraoral Right</button>
+                                            <button class="btn btn-outline-warning btn-sm label-btn" data-category="extraoral_full_face_smile">Extraoral Full Face Smile</button>
+                                            <button class="btn btn-outline-warning btn-sm label-btn" data-category="extraoral_zoomed_smile">Extraoral Zoomed Smile</button>
                                         </div>
                                     </div>
                                 </div>
@@ -156,6 +195,61 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
     document.addEventListener('DOMContentLoaded', function() {
+        // Direct upload form handler
+        const uploadForm = document.getElementById('trainingUploadForm');
+        if (uploadForm) {
+            uploadForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const formData = new FormData();
+                const imageFile = document.getElementById('trainingImage').files[0];
+                const category = document.getElementById('imageCategory').value;
+                
+                if (!imageFile) {
+                    showAlert('warning', 'Please select an image file');
+                    return;
+                }
+                
+                if (!category) {
+                    showAlert('warning', 'Please select a category');
+                    return;
+                }
+                
+                formData.append('image', imageFile);
+                formData.append('category', category);
+                
+                // Update button state
+                const submitBtn = this.querySelector('button[type="submit"]');
+                const originalText = submitBtn.innerHTML;
+                submitBtn.innerHTML = '<i class="bi bi-arrow-clockwise spin me-1"></i>Uploading...';
+                submitBtn.disabled = true;
+                
+                fetch('/upload_training_image', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        showAlert('success', data.message);
+                        // Reset form
+                        uploadForm.reset();
+                        // Reload page to show updated stats
+                        setTimeout(() => location.reload(), 1500);
+                    } else {
+                        showAlert('danger', 'Error: ' + data.error);
+                    }
+                })
+                .catch(error => {
+                    showAlert('danger', 'Failed to upload image');
+                })
+                .finally(() => {
+                    submitBtn.innerHTML = originalText;
+                    submitBtn.disabled = false;
+                });
+            });
+        }
+        
         // Label image functionality
         document.querySelectorAll('.label-btn').forEach(button => {
             button.addEventListener('click', function() {

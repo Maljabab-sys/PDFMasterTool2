@@ -25,11 +25,11 @@ class DentalImageClassifier:
         self.label_encoder = LabelEncoder()
         self.is_trained = False
         
-        # Dental image categories
+        # Dental image categories - updated to match your requirements
         self.categories = [
-            'left_view', 'right_view', 'front_view',
+            'intraoral_left', 'intraoral_right', 'intraoral_front',
             'upper_occlusal', 'lower_occlusal', 
-            'extraoral', 'radiograph', 'other'
+            'extraoral_frontal', 'extraoral_right', 'extraoral_full_face_smile', 'extraoral_zoomed_smile'
         ]
         
         # Fit label encoder

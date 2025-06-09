@@ -1842,6 +1842,53 @@ def training_stats():
         logging.error(f"Error getting training stats: {e}")
         return jsonify({'success': False, 'error': str(e)})
 
+@app.route('/upload_training_image', methods=['POST'])
+@login_required
+def upload_training_image():
+    """Upload image directly for training purposes"""
+    try:
+        if 'image' not in request.files:
+            return jsonify({'success': False, 'error': 'No image file provided'})
+        
+        file = request.files['image']
+        category = request.form.get('category')
+        
+        if not file or file.filename == '':
+            return jsonify({'success': False, 'error': 'No file selected'})
+        
+        if not category:
+            return jsonify({'success': False, 'error': 'No category specified'})
+        
+        if not allowed_file(file.filename):
+            return jsonify({'success': False, 'error': 'Invalid file type'})
+        
+        # Create user upload directory
+        user_upload_dir = os.path.join('uploads', str(current_user.id))
+        os.makedirs(user_upload_dir, exist_ok=True)
+        
+        # Generate unique filename
+        filename = secure_filename(file.filename)
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        filename = f"training_{timestamp}_{filename}"
+        file_path = os.path.join(user_upload_dir, filename)
+        
+        # Save the file
+        file.save(file_path)
+        
+        # Add to training data immediately
+        trainer = TrainingDataManager()
+        trainer.add_training_image(file_path, category, correct_classification=True)
+        
+        return jsonify({
+            'success': True,
+            'message': f'Image uploaded and labeled as {category}',
+            'filename': filename
+        })
+        
+    except Exception as e:
+        logging.error(f"Error uploading training image: {e}")
+        return jsonify({'success': False, 'error': str(e)})
+
 @app.errorhandler(500)
 def server_error(e):
     logging.error(f"Server error: {str(e)}")

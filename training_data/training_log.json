@@ -149,6 +149,42 @@
       "image_path": "training_data/other/20250609_214401_IMG_7297_1749093716075.png",
       "category": "other",
       "correctly_classified": true
+    },
+    {
+      "timestamp": "2025-06-09T22:05:23.225970",
+      "image_path": "training_data/other/20250609_220523_IMG_7398.png",
+      "category": "other",
+      "correctly_classified": true
+    },
+    {
+      "timestamp": "2025-06-09T22:05:25.201578",
+      "image_path": "training_data/other/20250609_220525_IMG_7399.jpeg",
+      "category": "other",
+      "correctly_classified": true
+    },
+    {
+      "timestamp": "2025-06-09T22:05:26.056369",
+      "image_path": "training_data/other/20250609_220526_IMG_7403.png",
+      "category": "other",
+      "correctly_classified": true
+    },
+    {
+      "timestamp": "2025-06-09T22:05:26.664966",
+      "image_path": "training_data/other/20250609_220526_IMG_7378.png",
+      "category": "other",
+      "correctly_classified": true
+    },
+    {
+      "timestamp": "2025-06-09T22:05:28.036569",
+      "image_path": "training_data/other/20250609_220528_IMG_7379.png",
+      "category": "other",
+      "correctly_classified": true
+    },
+    {
+      "timestamp": "2025-06-09T22:05:28.921490",
+      "image_path": "training_data/other/20250609_220528_IMG_7380.png",
+      "category": "other",
+      "correctly_classified": true
     }
   ]
 }
