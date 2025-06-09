@@ -40,122 +40,172 @@ def encode_image_to_base64(image_path, max_size=(512, 512)):
 
 def classify_dental_image(image_path):
     """
-    Classify dental image as left, right, front, or other view
+    Classify dental image using custom AI model or OpenAI fallback
     Returns: dict with classification and confidence
     """
     try:
-        # Encode image to base64
-        base64_image = encode_image_to_base64(image_path)
-        
-        # Create prompt for dental image classification
-        prompt = """
-        You are a dental AI assistant. Your job is to categorize the image accurately into one of the following labels. Use clear anatomical cues to distinguish left from right. Do not guess — choose the best label only if confident.
-
-        Categories and Definitions:
-        1. Extraoral_frontal_view — Full face from front, no smile.
-        2. Extraoral_right_view — Full face from patient's right side, no smile.
-        3. Extraoral_smiling_view — Full face from front, smiling.
-        4. Extraoral_teeth_smile_view — Cropped to mouth/teeth while smiling (not full face).
-        5. Intraoral_frontal_view — Teeth viewed from front inside the mouth (incisors centered).
-        6. Intraoral_right_view — Patient's right-side posterior teeth.
-           • Molars and premolars from the patient's right side.
-           • Buccal surface of the upper right molars visible.
-           • No mirror artifacts or reversed images.
-        7. Intraoral_left_view — Patient's left-side posterior teeth.
-           • Molars and premolars from the patient's left side.
-           • Buccal surface of the upper left molars visible.
-           • No mirror artifacts or reversed images.
-        8. Intraoral_upper_occlusal_view — Occlusal (biting surface) view of the upper jaw (maxilla), clearly showing both arches.
-        9. Intraoral_lower_occlusal_view — Occlusal (biting surface) view of the lower jaw (mandible), clearly showing both arches.
-
-        Respond with JSON in this exact format:
-        {
-            "classification": "extraoral_frontal_view|extraoral_right_view|extraoral_smiling_view|extraoral_teeth_smile_view|intraoral_frontal_view|intraoral_right_view|intraoral_left_view|intraoral_upper_occlusal_view|intraoral_lower_occlusal_view",
-            "confidence": 0.85,
-            "reasoning": "Brief explanation of anatomical features and positioning that led to this classification"
-        }
-        """
-
-        response = client.chat.completions.create(
-            model="gpt-4o",  # Latest vision model
-            messages=[
-                {
-                    "role": "user",
-                    "content": [
-                        {
-                            "type": "text",
-                            "text": prompt
-                        },
-                        {
-                            "type": "image_url",
-                            "image_url": {
-                                "url": f"data:image/jpeg;base64,{base64_image}",
-                                "detail": "low"  # Use low detail for faster processing
+        if USE_CUSTOM_AI:
+            # Use our custom dental AI model
+            result = custom_classify_image(image_path)
+            
+            # Map custom model categories to expected format
+            category_mapping = {
+                'left_view': 'left',
+                'right_view': 'right', 
+                'front_view': 'front',
+                'upper_occlusal': 'upper_occlusal',
+                'lower_occlusal': 'lower_occlusal',
+                'extraoral': 'extraoral',
+                'radiograph': 'radiograph',
+                'other': 'other'
+            }
+            
+            mapped_classification = category_mapping.get(result['classification'], 'other')
+            
+            return {
+                'classification': mapped_classification,
+                'confidence': result['confidence'],
+                'probabilities': result.get('probabilities', {}),
+                'category_name': result.get('category_name', 'Unknown')
+            }
+        else:
+            # Fallback to OpenAI
+            base64_image = encode_image_to_base64(image_path)
+            
+            response = client.chat.completions.create(
+                model="gpt-4o",
+                messages=[
+                    {
+                        "role": "system",
+                        "content": """You are a dental image classification expert. Analyze dental images and classify them into one of these categories:
+                        
+                        - left: Left side view of teeth/mouth
+                        - right: Right side view of teeth/mouth  
+                        - front: Front view of teeth/mouth
+                        - upper_occlusal: Upper jaw occlusal view (looking down at upper teeth)
+                        - lower_occlusal: Lower jaw occlusal view (looking up at lower teeth)
+                        - extraoral: External view of face/mouth
+                        - radiograph: X-ray images
+                        - other: Any other type of dental image
+                        
+                        Respond with JSON in this exact format:
+                        {"classification": "category_name", "confidence": 0.95}"""
+                    },
+                    {
+                        "role": "user",
+                        "content": [
+                            {
+                                "type": "text",
+                                "text": "Please classify this dental image and provide your confidence level."
+                            },
+                            {
+                                "type": "image_url",
+                                "image_url": {
+                                    "url": f"data:image/jpeg;base64,{base64_image}"
+                                }
                             }
-                        }
-                    ]
-                }
-            ],
-            response_format={"type": "json_object"},
-            max_tokens=150,  # Reduced for faster response
-            temperature=0.1  # Lower temperature for more consistent results
-        )
+                        ]
+                    }
+                ],
+                response_format={"type": "json_object"},
+                max_tokens=150
+            )
 
-        # Parse the response
-        response_content = response.choices[0].message.content
-        if not response_content:
-            raise Exception("Empty response from OpenAI")
-        result = json.loads(response_content)
-        
-        return {
-            "success": True,
-            "classification": result.get("classification", "other").lower(),
-            "confidence": float(result.get("confidence", 0.5)),
-            "reasoning": result.get("reasoning", ""),
-        }
+            # Parse the OpenAI response
+            response_content = response.choices[0].message.content
+            if not response_content:
+                raise Exception("Empty response from OpenAI")
+            result = json.loads(response_content)
+            
+            # Validate result format
+            if 'classification' not in result or 'confidence' not in result:
+                return {
+                    'classification': 'other',
+                    'confidence': 0.1,
+                    'error': 'Invalid response format'
+                }
+            
+            return {
+                'classification': result.get('classification', 'other'),
+                'confidence': result.get('confidence', 0.1),
+                'probabilities': {},
+                'category_name': result.get('classification', 'Other').title()
+            }
 
     except Exception as e:
+        print(f"Error classifying image {image_path}: {str(e)}")
         return {
-            "success": False,
-            "error": str(e),
-            "classification": "other",
-            "confidence": 0.0,
-            "reasoning": f"Error during classification: {str(e)}"
+            'classification': 'other',
+            'confidence': 0.1,
+            'error': str(e)
         }
 
 def classify_bulk_images(image_paths):
     """
-    Classify multiple images at once
+    Classify multiple images at once using custom AI model
     Returns: list of classification results
     """
-    results = []
-    
-    import concurrent.futures
-    
-    def classify_single_image(image_path):
-        if os.path.exists(image_path):
-            result = classify_dental_image(image_path)
-            result["image_path"] = image_path
-            result["filename"] = os.path.basename(image_path)
-            return result
+    try:
+        if USE_CUSTOM_AI:
+            # Use our custom dental AI model for bulk classification
+            results = custom_classify_bulk(image_paths)
+            
+            # Map custom model categories to expected format
+            category_mapping = {
+                'left_view': 'left',
+                'right_view': 'right', 
+                'front_view': 'front',
+                'upper_occlusal': 'upper_occlusal',
+                'lower_occlusal': 'lower_occlusal',
+                'extraoral': 'extraoral',
+                'radiograph': 'radiograph',
+                'other': 'other'
+            }
+            
+            # Map results to expected format
+            mapped_results = []
+            for result in results:
+                mapped_classification = category_mapping.get(result['classification'], 'other')
+                mapped_results.append({
+                    'classification': mapped_classification,
+                    'confidence': result['confidence'],
+                    'image_path': result.get('image_path', ''),
+                    'filename': os.path.basename(result.get('image_path', ''))
+                })
+            
+            return mapped_results
         else:
-            return {
-                "success": False,
-                "error": "File not found",
+            # Fallback to individual OpenAI classifications
+            results = []
+            for image_path in image_paths:
+                if os.path.exists(image_path):
+                    result = classify_dental_image(image_path)
+                    result["image_path"] = image_path
+                    result["filename"] = os.path.basename(image_path)
+                    results.append(result)
+                else:
+                    results.append({
+                        "classification": "other",
+                        "confidence": 0.0,
+                        "error": "File not found",
+                        "image_path": image_path,
+                        "filename": os.path.basename(image_path)
+                    })
+            return results
+            
+    except Exception as e:
+        print(f"Error in bulk classification: {str(e)}")
+        # Return error results for all images
+        return [
+            {
                 "classification": "other",
                 "confidence": 0.0,
-                "reasoning": "Image file does not exist",
-                "image_path": image_path,
-                "filename": os.path.basename(image_path)
+                "error": str(e),
+                "image_path": path,
+                "filename": os.path.basename(path)
             }
-    
-    # Use ThreadPoolExecutor for parallel processing (limited to 2 threads to avoid rate limits)
-    with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
-        future_to_path = {executor.submit(classify_single_image, path): path for path in image_paths}
-        
-        for future in concurrent.futures.as_completed(future_to_path):
-            result = future.result()
-            results.append(result)
+            for path in image_paths
+        ]
     
     # Sort results to maintain original order
     results.sort(key=lambda x: image_paths.index(x["image_path"]))
