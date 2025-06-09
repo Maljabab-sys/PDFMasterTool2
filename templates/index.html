@@ -146,7 +146,7 @@
         let visitTypeChartInstance = null;
         let clinicChartInstance = null;
         
-        let resizeTimeout;
+        let dashboardResizeTimeout;
         let isLoaded = false;
         
         document.addEventListener('DOMContentLoaded', function() {
@@ -154,8 +154,8 @@
             
             // Handle window resize for responsive charts with debouncing
             window.addEventListener('resize', function() {
-                clearTimeout(resizeTimeout);
-                resizeTimeout = setTimeout(() => {
+                clearTimeout(dashboardResizeTimeout);
+                dashboardResizeTimeout = setTimeout(() => {
                     // Only reload if data has been loaded and window actually resized significantly
                     if (isLoaded && visitTypeChartInstance && clinicChartInstance) {
                         visitTypeChartInstance.resize();
