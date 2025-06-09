@@ -1445,9 +1445,50 @@ def bulk_upload_categorize():
                 logging.error(f"Error uploading file {filename}: {str(e)}")
                 return jsonify({'success': False, 'error': f'Error uploading {filename}: {str(e)}'})
     
-    # Now classify all uploaded images
+    # Now classify all uploaded images using the trained AI model
     try:
-        classification_results = classify_bulk_images(file_paths)
+        from dental_ai_model import get_dental_classifier
+        classifier = get_dental_classifier()
+        
+        # Map dental AI categories to New Case layout categories
+        def map_dental_to_layout_category(dental_category):
+            mapping = {
+                'intraoral_left': 'intraoral_left_view',
+                'intraoral_right': 'intraoral_right_view', 
+                'intraoral_front': 'intraoral_frontal_view',
+                'upper_occlusal': 'intraoral_upper_occlusal_view',
+                'lower_occlusal': 'intraoral_lower_occlusal_view',
+                'extraoral_frontal': 'extraoral_frontal_view',
+                'extraoral_right': 'extraoral_right_view',
+                'extraoral_full_face_smile': 'extraoral_smiling_view',
+                'extraoral_zoomed_smile': 'extraoral_smiling_view'
+            }
+            return mapping.get(dental_category, 'other')
+        
+        # Use the custom trained model for classification
+        classification_results = []
+        for i, file_path in enumerate(file_paths):
+            try:
+                result = classifier.classify_image(file_path)
+                dental_category = result.get('classification', 'other')
+                layout_category = map_dental_to_layout_category(dental_category)
+                
+                classification_results.append({
+                    'filename': uploaded_files[i]['filename'],
+                    'classification': layout_category,
+                    'confidence': result.get('confidence', 0.0),
+                    'category_name': result.get('category_name', 'Other'),
+                    'dental_category': dental_category
+                })
+            except Exception as e:
+                logging.error(f"Classification failed for {file_path}: {e}")
+                classification_results.append({
+                    'filename': uploaded_files[i]['filename'],
+                    'classification': 'other',
+                    'confidence': 0.1,
+                    'category_name': 'Other',
+                    'dental_category': 'other'
+                })
         summary = get_classification_summary(classification_results)
         
         # Merge classification results with uploaded files
