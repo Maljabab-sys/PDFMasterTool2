@@ -1632,7 +1632,8 @@ def serve_profile_image(filename):
 @login_required
 def serve_uploaded_file(filename):
     """Serve uploaded files for the current user"""
-    return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
+    user_upload_dir = os.path.join('uploads', str(current_user.id))
+    return send_from_directory(user_upload_dir, filename)
 
 @app.route('/save_settings', methods=['POST'])
 def save_settings():
