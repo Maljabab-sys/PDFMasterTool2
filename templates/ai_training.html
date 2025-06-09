@@ -1,0 +1,253 @@
+{% extends "base.html" %}
+
+{% block title %}AI Training - Medical Case Manager{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-12">
+            <h2><i class="fas fa-brain"></i> AI Model Training</h2>
+            <p class="text-muted">Train your custom dental image classification model</p>
+        </div>
+    </div>
+
+    <!-- Training Statistics -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="fas fa-chart-bar"></i> Training Data Statistics</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6>Total Images: <span class="badge badge-primary">{{ stats.total_images }}</span></h6>
+                        </div>
+                        <div class="col-md-6">
+                            <h6>Model Status: 
+                                {% if classifier_info.is_trained %}
+                                    <span class="badge badge-success">Trained</span>
+                                {% else %}
+                                    <span class="badge badge-warning">Untrained</span>
+                                {% endif %}
+                            </h6>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-3">
+                        <h6>Images per Category:</h6>
+                        {% for category, count in stats.categories.items() %}
+                        <div class="d-flex justify-content-between">
+                            <span>{{ category.replace('_', ' ').title() }}:</span>
+                            <span class="badge badge-info">{{ count }}</span>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="fas fa-cogs"></i> Model Actions</h5>
+                </div>
+                <div class="card-body">
+                    <button id="trainModelBtn" class="btn btn-success btn-block mb-2">
+                        <i class="fas fa-play"></i> Train Model
+                    </button>
+                    <button id="refreshStatsBtn" class="btn btn-info btn-block mb-2">
+                        <i class="fas fa-sync"></i> Refresh Statistics
+                    </button>
+                    <div class="alert alert-info">
+                        <small>
+                            <i class="fas fa-info-circle"></i>
+                            Need at least 10 labeled images per category for effective training.
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Image Labeling Interface -->
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="fas fa-tag"></i> Label Images for Training</h5>
+                </div>
+                <div class="card-body">
+                    {% if unlabeled_images %}
+                    <div class="row" id="imageGrid">
+                        {% for image in unlabeled_images %}
+                        <div class="col-md-3 mb-4">
+                            <div class="card image-card" data-filename="{{ image.filename }}">
+                                <img src="{{ image.url }}" class="card-img-top" style="height: 200px; object-fit: cover;" alt="{{ image.filename }}">
+                                <div class="card-body p-2">
+                                    <h6 class="card-title text-truncate">{{ image.filename }}</h6>
+                                    <div class="btn-group-vertical btn-group-sm w-100">
+                                        <button class="btn btn-outline-primary label-btn" data-category="left_view">Left View</button>
+                                        <button class="btn btn-outline-primary label-btn" data-category="right_view">Right View</button>
+                                        <button class="btn btn-outline-primary label-btn" data-category="front_view">Front View</button>
+                                        <button class="btn btn-outline-success label-btn" data-category="upper_occlusal">Upper Occlusal</button>
+                                        <button class="btn btn-outline-success label-btn" data-category="lower_occlusal">Lower Occlusal</button>
+                                        <button class="btn btn-outline-info label-btn" data-category="extraoral">Extraoral</button>
+                                        <button class="btn btn-outline-dark label-btn" data-category="radiograph">Radiograph</button>
+                                        <button class="btn btn-outline-secondary label-btn" data-category="other">Other</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle"></i>
+                        No unlabeled images found. Upload some dental images through the case creation interface to start labeling.
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Progress Modal -->
+    <div class="modal fade" id="progressModal" tabindex="-1" role="dialog">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Training in Progress</h5>
+                </div>
+                <div class="modal-body">
+                    <div class="text-center">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="sr-only">Loading...</span>
+                        </div>
+                        <p class="mt-2">Training your custom AI model...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Label image functionality
+    document.querySelectorAll('.label-btn').forEach(button => {
+        button.addEventListener('click', function() {
+            const filename = this.closest('.image-card').dataset.filename;
+            const category = this.dataset.category;
+            
+            // Disable all buttons in this card
+            const card = this.closest('.image-card');
+            const buttons = card.querySelectorAll('.label-btn');
+            buttons.forEach(btn => btn.disabled = true);
+            
+            // Show loading on clicked button
+            this.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Labeling...';
+            
+            fetch('/label_image', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    filename: filename,
+                    category: category
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Mark as labeled
+                    this.innerHTML = '<i class="fas fa-check"></i> Labeled';
+                    this.classList.remove('btn-outline-primary', 'btn-outline-success', 'btn-outline-info', 'btn-outline-dark', 'btn-outline-secondary');
+                    this.classList.add('btn-success');
+                    
+                    // Hide other buttons
+                    buttons.forEach(btn => {
+                        if (btn !== this) {
+                            btn.style.display = 'none';
+                        }
+                    });
+                    
+                    // Show success message
+                    showAlert('success', data.message);
+                } else {
+                    // Re-enable buttons on error
+                    buttons.forEach(btn => btn.disabled = false);
+                    this.innerHTML = category.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase());
+                    showAlert('danger', data.error);
+                }
+            })
+            .catch(error => {
+                buttons.forEach(btn => btn.disabled = false);
+                this.innerHTML = category.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase());
+                showAlert('danger', 'Error labeling image');
+            });
+        });
+    });
+    
+    // Train model functionality
+    document.getElementById('trainModelBtn').addEventListener('click', function() {
+        $('#progressModal').modal('show');
+        
+        fetch('/train_model', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            $('#progressModal').modal('hide');
+            
+            if (data.success) {
+                showAlert('success', data.message);
+                if (data.results) {
+                    showAlert('info', `Training Results: Accuracy ${(data.results.val_accuracy * 100).toFixed(1)}%`);
+                }
+                // Refresh page to update stats
+                setTimeout(() => location.reload(), 2000);
+            } else {
+                showAlert('danger', data.error);
+            }
+        })
+        .catch(error => {
+            $('#progressModal').modal('hide');
+            showAlert('danger', 'Error training model');
+        });
+    });
+    
+    // Refresh stats functionality
+    document.getElementById('refreshStatsBtn').addEventListener('click', function() {
+        location.reload();
+    });
+    
+    function showAlert(type, message) {
+        const alertHtml = `
+            <div class="alert alert-${type} alert-dismissible fade show" role="alert">
+                ${message}
+                <button type="button" class="close" data-dismiss="alert">
+                    <span>&times;</span>
+                </button>
+            </div>
+        `;
+        
+        // Add alert to top of container
+        const container = document.querySelector('.container');
+        container.insertAdjacentHTML('afterbegin', alertHtml);
+        
+        // Auto-dismiss after 5 seconds
+        setTimeout(() => {
+            const alert = container.querySelector('.alert');
+            if (alert) {
+                alert.remove();
+            }
+        }, 5000);
+    }
+});
+</script>
+{% endblock %}
