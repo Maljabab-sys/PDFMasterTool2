@@ -176,10 +176,17 @@ class DentalImageClassifier:
             # Get prediction probabilities
             probabilities = self.model.predict_proba(features_scaled)[0]
             
+            # Ensure we have the right number of probabilities
+            if len(probabilities) != len(self.categories):
+                return self._rule_based_classification(features)
+            
             # Create probability dictionary
             result = {}
             for i, category in enumerate(self.categories):
-                result[category] = float(probabilities[i])
+                if i < len(probabilities):
+                    result[category] = float(probabilities[i])
+                else:
+                    result[category] = 0.0
             
             return result
             
