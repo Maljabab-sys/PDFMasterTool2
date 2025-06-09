@@ -1,12 +1,21 @@
 import os
 import base64
 import json
-from openai import OpenAI
+import logging
 from PIL import Image
 import io
 
-# Initialize OpenAI client
-client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
+# Import our custom dental AI model instead of OpenAI
+try:
+    from dental_ai_model import get_dental_classifier, classify_dental_image as custom_classify_image, classify_bulk_images as custom_classify_bulk
+    USE_CUSTOM_AI = True
+    logging.info("Using custom dental AI model")
+except ImportError:
+    # Fallback to OpenAI if custom model not available
+    from openai import OpenAI
+    client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
+    USE_CUSTOM_AI = False
+    logging.info("Using OpenAI model as fallback")
 
 def encode_image_to_base64(image_path, max_size=(512, 512)):
     """Convert image to base64 string for OpenAI API with optimization"""

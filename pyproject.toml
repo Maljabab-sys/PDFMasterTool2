@@ -18,4 +18,8 @@ dependencies = [
     "pyjwt>=2.10.1",
     "sqlalchemy>=2.0.41",
     "openai>=1.84.0",
+    "numpy>=2.3.0",
+    "tensorflow>=2.14.0",
+    "scikit-learn>=1.7.0",
+    "matplotlib>=3.10.3",
 ]
