@@ -172,8 +172,16 @@ class DentalImageClassifier:
         grad_x = np.abs(np.diff(gray_array, axis=1))
         grad_y = np.abs(np.diff(gray_array, axis=0))
         
-        # Gradient magnitude
-        grad_mag = np.sqrt(grad_x[:, :-1]**2 + grad_y[:-1, :]**2)
+        # Gradient magnitude - handle shape mismatch
+        min_rows = min(grad_x.shape[0], grad_y.shape[0])
+        min_cols = min(grad_x.shape[1], grad_y.shape[1])
+        
+        if min_rows > 0 and min_cols > 0:
+            grad_x_crop = grad_x[:min_rows, :min_cols]
+            grad_y_crop = grad_y[:min_rows, :min_cols]
+            grad_mag = np.sqrt(grad_x_crop**2 + grad_y_crop**2)
+        else:
+            grad_mag = np.array([[0]])
 
         features.extend([
             np.mean(grad_x),
@@ -270,15 +278,18 @@ class DentalImageClassifier:
         ])
         
         # 3. Symmetry features (intraoral views are often more symmetric)
-        left_half = gray_array[:, :cols//2]
-        right_half = np.fliplr(gray_array[:, cols//2:])
-        min_width = min(left_half.shape[1], right_half.shape[1])
-        
-        if min_width > 0:
-            left_crop = left_half[:, -min_width:]
-            right_crop = right_half[:, :min_width]
-            symmetry_score = np.mean(np.abs(left_crop.astype(float) - right_crop.astype(float)))
-        else:
+        try:
+            left_half = gray_array[:, :cols//2]
+            right_half = np.fliplr(gray_array[:, cols//2:])
+            min_width = min(left_half.shape[1], right_half.shape[1])
+            
+            if min_width > 0 and left_half.shape[0] == right_half.shape[0]:
+                left_crop = left_half[:, -min_width:]
+                right_crop = right_half[:, :min_width]
+                symmetry_score = np.mean(np.abs(left_crop.astype(float) - right_crop.astype(float)))
+            else:
+                symmetry_score = 255
+        except Exception as e:
             symmetry_score = 255
             
         features.extend([
