@@ -1775,6 +1775,18 @@ def test_ai_classification():
         logging.error(f"Error in AI classification test: {e}")
         return jsonify({'success': False, 'error': str(e)})
 
+@app.route('/trigger-training', methods=['POST'])
+@login_required
+def trigger_training():
+    """Manually trigger AI model training"""
+    try:
+        from background_trainer import train_model_background
+        train_model_background()
+        return jsonify({'success': True, 'message': 'Training started in background'})
+    except Exception as e:
+        logging.error(f"Error triggering training: {e}")
+        return jsonify({'success': False, 'error': str(e)})
+
 @app.route('/save_settings', methods=['POST'])
 def save_settings():
     """Save user settings to database"""
