@@ -69,7 +69,7 @@ class DentalImageClassifier:
 
                 # 1. Enhanced color statistics for each channel
                 for channel in range(3):  # R, G, B
-                    channel_data = np.array(img)[:, :, channel]
+                    channel_data = np.array(img)[:, :, channel].astype(np.float64)
                     features.extend([
                         np.mean(channel_data),
                         np.std(channel_data),
@@ -82,7 +82,7 @@ class DentalImageClassifier:
 
                 # 2. Enhanced brightness and contrast analysis
                 gray = img.convert('L')
-                gray_array = np.array(gray)
+                gray_array = np.array(gray).astype(np.float64)
                 features.extend([
                     np.mean(gray_array),  # Overall brightness
                     np.std(gray_array),   # Contrast
@@ -94,28 +94,32 @@ class DentalImageClassifier:
 
                 # 3. Enhanced edge detection for dental features
                 edges = gray.filter(ImageFilter.FIND_EDGES)
-                edge_array = np.array(edges)
+                edge_array = np.array(edges).astype(np.float64)
                 edge_threshold = 30
+                edge_density = np.sum(edge_array > edge_threshold) / max(edge_array.size, 1)
+                strong_edge_density = np.sum(edge_array > edge_threshold * 2) / max(edge_array.size, 1)
                 features.extend([
                     np.mean(edge_array),
                     np.std(edge_array),
-                    np.sum(edge_array > edge_threshold) / edge_array.size,  # Edge density
-                    np.max(edge_array),  # Strongest edge
-                    np.sum(edge_array > edge_threshold * 2) / edge_array.size,  # Strong edges
+                    edge_density,
+                    np.max(edge_array),
+                    strong_edge_density,
                 ])
 
                 # 4. Shape and geometric features
                 width, height = img.size
+                aspect_ratio = width / max(height, 1)
+                total_area = min(width * height, 1e6)  # Cap area to prevent overflow
+                extreme_ratio = max(width, height) / max(min(width, height), 1)
                 features.extend([
-                    width / height,  # Aspect ratio
-                    width * height,  # Total area
-                    max(width, height) / min(width, height),  # Extreme aspect ratio
+                    aspect_ratio,
+                    total_area,
+                    extreme_ratio,
                 ])
 
                 # 5. Enhanced histogram analysis
                 hist = img.histogram()
-                # Analyze different regions of histogram
-                total_pixels = width * height
+                total_pixels = max(width * height, 1)
                 hist_features = []
                 
                 # RGB histogram features
@@ -123,7 +127,11 @@ class DentalImageClassifier:
                     r_sum = sum(hist[i:i+32])
                     g_sum = sum(hist[256+i:256+i+32])
                     b_sum = sum(hist[512+i:512+i+32])
-                    hist_features.extend([r_sum/total_pixels, g_sum/total_pixels, b_sum/total_pixels])
+                    hist_features.extend([
+                        r_sum / total_pixels, 
+                        g_sum / total_pixels, 
+                        b_sum / total_pixels
+                    ])
                 
                 features.extend(hist_features[:24])  # 24 histogram features
 
@@ -135,166 +143,265 @@ class DentalImageClassifier:
                 dental_features = self._calculate_dental_specific_features(gray_array, edge_array)
                 features.extend(dental_features)
 
-                return np.array(features, dtype=np.float32)
+                # Convert to numpy array and handle NaN/inf values
+                features_array = np.array(features, dtype=np.float64)
+                
+                # Replace NaN and inf values with safe defaults
+                features_array = np.nan_to_num(features_array, nan=0.0, posinf=1000.0, neginf=-1000.0)
+                
+                # Clip extreme values to prevent overflow
+                features_array = np.clip(features_array, -1e6, 1e6)
+
+                return features_array.astype(np.float32)
 
         except Exception as e:
             logging.error(f"Feature extraction failed for {image_path}: {e}")
             # Return zero features if extraction fails
-            return np.zeros(50, dtype=np.float32)
+            return np.zeros(100, dtype=np.float32)
 
     def _calculate_enhanced_texture_features(self, gray_array: np.ndarray) -> List[float]:
         """Calculate enhanced texture features from grayscale image"""
         features = []
+        
+        try:
+            # Enhanced texture measures
+            # 1. Local variance in multiple neighborhood sizes
+            rows, cols = gray_array.shape
+            for window_size in [3, 5]:
+                local_vars = []
+                half_window = window_size // 2
+                
+                # Sample fewer points to reduce computation
+                step_size = max(8, min(rows, cols) // 10)
+                for i in range(half_window, rows-half_window, step_size):
+                    for j in range(half_window, cols-half_window, step_size):
+                        try:
+                            neighborhood = gray_array[i-half_window:i+half_window+1, j-half_window:j+half_window+1]
+                            if neighborhood.size > 0:
+                                var_val = np.var(neighborhood)
+                                # Clip variance to prevent extreme values
+                                local_vars.append(min(var_val, 10000.0))
+                        except:
+                            local_vars.append(0.0)
 
-        # Enhanced texture measures
-        # 1. Local variance in multiple neighborhood sizes
-        rows, cols = gray_array.shape
-        for window_size in [3, 5]:
-            local_vars = []
-            half_window = window_size // 2
-            
-            for i in range(half_window, rows-half_window, 6):
-                for j in range(half_window, cols-half_window, 6):
-                    neighborhood = gray_array[i-half_window:i+half_window+1, j-half_window:j+half_window+1]
-                    local_vars.append(np.var(neighborhood))
+                if local_vars:
+                    safe_vars = [v for v in local_vars if np.isfinite(v)]
+                    if safe_vars:
+                        features.extend([
+                            np.mean(safe_vars),
+                            np.std(safe_vars),
+                            max(safe_vars),
+                            min(safe_vars)
+                        ])
+                    else:
+                        features.extend([0.0, 0.0, 0.0, 0.0])
+                else:
+                    features.extend([0.0, 0.0, 0.0, 0.0])
 
-            if local_vars:
-                features.extend([
-                    np.mean(local_vars),
-                    np.std(local_vars),
-                    np.max(local_vars),
-                    np.min(local_vars)
-                ])
+            # 2. Enhanced gradient features with safety checks
+            if gray_array.size > 1:
+                grad_x = np.abs(np.diff(gray_array, axis=1))
+                grad_y = np.abs(np.diff(gray_array, axis=0))
+                
+                # Gradient magnitude - handle shape mismatch
+                min_rows = min(grad_x.shape[0], grad_y.shape[0])
+                min_cols = min(grad_x.shape[1], grad_y.shape[1])
+                
+                if min_rows > 0 and min_cols > 0:
+                    grad_x_crop = grad_x[:min_rows, :min_cols]
+                    grad_y_crop = grad_y[:min_rows, :min_cols]
+                    # Clip gradients to prevent overflow in sqrt
+                    grad_x_crop = np.clip(grad_x_crop, 0, 1000)
+                    grad_y_crop = np.clip(grad_y_crop, 0, 1000)
+                    grad_mag = np.sqrt(grad_x_crop**2 + grad_y_crop**2)
+                else:
+                    grad_mag = np.array([[0]])
+
+                # Safely calculate gradient features
+                grad_features = [
+                    np.mean(grad_x) if grad_x.size > 0 else 0.0,
+                    np.mean(grad_y) if grad_y.size > 0 else 0.0,
+                    np.std(grad_x) if grad_x.size > 0 else 0.0,
+                    np.std(grad_y) if grad_y.size > 0 else 0.0,
+                    np.mean(grad_mag) if grad_mag.size > 0 else 0.0,
+                    np.std(grad_mag) if grad_mag.size > 0 else 0.0,
+                    np.max(grad_mag) if grad_mag.size > 0 else 0.0
+                ]
+                
+                # Clean any NaN or inf values
+                grad_features = [f if np.isfinite(f) else 0.0 for f in grad_features]
+                features.extend(grad_features)
             else:
-                features.extend([0.0, 0.0, 0.0, 0.0])
+                features.extend([0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0])
 
-        # 2. Enhanced gradient features
-        grad_x = np.abs(np.diff(gray_array, axis=1))
-        grad_y = np.abs(np.diff(gray_array, axis=0))
-        
-        # Gradient magnitude - handle shape mismatch
-        min_rows = min(grad_x.shape[0], grad_y.shape[0])
-        min_cols = min(grad_x.shape[1], grad_y.shape[1])
-        
-        if min_rows > 0 and min_cols > 0:
-            grad_x_crop = grad_x[:min_rows, :min_cols]
-            grad_y_crop = grad_y[:min_rows, :min_cols]
-            grad_mag = np.sqrt(grad_x_crop**2 + grad_y_crop**2)
-        else:
-            grad_mag = np.array([[0]])
+            # 3. Texture patterns using simplified LBP
+            pattern_features = self._calculate_pattern_features(gray_array)
+            features.extend(pattern_features)
 
-        features.extend([
-            np.mean(grad_x),
-            np.mean(grad_y),
-            np.std(grad_x),
-            np.std(grad_y),
-            np.mean(grad_mag),
-            np.std(grad_mag),
-            np.max(grad_mag)
-        ])
-
-        # 3. Texture patterns using simplified LBP
-        pattern_features = self._calculate_pattern_features(gray_array)
-        features.extend(pattern_features)
+        except Exception as e:
+            logging.error(f"Texture feature calculation failed: {e}")
+            # Return safe default values
+            features = [0.0] * 20
 
         return features
 
     def _calculate_pattern_features(self, gray_array: np.ndarray) -> List[float]:
         """Calculate pattern features for texture analysis"""
         features = []
-        rows, cols = gray_array.shape
         
-        # Simplified Local Binary Pattern
-        patterns = []
-        for i in range(1, rows-1, 4):
-            for j in range(1, cols-1, 4):
-                center = gray_array[i, j]
-                neighbors = [
-                    gray_array[i-1, j-1], gray_array[i-1, j], gray_array[i-1, j+1],
-                    gray_array[i, j+1], gray_array[i+1, j+1], gray_array[i+1, j],
-                    gray_array[i+1, j-1], gray_array[i, j-1]
-                ]
+        try:
+            rows, cols = gray_array.shape
+            
+            if rows < 3 or cols < 3:
+                return [0.0, 0.0, 0.0, 0.0]
+            
+            # Simplified Local Binary Pattern with safety checks
+            patterns = []
+            step = max(4, min(rows, cols) // 20)  # Adaptive step size
+            
+            for i in range(1, rows-1, step):
+                for j in range(1, cols-1, step):
+                    try:
+                        center = float(gray_array[i, j])
+                        neighbors = [
+                            float(gray_array[i-1, j-1]), float(gray_array[i-1, j]), float(gray_array[i-1, j+1]),
+                            float(gray_array[i, j+1]), float(gray_array[i+1, j+1]), float(gray_array[i+1, j]),
+                            float(gray_array[i+1, j-1]), float(gray_array[i, j-1])
+                        ]
+                        
+                        # Count neighbors greater than center
+                        pattern = sum(1 for n in neighbors if n > center and np.isfinite(n))
+                        patterns.append(pattern)
+                    except:
+                        patterns.append(0)
+            
+            if patterns and len(patterns) > 0:
+                mean_pattern = np.mean(patterns)
+                std_pattern = np.std(patterns)
+                dark_ratio = patterns.count(0) / len(patterns)
+                bright_ratio = patterns.count(8) / len(patterns)
                 
-                # Count neighbors greater than center
-                pattern = sum(1 for n in neighbors if n > center)
-                patterns.append(pattern)
-        
-        if patterns:
-            features.extend([
-                np.mean(patterns),
-                np.std(patterns),
-                patterns.count(0) / len(patterns),  # Uniform dark regions
-                patterns.count(8) / len(patterns),  # Uniform bright regions
-            ])
-        else:
-            features.extend([0.0, 0.0, 0.0, 0.0])
+                # Ensure all values are finite
+                features.extend([
+                    mean_pattern if np.isfinite(mean_pattern) else 0.0,
+                    std_pattern if np.isfinite(std_pattern) else 0.0,
+                    dark_ratio if np.isfinite(dark_ratio) else 0.0,
+                    bright_ratio if np.isfinite(bright_ratio) else 0.0,
+                ])
+            else:
+                features.extend([0.0, 0.0, 0.0, 0.0])
+                
+        except Exception as e:
+            logging.error(f"Pattern feature calculation failed: {e}")
+            features = [0.0, 0.0, 0.0, 0.0]
         
         return features
 
     def _calculate_dental_specific_features(self, gray_array: np.ndarray, edge_array: np.ndarray) -> List[float]:
         """Calculate features specific to dental image classification"""
         features = []
-        rows, cols = gray_array.shape
         
-        # 1. Darkness concentration (for occlusal views - dark areas between teeth)
-        dark_threshold = np.percentile(gray_array, 20)
-        dark_pixels = gray_array < dark_threshold
-        dark_ratio = np.sum(dark_pixels) / (rows * cols)
-        
-        # Dark region clustering (occlusal views have clustered dark areas)
-        from scipy import ndimage
         try:
-            dark_labels, dark_regions = ndimage.label(dark_pixels)
-            avg_dark_region_size = np.sum(dark_pixels) / max(dark_regions, 1)
-        except:
-            avg_dark_region_size = 0
-        
-        features.extend([
-            dark_ratio,
-            avg_dark_region_size / (rows * cols),  # Normalized region size
-        ])
-        
-        # 2. Edge concentration patterns
-        # Occlusal views have edges concentrated in center
-        # Extraoral views have edges more distributed
-        center_y, center_x = rows // 2, cols // 2
-        quarter_y, quarter_x = rows // 4, cols // 4
-        
-        center_region = edge_array[quarter_y:3*quarter_y, quarter_x:3*quarter_x]
-        edge_region = np.concatenate([
-            edge_array[:quarter_y, :].flatten(),
-            edge_array[3*quarter_y:, :].flatten(),
-            edge_array[:, :quarter_x].flatten(),
-            edge_array[:, 3*quarter_x:].flatten()
-        ])
-        
-        center_edge_density = np.mean(center_region) if center_region.size > 0 else 0
-        edge_edge_density = np.mean(edge_region) if edge_region.size > 0 else 0
-        
-        features.extend([
-            center_edge_density,
-            edge_edge_density,
-            center_edge_density / max(edge_edge_density, 1),  # Center vs edge ratio
-        ])
-        
-        # 3. Symmetry features (intraoral views are often more symmetric)
-        try:
-            left_half = gray_array[:, :cols//2]
-            right_half = np.fliplr(gray_array[:, cols//2:])
-            min_width = min(left_half.shape[1], right_half.shape[1])
+            rows, cols = gray_array.shape
+            total_pixels = max(rows * cols, 1)
             
-            if min_width > 0 and left_half.shape[0] == right_half.shape[0]:
-                left_crop = left_half[:, -min_width:]
-                right_crop = right_half[:, :min_width]
-                symmetry_score = np.mean(np.abs(left_crop.astype(float) - right_crop.astype(float)))
-            else:
-                symmetry_score = 255
+            # 1. Darkness concentration (for occlusal views - dark areas between teeth)
+            try:
+                dark_threshold = np.percentile(gray_array, 20)
+                dark_pixels = gray_array < dark_threshold
+                dark_ratio = np.sum(dark_pixels) / total_pixels
+                
+                # Simple dark region analysis without scipy
+                avg_dark_region_size = np.sum(dark_pixels) / total_pixels
+                
+                features.extend([
+                    min(dark_ratio, 1.0),  # Cap at 1.0
+                    min(avg_dark_region_size, 1.0),  # Normalized region size
+                ])
+            except:
+                features.extend([0.0, 0.0])
+            
+            # 2. Edge concentration patterns with safety checks
+            try:
+                if edge_array.shape == gray_array.shape and rows > 8 and cols > 8:
+                    center_y, center_x = rows // 2, cols // 2
+                    quarter_y, quarter_x = max(rows // 4, 1), max(cols // 4, 1)
+                    
+                    # Ensure we don't go out of bounds
+                    start_y, end_y = max(quarter_y, 0), min(3*quarter_y, rows)
+                    start_x, end_x = max(quarter_x, 0), min(3*quarter_x, cols)
+                    
+                    center_region = edge_array[start_y:end_y, start_x:end_x]
+                    
+                    # Build edge region safely
+                    edge_regions = []
+                    if quarter_y > 0:
+                        edge_regions.append(edge_array[:quarter_y, :].flatten())
+                    if 3*quarter_y < rows:
+                        edge_regions.append(edge_array[3*quarter_y:, :].flatten())
+                    if quarter_x > 0:
+                        edge_regions.append(edge_array[:, :quarter_x].flatten())
+                    if 3*quarter_x < cols:
+                        edge_regions.append(edge_array[:, 3*quarter_x:].flatten())
+                    
+                    if edge_regions:
+                        edge_region = np.concatenate(edge_regions)
+                    else:
+                        edge_region = np.array([0])
+                    
+                    center_edge_density = np.mean(center_region) if center_region.size > 0 else 0
+                    edge_edge_density = np.mean(edge_region) if edge_region.size > 0 else 0
+                    
+                    # Safe division
+                    center_vs_edge_ratio = center_edge_density / max(edge_edge_density, 0.1)
+                    
+                    features.extend([
+                        min(center_edge_density, 255.0),
+                        min(edge_edge_density, 255.0),
+                        min(center_vs_edge_ratio, 10.0),  # Cap ratio
+                    ])
+                else:
+                    features.extend([0.0, 0.0, 0.0])
+            except:
+                features.extend([0.0, 0.0, 0.0])
+            
+            # 3. Symmetry features with extensive safety checks
+            try:
+                if cols > 4 and rows > 0:
+                    left_half = gray_array[:, :cols//2]
+                    right_half = gray_array[:, cols//2:]
+                    
+                    if right_half.size > 0:
+                        right_half = np.fliplr(right_half)
+                        min_width = min(left_half.shape[1], right_half.shape[1])
+                        
+                        if min_width > 0 and left_half.shape[0] == right_half.shape[0]:
+                            left_crop = left_half[:, -min_width:].astype(np.float64)
+                            right_crop = right_half[:, :min_width].astype(np.float64)
+                            
+                            if left_crop.shape == right_crop.shape:
+                                diff = np.abs(left_crop - right_crop)
+                                symmetry_score = np.mean(diff)
+                                symmetry_score = min(symmetry_score, 255.0)  # Cap at 255
+                            else:
+                                symmetry_score = 255.0
+                        else:
+                            symmetry_score = 255.0
+                    else:
+                        symmetry_score = 255.0
+                else:
+                    symmetry_score = 255.0
+                    
+                features.extend([
+                    symmetry_score / 255.0,  # Normalized symmetry score
+                ])
+            except:
+                features.extend([1.0])  # Default to maximum asymmetry
+                
         except Exception as e:
-            symmetry_score = 255
-            
-        features.extend([
-            symmetry_score / 255,  # Normalized symmetry score
-        ])
+            logging.error(f"Dental-specific feature calculation failed: {e}")
+            # Return safe default values
+            features = [0.0, 0.0, 0.0, 0.0, 0.0, 1.0]
         
         return features
 
