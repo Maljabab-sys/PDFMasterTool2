@@ -55,7 +55,11 @@
 <body>
 
     <div class="container mt-5">
-        <h1>Welcome, {{ user.first_name }}!</h1>
+        {% if user %}
+<h1>Welcome, {{ user.first_name }}!</h1>
+{% else %}
+<h1>Welcome!</h1>
+{% endif %}
         <p>This is your dashboard.</p>
     </div>
 

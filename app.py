@@ -703,17 +703,17 @@ def index():
 @app.route('/dashboard')
 @login_required
 def dashboard():
-    return render_template('index.html')
+    return render_template('index.html', user=current_user)
 
 @app.route('/new_case')
 @login_required
 def new_case():
-    return render_template('new_case.html')
+    return render_template('new_case.html', user=current_user)
 
 @app.route('/patient_list')
 @login_required
 def patient_list():
-    return render_template('patient_list.html')
+    return render_template('patient_list.html', user=current_user)
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -1544,7 +1544,8 @@ def too_large(e):
 
 @app.errorhandler(404)
 def not_found(e):
-    return render_template('index.html'), 404
+    user = current_user if current_user.is_authenticated else None
+    return render_template('index.html', user=user), 404
 
 @app.route('/api/cases')
 def api_cases():
@@ -1871,4 +1872,5 @@ def save_settings():
 def server_error(e):
     logging.error(f"Server error: {str(e)}")
     flash('An internal server error occurred. Please try again.', 'error')
-    return render_template('index.html'), 500
+    user = current_user if current_user.is_authenticated else None
+    return render_template('index.html', user=user), 500
