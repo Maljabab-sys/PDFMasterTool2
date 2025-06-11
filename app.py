@@ -1695,6 +1695,86 @@ def serve_uploaded_file(filename):
     user_upload_dir = os.path.join('uploads', str(current_user.id))
     return send_from_directory(user_upload_dir, filename)
 
+@app.route('/ai_test')
+@login_required
+def ai_test():
+    """AI Model Testing page"""
+    return render_template('ai_test.html')
+
+@app.route('/api/model-status')
+@login_required
+def api_model_status():
+    """Get current model status and training information"""
+    try:
+        from dental_ai_model import get_dental_classifier
+        from training_setup import TrainingDataManager
+        
+        classifier = get_dental_classifier()
+        trainer = TrainingDataManager()
+        stats = trainer.get_training_stats()
+        
+        return jsonify({
+            'is_trained': classifier.is_trained,
+            'training_images': stats['total_images'],
+            'categories': classifier.categories,
+            'train_accuracy': getattr(classifier, 'last_train_accuracy', None),
+            'val_accuracy': getattr(classifier, 'last_val_accuracy', None),
+            'last_training': getattr(classifier, 'last_training_time', None)
+        })
+    except Exception as e:
+        logging.error(f"Error getting model status: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/test-ai-classification', methods=['POST'])
+@login_required
+def test_ai_classification():
+    """Test AI classification on uploaded image"""
+    try:
+        if 'test_image' not in request.files:
+            return jsonify({'success': False, 'error': 'No image provided'})
+        
+        file = request.files['test_image']
+        if not file or file.filename == '':
+            return jsonify({'success': False, 'error': 'No image provided'})
+        
+        if not allowed_file(file.filename):
+            return jsonify({'success': False, 'error': 'Invalid file type'})
+        
+        # Save temporary file
+        temp_filename = f"test_{uuid.uuid4()}_{secure_filename(file.filename)}"
+        temp_path = os.path.join(app.config['UPLOAD_FOLDER'], temp_filename)
+        file.save(temp_path)
+        
+        try:
+            # Optimize image
+            optimize_image_for_pdf(temp_path)
+            
+            # Classify the image
+            from dental_ai_model import get_dental_classifier
+            classifier = get_dental_classifier()
+            result = classifier.classify_image(temp_path)
+            
+            # Clean up temp file
+            os.unlink(temp_path)
+            
+            return jsonify({
+                'success': True,
+                'classification': result['classification'],
+                'confidence': result['confidence'],
+                'probabilities': result['probabilities'],
+                'category_name': result['category_name']
+            })
+            
+        except Exception as e:
+            # Clean up temp file on error
+            if os.path.exists(temp_path):
+                os.unlink(temp_path)
+            raise e
+            
+    except Exception as e:
+        logging.error(f"Error in AI classification test: {e}")
+        return jsonify({'success': False, 'error': str(e)})
+
 @app.route('/save_settings', methods=['POST'])
 def save_settings():
     """Save user settings to database"""

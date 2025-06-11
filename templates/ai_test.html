@@ -1,0 +1,248 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Model Testing - Dental Case Manager</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=3.1">
+    <link rel="stylesheet" href="{{ url_for('static', filename='navigation_clean.css') }}?v=1.1">
+    <style>
+        .test-container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .upload-area {
+            border: 2px dashed #007bff;
+            border-radius: 10px;
+            padding: 40px;
+            text-align: center;
+            margin: 20px 0;
+            background: #f8f9fa;
+        }
+        
+        .upload-area.dragover {
+            background: #e3f2fd;
+            border-color: #0056b3;
+        }
+        
+        .result-card {
+            background: white;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 10px 0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .confidence-bar {
+            background: #e9ecef;
+            border-radius: 4px;
+            height: 8px;
+            margin: 5px 0;
+            overflow: hidden;
+        }
+        
+        .confidence-fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 0.3s ease;
+        }
+        
+        .confidence-high { background: #28a745; }
+        .confidence-medium { background: #ffc107; }
+        .confidence-low { background: #dc3545; }
+        
+        .test-image {
+            max-width: 200px;
+            max-height: 200px;
+            border-radius: 8px;
+            margin: 10px 0;
+        }
+        
+        .category-label {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: bold;
+            color: white;
+            margin: 2px;
+        }
+        
+        .category-intraoral { background: #007bff; }
+        .category-extraoral { background: #28a745; }
+        .category-occlusal { background: #ffc107; color: #212529; }
+        .category-other { background: #6c757d; }
+    </style>
+</head>
+<body>
+    {% include 'navigation_clean.html' %}
+    
+    <div class="test-container">
+        <h1>🧠 AI Model Testing</h1>
+        <p class="text-muted">Upload dental images to test how accurately the AI model classifies them.</p>
+        
+        <div class="card">
+            <div class="card-body">
+                <h5>Model Status</h5>
+                <div id="model-status">
+                    <p>Loading model information...</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="upload-area" id="upload-area">
+            <i class="fas fa-cloud-upload-alt fa-3x text-primary mb-3"></i>
+            <h4>Drop images here or click to select</h4>
+            <p class="text-muted">Upload dental images to test AI classification</p>
+            <input type="file" id="file-input" multiple accept="image/*" style="display: none;">
+            <button type="button" class="btn btn-primary" onclick="document.getElementById('file-input').click()">
+                Select Images
+            </button>
+        </div>
+        
+        <div id="results-container"></div>
+    </div>
+
+    <script>
+        const uploadArea = document.getElementById('upload-area');
+        const fileInput = document.getElementById('file-input');
+        const resultsContainer = document.getElementById('results-container');
+        
+        // Load model status
+        fetch('/api/model-status')
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('model-status').innerHTML = `
+                    <div class="row">
+                        <div class="col-md-6">
+                            <strong>Training Images:</strong> ${data.training_images}<br>
+                            <strong>Model Trained:</strong> ${data.is_trained ? 'Yes' : 'No'}<br>
+                            <strong>Categories:</strong> ${data.categories.length}
+                        </div>
+                        <div class="col-md-6">
+                            <strong>Training Accuracy:</strong> ${data.train_accuracy ? (data.train_accuracy * 100).toFixed(1) + '%' : 'N/A'}<br>
+                            <strong>Validation Accuracy:</strong> ${data.val_accuracy ? (data.val_accuracy * 100).toFixed(1) + '%' : 'N/A'}<br>
+                            <strong>Last Training:</strong> ${data.last_training || 'Never'}
+                        </div>
+                    </div>
+                `;
+            })
+            .catch(error => {
+                document.getElementById('model-status').innerHTML = '<p class="text-danger">Error loading model status</p>';
+            });
+
+        // Drag and drop functionality
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('dragover');
+        });
+
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.classList.remove('dragover');
+        });
+
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+            handleFiles(e.dataTransfer.files);
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            handleFiles(e.target.files);
+        });
+
+        function handleFiles(files) {
+            Array.from(files).forEach(file => {
+                if (file.type.startsWith('image/')) {
+                    testImage(file);
+                }
+            });
+        }
+
+        function testImage(file) {
+            const formData = new FormData();
+            formData.append('test_image', file);
+
+            // Create result card immediately
+            const resultCard = document.createElement('div');
+            resultCard.className = 'result-card';
+            resultCard.innerHTML = `
+                <div class="row">
+                    <div class="col-md-3">
+                        <img src="${URL.createObjectURL(file)}" class="test-image" alt="Test image">
+                        <p><strong>${file.name}</strong></p>
+                    </div>
+                    <div class="col-md-9">
+                        <h6>Classification Results</h6>
+                        <div class="classification-results">
+                            <p>Analyzing image...</p>
+                        </div>
+                    </div>
+                </div>
+            `;
+            resultsContainer.appendChild(resultCard);
+
+            // Send to server for classification
+            fetch('/test-ai-classification', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                const resultsDiv = resultCard.querySelector('.classification-results');
+                
+                if (data.success) {
+                    const confidence = data.confidence;
+                    const confidenceClass = confidence > 0.7 ? 'confidence-high' : 
+                                          confidence > 0.4 ? 'confidence-medium' : 'confidence-low';
+                    
+                    const categoryClass = getCategoryClass(data.classification);
+                    
+                    resultsDiv.innerHTML = `
+                        <div class="mb-3">
+                            <span class="category-label ${categoryClass}">${data.category_name}</span>
+                            <div class="confidence-bar">
+                                <div class="confidence-fill ${confidenceClass}" style="width: ${confidence * 100}%"></div>
+                            </div>
+                            <small>Confidence: ${(confidence * 100).toFixed(1)}%</small>
+                        </div>
+                        
+                        <h6>All Probabilities:</h6>
+                        <div class="probabilities">
+                            ${Object.entries(data.probabilities || {})
+                                .sort(([,a], [,b]) => b - a)
+                                .map(([category, prob]) => `
+                                    <div class="d-flex justify-content-between">
+                                        <span>${formatCategoryName(category)}</span>
+                                        <span>${(prob * 100).toFixed(1)}%</span>
+                                    </div>
+                                `).join('')}
+                        </div>
+                    `;
+                } else {
+                    resultsDiv.innerHTML = `<p class="text-danger">Error: ${data.error}</p>`;
+                }
+            })
+            .catch(error => {
+                const resultsDiv = resultCard.querySelector('.classification-results');
+                resultsDiv.innerHTML = `<p class="text-danger">Error analyzing image: ${error.message}</p>`;
+            });
+        }
+
+        function getCategoryClass(category) {
+            if (category.includes('intraoral')) return 'category-intraoral';
+            if (category.includes('extraoral')) return 'category-extraoral';
+            if (category.includes('occlusal')) return 'category-occlusal';
+            return 'category-other';
+        }
+
+        function formatCategoryName(category) {
+            return category.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+        }
+    </script>
+</body>
+</html>

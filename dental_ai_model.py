@@ -11,6 +11,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder, StandardScaler
 from sklearn.metrics import classification_report, accuracy_score
 import pickle
+from datetime import datetime
 
 class DentalImageClassifier:
     """
@@ -24,6 +25,9 @@ class DentalImageClassifier:
         self.scaler = StandardScaler()
         self.label_encoder = LabelEncoder()
         self.is_trained = False
+        self.last_train_accuracy = None
+        self.last_val_accuracy = None
+        self.last_training_time = None
         
         # Dental image categories - updated to match your requirements
         self.categories = [
@@ -368,6 +372,10 @@ class DentalImageClassifier:
         logging.info(f"Validation accuracy: {val_score:.3f}")
         
         self.is_trained = True
+        self.last_train_accuracy = train_score
+        self.last_val_accuracy = val_score
+        self.last_training_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        
         return {'train_accuracy': train_score, 'val_accuracy': val_score}
     
     def save_model(self, save_path: str):
