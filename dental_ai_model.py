@@ -21,7 +21,16 @@ class DentalImageClassifier:
 
     def __init__(self, model_path: Optional[str] = None):
         self.model_path = model_path
-        self.model = RandomForestClassifier(n_estimators=100, random_state=42)
+        self.model = RandomForestClassifier(
+            n_estimators=200,  # More trees for better accuracy
+            max_depth=15,      # Prevent overfitting
+            min_samples_split=3,  # More conservative splitting
+            min_samples_leaf=2,   # Ensure leaf nodes have multiple samples
+            max_features='sqrt',  # Use sqrt of features for diversity
+            bootstrap=True,
+            random_state=42,
+            class_weight='balanced'  # Handle class imbalance
+        )
         self.scaler = StandardScaler()
         self.label_encoder = LabelEncoder()
         self.is_trained = False
@@ -45,7 +54,7 @@ class DentalImageClassifier:
             logging.info("Created new Random Forest classifier for dental images")
 
     def extract_image_features(self, image_path: str) -> np.ndarray:
-        """Extract meaningful features from dental image for classification"""
+        """Extract comprehensive features from dental image for better classification"""
         try:
             with Image.open(image_path) as img:
                 # Convert to RGB if needed
@@ -55,54 +64,76 @@ class DentalImageClassifier:
                 # Resize to standard size
                 img = img.resize((224, 224), Image.Resampling.LANCZOS)
 
-                # Extract basic image statistics
+                # Extract comprehensive features
                 features = []
 
-                # 1. Color statistics for each channel
+                # 1. Enhanced color statistics for each channel
                 for channel in range(3):  # R, G, B
                     channel_data = np.array(img)[:, :, channel]
                     features.extend([
                         np.mean(channel_data),
                         np.std(channel_data),
                         np.min(channel_data),
-                        np.max(channel_data)
+                        np.max(channel_data),
+                        np.percentile(channel_data, 25),  # Q1
+                        np.percentile(channel_data, 75),  # Q3
+                        np.median(channel_data)
                     ])
 
-                # 2. Brightness and contrast
+                # 2. Enhanced brightness and contrast analysis
                 gray = img.convert('L')
                 gray_array = np.array(gray)
                 features.extend([
                     np.mean(gray_array),  # Overall brightness
                     np.std(gray_array),   # Contrast
+                    np.min(gray_array),   # Darkest point
+                    np.max(gray_array),   # Brightest point
+                    np.percentile(gray_array, 10),  # Dark regions
+                    np.percentile(gray_array, 90),  # Bright regions
                 ])
 
-                # 3. Edge detection features
+                # 3. Enhanced edge detection for dental features
                 edges = gray.filter(ImageFilter.FIND_EDGES)
                 edge_array = np.array(edges)
+                edge_threshold = 30
                 features.extend([
                     np.mean(edge_array),
                     np.std(edge_array),
-                    np.sum(edge_array > 50) / edge_array.size  # Edge density
+                    np.sum(edge_array > edge_threshold) / edge_array.size,  # Edge density
+                    np.max(edge_array),  # Strongest edge
+                    np.sum(edge_array > edge_threshold * 2) / edge_array.size,  # Strong edges
                 ])
 
-                # 4. Aspect ratio and shape features
+                # 4. Shape and geometric features
                 width, height = img.size
                 features.extend([
                     width / height,  # Aspect ratio
                     width * height,  # Total area
+                    max(width, height) / min(width, height),  # Extreme aspect ratio
                 ])
 
-                # 5. Histogram features
+                # 5. Enhanced histogram analysis
                 hist = img.histogram()
-                # Reduce histogram to key features
+                # Analyze different regions of histogram
+                total_pixels = width * height
                 hist_features = []
-                for i in range(0, len(hist), 32):  # Sample every 32nd bin
-                    hist_features.append(sum(hist[i:i+32]))
-                features.extend(hist_features[:20])  # Take first 20 features
+                
+                # RGB histogram features
+                for i in range(0, 256, 32):  # 8 bins per channel
+                    r_sum = sum(hist[i:i+32])
+                    g_sum = sum(hist[256+i:256+i+32])
+                    b_sum = sum(hist[512+i:512+i+32])
+                    hist_features.extend([r_sum/total_pixels, g_sum/total_pixels, b_sum/total_pixels])
+                
+                features.extend(hist_features[:24])  # 24 histogram features
 
-                # 6. Texture analysis using local binary patterns simulation
-                texture_features = self._calculate_texture_features(gray_array)
+                # 6. Enhanced texture analysis
+                texture_features = self._calculate_enhanced_texture_features(gray_array)
                 features.extend(texture_features)
+
+                # 7. Dental-specific features
+                dental_features = self._calculate_dental_specific_features(gray_array, edge_array)
+                features.extend(dental_features)
 
                 return np.array(features, dtype=np.float32)
 
@@ -111,40 +142,149 @@ class DentalImageClassifier:
             # Return zero features if extraction fails
             return np.zeros(50, dtype=np.float32)
 
-    def _calculate_texture_features(self, gray_array: np.ndarray) -> List[float]:
-        """Calculate texture features from grayscale image"""
+    def _calculate_enhanced_texture_features(self, gray_array: np.ndarray) -> List[float]:
+        """Calculate enhanced texture features from grayscale image"""
         features = []
 
-        # Simple texture measures
-        # 1. Local variance in 3x3 neighborhoods
+        # Enhanced texture measures
+        # 1. Local variance in multiple neighborhood sizes
         rows, cols = gray_array.shape
-        local_vars = []
+        for window_size in [3, 5]:
+            local_vars = []
+            half_window = window_size // 2
+            
+            for i in range(half_window, rows-half_window, 6):
+                for j in range(half_window, cols-half_window, 6):
+                    neighborhood = gray_array[i-half_window:i+half_window+1, j-half_window:j+half_window+1]
+                    local_vars.append(np.var(neighborhood))
 
-        for i in range(1, rows-1, 4):  # Sample every 4th pixel
-            for j in range(1, cols-1, 4):
-                neighborhood = gray_array[i-1:i+2, j-1:j+2]
-                local_vars.append(np.var(neighborhood))
+            if local_vars:
+                features.extend([
+                    np.mean(local_vars),
+                    np.std(local_vars),
+                    np.max(local_vars),
+                    np.min(local_vars)
+                ])
+            else:
+                features.extend([0.0, 0.0, 0.0, 0.0])
 
-        if local_vars:
-            features.extend([
-                np.mean(local_vars),
-                np.std(local_vars),
-                np.max(local_vars)
-            ])
-        else:
-            features.extend([0.0, 0.0, 0.0])
-
-        # 2. Gradient features
+        # 2. Enhanced gradient features
         grad_x = np.abs(np.diff(gray_array, axis=1))
         grad_y = np.abs(np.diff(gray_array, axis=0))
+        
+        # Gradient magnitude
+        grad_mag = np.sqrt(grad_x[:, :-1]**2 + grad_y[:-1, :]**2)
 
         features.extend([
             np.mean(grad_x),
             np.mean(grad_y),
             np.std(grad_x),
-            np.std(grad_y)
+            np.std(grad_y),
+            np.mean(grad_mag),
+            np.std(grad_mag),
+            np.max(grad_mag)
         ])
 
+        # 3. Texture patterns using simplified LBP
+        pattern_features = self._calculate_pattern_features(gray_array)
+        features.extend(pattern_features)
+
+        return features
+
+    def _calculate_pattern_features(self, gray_array: np.ndarray) -> List[float]:
+        """Calculate pattern features for texture analysis"""
+        features = []
+        rows, cols = gray_array.shape
+        
+        # Simplified Local Binary Pattern
+        patterns = []
+        for i in range(1, rows-1, 4):
+            for j in range(1, cols-1, 4):
+                center = gray_array[i, j]
+                neighbors = [
+                    gray_array[i-1, j-1], gray_array[i-1, j], gray_array[i-1, j+1],
+                    gray_array[i, j+1], gray_array[i+1, j+1], gray_array[i+1, j],
+                    gray_array[i+1, j-1], gray_array[i, j-1]
+                ]
+                
+                # Count neighbors greater than center
+                pattern = sum(1 for n in neighbors if n > center)
+                patterns.append(pattern)
+        
+        if patterns:
+            features.extend([
+                np.mean(patterns),
+                np.std(patterns),
+                patterns.count(0) / len(patterns),  # Uniform dark regions
+                patterns.count(8) / len(patterns),  # Uniform bright regions
+            ])
+        else:
+            features.extend([0.0, 0.0, 0.0, 0.0])
+        
+        return features
+
+    def _calculate_dental_specific_features(self, gray_array: np.ndarray, edge_array: np.ndarray) -> List[float]:
+        """Calculate features specific to dental image classification"""
+        features = []
+        rows, cols = gray_array.shape
+        
+        # 1. Darkness concentration (for occlusal views - dark areas between teeth)
+        dark_threshold = np.percentile(gray_array, 20)
+        dark_pixels = gray_array < dark_threshold
+        dark_ratio = np.sum(dark_pixels) / (rows * cols)
+        
+        # Dark region clustering (occlusal views have clustered dark areas)
+        from scipy import ndimage
+        try:
+            dark_labels, dark_regions = ndimage.label(dark_pixels)
+            avg_dark_region_size = np.sum(dark_pixels) / max(dark_regions, 1)
+        except:
+            avg_dark_region_size = 0
+        
+        features.extend([
+            dark_ratio,
+            avg_dark_region_size / (rows * cols),  # Normalized region size
+        ])
+        
+        # 2. Edge concentration patterns
+        # Occlusal views have edges concentrated in center
+        # Extraoral views have edges more distributed
+        center_y, center_x = rows // 2, cols // 2
+        quarter_y, quarter_x = rows // 4, cols // 4
+        
+        center_region = edge_array[quarter_y:3*quarter_y, quarter_x:3*quarter_x]
+        edge_region = np.concatenate([
+            edge_array[:quarter_y, :].flatten(),
+            edge_array[3*quarter_y:, :].flatten(),
+            edge_array[:, :quarter_x].flatten(),
+            edge_array[:, 3*quarter_x:].flatten()
+        ])
+        
+        center_edge_density = np.mean(center_region) if center_region.size > 0 else 0
+        edge_edge_density = np.mean(edge_region) if edge_region.size > 0 else 0
+        
+        features.extend([
+            center_edge_density,
+            edge_edge_density,
+            center_edge_density / max(edge_edge_density, 1),  # Center vs edge ratio
+        ])
+        
+        # 3. Symmetry features (intraoral views are often more symmetric)
+        left_half = gray_array[:, :cols//2]
+        right_half = np.fliplr(gray_array[:, cols//2:])
+        min_width = min(left_half.shape[1], right_half.shape[1])
+        
+        if min_width > 0:
+            left_crop = left_half[:, -min_width:]
+            right_crop = right_half[:, :min_width]
+            symmetry_score = np.mean(np.abs(left_crop.astype(float) - right_crop.astype(float)))
+        else:
+            symmetry_score = 255
+            
+        features.extend([
+            symmetry_score / 255,  # Normalized symmetry score
+        ])
+        
         return features
 
     def preprocess_image(self, image_data: bytes) -> np.ndarray:
@@ -341,11 +481,32 @@ class DentalImageClassifier:
 
         logging.info(f"Loaded {len(X)} training samples")
 
+        # Apply data augmentation to increase training data
+        logging.info("Applying data augmentation...")
+        X_augmented = []
+        y_augmented = []
+        
+        for i, (sample, label) in enumerate(zip(X, y)):
+            # Add original sample
+            X_augmented.append(sample)
+            y_augmented.append(label)
+            
+            # Add augmented versions
+            augmented_samples = self._augment_features(sample)
+            for aug_sample in augmented_samples:
+                X_augmented.append(aug_sample)
+                y_augmented.append(label)
+        
+        X = np.array(X_augmented)
+        y = np.array(y_augmented)
+        
+        logging.info(f"After augmentation: {len(X)} training samples")
+
         # Check if we have enough data for proper validation split
         unique_labels, label_counts = np.unique(y, return_counts=True)
         min_samples = min(label_counts)
 
-        if len(X) < 10 or min_samples < 2:
+        if len(X) < 20 or min_samples < 4:
             # Not enough data for validation split - train on all data
             logging.info(f"Limited data ({len(X)} samples, min {min_samples} per class). Training on all data.")
             X_train, X_val, y_train, y_val = X, X, y, y

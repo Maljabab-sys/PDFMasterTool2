@@ -1755,15 +1755,19 @@ def test_ai_classification():
             classifier = get_dental_classifier()
             result = classifier.classify_image(temp_path)
             
-            # Clean up temp file
-            os.unlink(temp_path)
+            # Store temp file path for potential training data collection
+            session['last_test_image'] = temp_path
+            session['last_test_result'] = result
+            
+            # Don't clean up temp file yet - keep for training data collection
             
             return jsonify({
                 'success': True,
                 'classification': result['classification'],
                 'confidence': result['confidence'],
                 'probabilities': result['probabilities'],
-                'category_name': result['category_name']
+                'category_name': result['category_name'],
+                'temp_path': temp_path  # Return for correction endpoint
             })
             
         except Exception as e:
@@ -1874,3 +1878,54 @@ def server_error(e):
     flash('An internal server error occurred. Please try again.', 'error')
     user = current_user if current_user.is_authenticated else None
     return render_template('index.html', user=user), 500
+
+
+
+@app.route('/correct_classification', methods=['POST'])
+def correct_classification():
+    """Correct AI classification and add to training data"""
+    try:
+        data = request.get_json()
+        correct_category = data.get('correct_category')
+        temp_path = data.get('temp_path')
+        
+        if not correct_category or not temp_path or not os.path.exists(temp_path):
+            return jsonify({'success': False, 'error': 'Invalid correction data'})
+        
+        # Map frontend categories to dental AI categories
+        category_mapping = {
+            'intraoral_left_view': 'intraoral_left',
+            'intraoral_right_view': 'intraoral_right',
+            'intraoral_frontal_view': 'intraoral_front',
+            'intraoral_upper_occlusal_view': 'upper_occlusal',
+            'intraoral_lower_occlusal_view': 'lower_occlusal',
+            'extraoral_frontal_view': 'extraoral_frontal',
+            'extraoral_right_view': 'extraoral_right',
+            'extraoral_smiling_view': 'extraoral_full_face_smile'
+        }
+        
+        dental_category = category_mapping.get(correct_category, correct_category)
+        
+        # Add to training data
+        from training_setup import TrainingDataManager
+        trainer = TrainingDataManager()
+        trainer.add_training_image(temp_path, dental_category, correct_classification=False)
+        
+        # Clean up temp file
+        os.unlink(temp_path)
+        
+        # Get updated training stats
+        stats = trainer.get_training_stats()
+        
+        logging.info(f"Added corrected classification: {dental_category}")
+        
+        return jsonify({
+            'success': True,
+            'message': f'Added to {dental_category} training data',
+            'training_stats': stats
+        })
+        
+    except Exception as e:
+        logging.error(f"Error correcting classification: {e}")
+        return jsonify({'success': False, 'error': str(e)})
+
