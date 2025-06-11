@@ -252,9 +252,17 @@ class DentalImageClassifier:
                     'front_view': 'intraoral_front',
                     'extraoral': 'extraoral_frontal',
                     'radiograph': 'intraoral_front',  # Default radiographs to front view
-                    'other': 'intraoral_front'
+                    'other': 'intraoral_front',
+                    'reasoning': 'intraoral_front',  # Handle reasoning errors
+                    'success': 'intraoral_front'     # Handle success errors
                 }
+                logging.warning(f"Unknown category '{best_category}' mapped to front view")
                 best_category = old_to_new_mapping.get(best_category, 'intraoral_front')
+                
+            # Double-check the category is valid
+            if best_category not in self.categories:
+                best_category = 'intraoral_front'
+                confidence = 0.3
             
             # Map to user-friendly names
             category_names = {
