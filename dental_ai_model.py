@@ -429,7 +429,38 @@ def get_dental_classifier():
     global dental_classifier
     if dental_classifier is None:
         dental_classifier = DentalImageClassifier()
+        # Automatically train if we have training data but no trained model
+        auto_train_if_needed()
     return dental_classifier
+
+def auto_train_if_needed():
+    """Automatically train the model if training data is available and model is not trained"""
+    try:
+        from training_setup import TrainingDataManager
+        trainer = TrainingDataManager()
+        stats = trainer.get_training_stats()
+        
+        classifier = get_dental_classifier()
+        
+        # Train if we have enough data (at least 20 images) and model isn't trained
+        if stats['total_images'] >= 20 and not classifier.is_trained:
+            logging.info(f"Auto-training model with {stats['total_images']} training images...")
+            
+            # Train the model
+            results = classifier.train(trainer.base_path)
+            
+            # Save the trained model
+            model_save_path = "models/dental_classifier.pkl"
+            os.makedirs("models", exist_ok=True)
+            classifier.save_model(model_save_path)
+            
+            logging.info(f"Auto-training completed. Train accuracy: {results.get('train_accuracy', 0):.3f}")
+            
+        elif stats['total_images'] > 0 and stats['total_images'] < 20:
+            logging.info(f"Training data available ({stats['total_images']} images) but need at least 20 for training")
+            
+    except Exception as e:
+        logging.error(f"Auto-training failed: {e}")
 
 # Compatibility functions for existing code
 def classify_dental_image(image_path: str) -> Dict[str, Any]:

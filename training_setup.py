@@ -80,8 +80,38 @@ class TrainingDataManager:
             
             logging.info(f"Added training image: {new_filename} -> {category}")
             
+            # Trigger automatic retraining if we have enough data
+            self._check_and_retrain()
+            
         except Exception as e:
             logging.error(f"Failed to add training image: {e}")
+    
+    def _check_and_retrain(self):
+        """Check if we should retrain the model automatically"""
+        try:
+            stats = self.get_training_stats()
+            
+            # Retrain every 10 new images or if we have multiples of 50
+            if stats['total_images'] % 10 == 0 and stats['total_images'] >= 20:
+                logging.info(f"Auto-retraining triggered with {stats['total_images']} total images")
+                
+                # Import here to avoid circular imports
+                from dental_ai_model import get_dental_classifier
+                classifier = get_dental_classifier()
+                
+                # Train the model
+                results = classifier.train(self.base_path)
+                
+                # Save the trained model
+                import os
+                model_save_path = "models/dental_classifier.pkl"
+                os.makedirs("models", exist_ok=True)
+                classifier.save_model(model_save_path)
+                
+                logging.info(f"Auto-retraining completed. Train accuracy: {results.get('train_accuracy', 0):.3f}")
+                
+        except Exception as e:
+            logging.error(f"Auto-retraining failed: {e}")
     
     def remove_training_image(self, image_path: str):
         """

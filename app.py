@@ -62,6 +62,25 @@ from models import User, Patient, Case, UserSettings
 with app.app_context():
     db.create_all()
 
+# Initialize background training
+def initialize_background_training():
+    """Initialize background AI training service"""
+    try:
+        # Initialize dental classifier which will auto-train if needed
+        from dental_ai_model import get_dental_classifier
+        classifier = get_dental_classifier()
+        
+        # Start background training service
+        from background_trainer import start_background_training
+        start_background_training()
+        
+        logging.info("Background AI training service initialized")
+    except Exception as e:
+        logging.error(f"Failed to initialize background training: {e}")
+
+# Start background training on app startup
+initialize_background_training()
+
 # Configuration
 UPLOAD_FOLDER = 'uploads'
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'webp', 'gif'}
@@ -1817,10 +1836,10 @@ def label_image():
         # Initialize training data manager
         trainer = TrainingDataManager()
         
-        # Add image to training data
+        # Add image to training data (this will automatically trigger retraining if needed)
         trainer.add_training_image(image_path, category, correct_classification=True)
         
-        return jsonify({'success': True, 'message': f'Image labeled as {category}'})
+        return jsonify({'success': True, 'message': f'Image labeled as {category}. Model will retrain automatically in background.'})
         
     except Exception as e:
         logging.error(f"Error labeling image: {e}")
@@ -1829,39 +1848,28 @@ def label_image():
 @app.route('/train_model', methods=['POST'])
 @login_required
 def train_model():
-    """Train the custom AI model"""
+    """Get training status (training happens automatically in background)"""
     try:
         # Initialize training data manager
         trainer = TrainingDataManager()
         stats = trainer.get_training_stats()
         
-        # Check if we have enough training data
-        if stats['total_images'] < 10:
-            return jsonify({
-                'success': False, 
-                'error': f'Need at least 10 labeled images. Currently have {stats["total_images"]}'
-            })
-        
         # Get dental classifier
         classifier = get_dental_classifier()
         
-        # Train the model
-        training_data_path = trainer.base_path
-        results = classifier.train(training_data_path)
-        
-        # Save the trained model
-        model_save_path = "models/dental_classifier.pkl"
-        os.makedirs("models", exist_ok=True)
-        classifier.save_model(model_save_path)
+        from background_trainer import background_trainer
         
         return jsonify({
             'success': True,
-            'message': 'Model trained successfully!',
-            'results': results
+            'message': 'AI training happens automatically in the background',
+            'stats': stats,
+            'model_trained': classifier.is_trained,
+            'training_in_progress': background_trainer.training_in_progress,
+            'last_training': background_trainer.last_training.isoformat() if background_trainer.last_training else None
         })
         
     except Exception as e:
-        logging.error(f"Error training model: {e}")
+        logging.error(f"Error getting training status: {e}")
         return jsonify({'success': False, 'error': str(e)})
 
 @app.route('/training_stats')
