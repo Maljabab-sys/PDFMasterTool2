@@ -244,7 +244,7 @@ img.layout-img.extraoral-smile {
 
 .image-card-hover:hover {
     transform: translateY(-2px);
-    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
 }
 
 /* Mobile Responsiveness */
@@ -285,7 +285,7 @@ img.layout-img.extraoral-smile {
     
     .mobile-cases .card {
         border-radius: 8px;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     }
     
     .mobile-cases .card-title {
@@ -339,11 +339,6 @@ img.layout-img.extraoral-smile {
     .image-card-hover img {
         height: 120px !important;
         width: 100% !important;
-    }
-    
-    /* Preserve extraoral rotation on mobile - REMOVED AUTOMATIC ROTATION */
-    .image-card-hover img.extraoral {
-        /* transform: rotate(-90deg) !important; - REMOVED */
     }
     
     /* Section headers mobile */
@@ -508,7 +503,7 @@ img.layout-img.extraoral-smile {
         left: 0;
         right: 0;
         height: 4px;
-        background: rgba(0,0,0,0.1);
+        background: rgba(0, 0, 0, 0.1);
         overflow: hidden;
         border-radius: 0 0 0.375rem 0.375rem;
     }
@@ -527,7 +522,7 @@ img.layout-img.extraoral-smile {
     
     .layout-placeholder-box .layout-img {
         border-radius: 0.375rem;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     }
     
     .layout-placeholder-box .btn-danger {
@@ -567,7 +562,7 @@ img.layout-img.extraoral-smile {
     }
     
     .layout-placeholder-box .badge {
-        background: rgba(0,123,255,0.9) !important;
+        background: rgba(0, 123, 255, 0.9) !important;
         border-radius: 0.375rem;
     }
     
@@ -579,9 +574,7 @@ img.layout-img.extraoral-smile {
     }
     
     /* Preserve extraoral rotation on mobile structured layout - REMOVED AUTOMATIC ROTATION */
-    .layout-card-mobile .layout-img.extraoral {
-        /* transform: rotate(-90deg) !important; - REMOVED */
-    }
+    /* .layout-card-mobile .layout-img.extraoral - automatic rotation removed */
     
     .layout-label {
         font-size: 0.7rem !important;
@@ -661,7 +654,7 @@ body {
     bottom: 0;
     left: 0;
     right: 0;
-    background: linear-gradient(transparent, rgba(0,0,0,0.8));
+    background: linear-gradient(transparent, rgba(0, 0, 0, 0.8));
     color: white;
     padding: 0.5rem;
     font-size: 0.75rem;
@@ -931,7 +924,7 @@ body {
 
 .patient-result:hover {
     transform: translateY(-1px);
-    box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
 }
 
 .patient-result.selected {
@@ -946,7 +939,7 @@ body {
 }
 
 .patient-result.selected small {
-    color: rgba(255,255,255,0.8) !important;
+    color: rgba(255, 255, 255, 0.8) !important;
 }
 
 /* Image Upload Containers */
@@ -956,7 +949,7 @@ body {
 
 .image-upload-container:hover {
     transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 }
 
 /* Form Card Animations */

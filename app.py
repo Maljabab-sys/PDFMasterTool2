@@ -15,10 +15,9 @@ from reportlab.lib import colors
 import tempfile
 import uuid
 from datetime import datetime
-from image_classifier import classify_bulk_images, get_classification_summary
-from dental_ai_model import get_dental_classifier, initialize_dental_classifier
-from training_setup import TrainingDataManager
-from database import db
+from dental_ai_model import get_dental_classifier, initialize_dental_classifier, classify_bulk_images, get_classification_summary
+from AI_System.scripts.training_setup import TrainingDataManager
+from config.database import db
 
 # Configure logging
 logging.basicConfig(level=logging.DEBUG)
@@ -48,13 +47,14 @@ login_manager.login_message_category = 'info'
 @login_manager.user_loader
 def load_user(user_id):
     # Import here to avoid circular import
-    from models import User
-    return User.query.get(int(user_id))
+    from config.models import User
+    from config.database import db
+    return db.session.get(User, int(user_id))
 
 # Initialize database with models
 with app.app_context():
     # Import models here to avoid circular import
-    from models import User, Patient, Case, UserSettings
+    from config.models import User, Patient, Case, UserSettings
     db.create_all()
 
 # Initialize background training
@@ -66,8 +66,11 @@ def initialize_background_training():
         classifier = get_dental_classifier()
 
         # Start background training service
-        from background_trainer import start_background_training
-        start_background_training()
+        try:
+            from AI_System.scripts.background_trainer import start_background_training
+            start_background_training()
+        except ImportError as e:
+            logging.warning(f"Background trainer not available: {e}")
 
         logging.info("Background AI training service initialized")
     except Exception as e:
@@ -1913,7 +1916,7 @@ def api_model_status():
 
         # Get training data statistics
         try:
-            from training_setup import TrainingDataManager
+            from AI_System.scripts.training_setup import TrainingDataManager
             trainer = TrainingDataManager()
             stats = trainer.get_training_stats()
             model_info['training_images'] = stats['total_images']
@@ -2088,7 +2091,7 @@ def test_ai_classification():
 def trigger_training():
     """Manually trigger AI model training"""
     try:
-        from background_trainer import train_model_background
+        from AI_System.scripts.background_trainer import train_model_background
         train_model_background()
         return jsonify({'success': True, 'message': 'Training started in background'})
     except Exception as e:
@@ -2206,7 +2209,7 @@ def correct_classification():
         dental_category = category_mapping.get(correct_category, correct_category)
 
         # Add to training data
-        from training_setup import TrainingDataManager
+        from AI_System.scripts.training_setup import TrainingDataManager
         trainer = TrainingDataManager()
         trainer.add_training_image(temp_path, dental_category, correct_classification=False)
 
