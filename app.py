@@ -69,11 +69,11 @@ def initialize_background_training():
         # Initialize dental classifier which will auto-train if needed
         from dental_ai_model import get_dental_classifier
         classifier = get_dental_classifier()
-        
+
         # Start background training service
         from background_trainer import start_background_training
         start_background_training()
-        
+
         logging.info("Background AI training service initialized")
     except Exception as e:
         logging.error(f"Failed to initialize background training: {e}")
@@ -100,11 +100,11 @@ def optimize_image_for_pdf(image_path, max_size=(800, 600), quality=70):
             # Convert to RGB if needed
             if img.mode in ('RGBA', 'LA', 'P'):
                 img = img.convert('RGB')
-            
+
             # Resize if too large
             if img.size[0] > max_size[0] or img.size[1] > max_size[1]:
                 img.thumbnail(max_size, Image.Resampling.LANCZOS)
-            
+
             # Save directly over the original file to save memory
             img.save(image_path, 'JPEG', quality=quality, optimize=True)
             return True
@@ -124,10 +124,10 @@ def optimize_image(image_path, max_width=800, max_height=600, quality=85):
             # Convert to RGB if necessary
             if img.mode in ('RGBA', 'LA', 'P'):
                 img = img.convert('RGB')
-            
+
             # Calculate new dimensions while maintaining aspect ratio
             img.thumbnail((max_width, max_height), Image.Resampling.LANCZOS)
-            
+
             # Save optimized image to temporary file
             temp_file = tempfile.NamedTemporaryFile(delete=False, suffix='.jpg', dir=UPLOAD_FOLDER)
             temp_file.close()  # Close the file handle so other processes can access it
@@ -141,27 +141,27 @@ def create_classic_layout(images, heading_style, styles, pagesize):
     """Classic template - one image per slide"""
     story = []
     from reportlab.platypus import PageBreak
-    
+
     # Standard dimensions for faster processing
     max_width = 5 * inch
     max_height = 4 * inch
-    
+
     for i, image_path in enumerate(images, 1):
         try:
             story.append(Paragraph(f"Slide {i}", heading_style))
-            
+
             # Use fixed dimensions for speed
             img_obj = RLImage(image_path, width=max_width, height=max_height)
             story.append(img_obj)
             story.append(Spacer(1, 0.3*inch))
-            
+
             if i < len(images):
                 story.append(PageBreak())
-                
+
         except Exception as e:
             logging.error(f"Error adding image {image_path}: {str(e)}")
             story.append(Paragraph(f"Error loading image {i}", styles['Normal']))
-    
+
     return story
 
 def create_modern_layout(images, heading_style, styles, pagesize, notes):
@@ -169,27 +169,27 @@ def create_modern_layout(images, heading_style, styles, pagesize, notes):
     story = []
     from reportlab.platypus import PageBreak, Table, TableStyle
     from reportlab.lib import colors
-    
+
     for i, image_path in enumerate(images, 1):
         try:
             story.append(Paragraph(f"Slide {i}", heading_style))
-            
+
             with Image.open(image_path) as img:
                 img_width, img_height = img.size
                 aspect_ratio = img_width / img_height
-                
+
                 width = 4.5 * inch
                 height = width / aspect_ratio
                 if height > 3.5 * inch:
                     height = 3.5 * inch
                     width = height * aspect_ratio
-            
+
             img_obj = RLImage(image_path, width=width, height=height)
-            
+
             # Create notes content
             note_content = notes if notes else f"Image {i} description"
             note_para = Paragraph(note_content, styles['Normal'])
-            
+
             # Create table with image and notes
             table_data = [[img_obj, note_para]]
             table = Table(table_data, colWidths=[width + 0.5*inch, 2*inch])
@@ -197,24 +197,24 @@ def create_modern_layout(images, heading_style, styles, pagesize, notes):
                 ('VALIGN', (0, 0), (-1, -1), 'TOP'),
                 ('LEFTPADDING', (1, 0), (1, 0), 10),
             ]))
-            
+
             story.append(table)
             story.append(Spacer(1, 0.3*inch))
-            
+
             if i < len(images):
                 story.append(PageBreak())
-                
+
         except Exception as e:
             logging.error(f"Error adding image {image_path}: {str(e)}")
             story.append(Paragraph(f"Error loading image {i}", styles['Normal']))
-    
+
     return story
 
 def create_grid_layout(images, heading_style, styles, pagesize, images_per_slide):
     """Grid template - multiple images per slide"""
     story = []
     from reportlab.platypus import PageBreak, Table, TableStyle
-    
+
     # Fixed dimensions for speed
     if images_per_slide == 2:
         img_width, img_height = 3*inch, 2*inch
@@ -224,13 +224,13 @@ def create_grid_layout(images, heading_style, styles, pagesize, images_per_slide
         img_width, img_height = 2*inch, 1.2*inch
     else:
         img_width, img_height = 5*inch, 3*inch
-    
+
     slide_num = 1
     for i in range(0, len(images), images_per_slide):
         slide_images = images[i:i + images_per_slide]
-        
+
         story.append(Paragraph(f"Slide {slide_num}", heading_style))
-        
+
         # Simple layout for speed
         for img_path in slide_images:
             try:
@@ -239,20 +239,20 @@ def create_grid_layout(images, heading_style, styles, pagesize, images_per_slide
                 story.append(Spacer(1, 0.2*inch))
             except Exception as e:
                 logging.error(f"Error adding image {img_path}: {str(e)}")
-        
+
         story.append(Spacer(1, 0.3*inch))
         slide_num += 1
-        
+
         if i + images_per_slide < len(images):
             story.append(PageBreak())
-    
+
     return story
 
 def create_timeline_layout(images, heading_style, styles, pagesize):
     """Timeline template - chronological layout"""
     story = []
     from reportlab.platypus import PageBreak
-    
+
     for i, image_path in enumerate(images, 1):
         try:
             # Add timeline marker
@@ -264,51 +264,51 @@ def create_timeline_layout(images, heading_style, styles, pagesize):
                 leftIndent=20
             )
             story.append(Paragraph(f"Step {i}", timeline_style))
-            
+
             with Image.open(image_path) as img:
                 img_width, img_height = img.size
                 aspect_ratio = img_width / img_height
-                
+
                 width = 5 * inch
                 height = width / aspect_ratio
                 if height > 3 * inch:
                     height = 3 * inch
                     width = height * aspect_ratio
-            
+
             img_obj = RLImage(image_path, width=width, height=height)
             story.append(img_obj)
             story.append(Spacer(1, 0.5*inch))
-            
+
             # Add connector line (except for last image)
             if i < len(images):
                 story.append(Paragraph("↓", styles['Normal']))
                 story.append(Spacer(1, 0.2*inch))
-                
+
         except Exception as e:
             logging.error(f"Error adding image {image_path}: {str(e)}")
             story.append(Paragraph(f"Error loading image {i}", styles['Normal']))
-    
+
     return story
 
 def create_comparison_layout(images, heading_style, styles, pagesize):
     """Comparison template - side-by-side layout"""
     story = []
     from reportlab.platypus import PageBreak, Table, TableStyle
-    
+
     # Process images in pairs
     for i in range(0, len(images), 2):
         slide_num = (i // 2) + 1
         story.append(Paragraph(f"Comparison {slide_num}", heading_style))
-        
+
         img1_path = images[i]
         img2_path = images[i + 1] if i + 1 < len(images) else None
-        
+
         try:
             img_width = 3 * inch
             img_height = 2.5 * inch
-            
+
             img1_obj = RLImage(img1_path, width=img_width, height=img_height)
-            
+
             if img2_path:
                 img2_obj = RLImage(img2_path, width=img_width, height=img_height)
                 table_data = [[img1_obj, img2_obj]]
@@ -316,24 +316,24 @@ def create_comparison_layout(images, heading_style, styles, pagesize):
             else:
                 table_data = [[img1_obj, ""]]
                 table = Table(table_data, colWidths=[img_width + 0.5*inch, img_width + 0.5*inch])
-            
+
             table.setStyle(TableStyle([
                 ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
                 ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
                 ('LEFTPADDING', (0, 0), (-1, -1), 10),
                 ('RIGHTPADDING', (0, 0), (-1, -1), 10),
             ]))
-            
+
             story.append(table)
             story.append(Spacer(1, 0.3*inch))
-            
+
             if i + 2 < len(images):
                 story.append(PageBreak())
-                
+
         except Exception as e:
             logging.error(f"Error creating comparison layout: {str(e)}")
             story.append(Paragraph(f"Error loading comparison {slide_num}", styles['Normal']))
-    
+
     return story
 
 def create_medical_layout(images, heading_style, styles, pagesize):
@@ -343,7 +343,7 @@ def create_medical_layout(images, heading_style, styles, pagesize):
     from reportlab.lib import colors
     from reportlab.lib.styles import ParagraphStyle
     from reportlab.lib.enums import TA_LEFT
-    
+
     # Create custom styles matching the design
     section_style = ParagraphStyle(
         'SectionHeader',
@@ -354,21 +354,21 @@ def create_medical_layout(images, heading_style, styles, pagesize):
         fontName='Helvetica',
         alignment=TA_LEFT
     )
-    
+
     # Split images into extra-oral and intra-oral sections
     # First 3 images go to extra-oral, remaining go to intra-oral
     extra_oral = images[:3] if len(images) >= 3 else images
     intra_oral = images[3:] if len(images) > 3 else []
-    
+
     # Remove empty strings that might cause ReportLab errors
     extra_oral = [img for img in extra_oral if img and img.strip()]
     intra_oral = [img for img in intra_oral if img and img.strip()]
-    
+
     # Extra-oral section: 3 images next to each other (enlarged to fit page)
     if extra_oral:
         story.append(Paragraph("Extra-oral", section_style))
         story.append(Spacer(1, 0.15*inch))
-        
+
         # Single row: 3 images next to each other, larger size
         img_row = []
         for img_path in extra_oral:
@@ -381,11 +381,11 @@ def create_medical_layout(images, heading_style, styles, pagesize):
                     img_row.append("")
             else:
                 img_row.append("")
-        
+
         # Fill to 3 columns if needed
         while len(img_row) < 3:
             img_row.append("")
-        
+
         table = Table([img_row], colWidths=[2.3*inch, 2.3*inch, 2.3*inch])
         table.setStyle(TableStyle([
             ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
@@ -398,12 +398,12 @@ def create_medical_layout(images, heading_style, styles, pagesize):
         ]))
         story.append(table)
         story.append(Spacer(1, 0.3*inch))
-    
+
     # Intra-oral section: 5 images total - 3 on top row, 2 centered below
     if intra_oral:
         story.append(Paragraph("Intra oral:", section_style))
         story.append(Spacer(1, 0.15*inch))
-        
+
         # First row: 3 images next to each other
         first_row = intra_oral[:3]
         img_row = []
@@ -417,11 +417,11 @@ def create_medical_layout(images, heading_style, styles, pagesize):
                     img_row.append("")
             else:
                 img_row.append("")
-        
+
         # Fill to 3 columns if needed
         while len(img_row) < 3:
             img_row.append("")
-        
+
         table = Table([img_row], colWidths=[2.3*inch, 2.3*inch, 2.3*inch])
         table.setStyle(TableStyle([
             ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
@@ -434,13 +434,13 @@ def create_medical_layout(images, heading_style, styles, pagesize):
         ]))
         story.append(table)
         story.append(Spacer(1, 0.15*inch))
-        
+
         # Second row: 2 images centered below (4th and 5th images)
         if len(intra_oral) > 3:
             second_row = intra_oral[3:5]  # Take 4th and 5th images
             if len(second_row) >= 1:
                 img_row = []
-                
+
                 # Add spacing columns to center the images
                 if len(second_row) == 1:
                     # Single image centered
@@ -452,7 +452,7 @@ def create_medical_layout(images, heading_style, styles, pagesize):
                         logging.error(f"Error adding centered image: {str(e)}")
                         img_row.append("")
                     img_row.append("")
-                    
+
                 elif len(second_row) == 2:
                     # Two images centered
                     img_row = [""]
@@ -464,7 +464,7 @@ def create_medical_layout(images, heading_style, styles, pagesize):
                             logging.error(f"Error adding image: {str(e)}")
                             img_row.append("")
                     img_row.append("")
-                
+
                 # Create table with proper centering
                 if len(second_row) == 1:
                     centered_table = Table([img_row], colWidths=[2.3*inch, 2.3*inch, 2.3*inch])
@@ -481,9 +481,9 @@ def create_medical_layout(images, heading_style, styles, pagesize):
                         ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
                         ('GRID', (1, 0), (2, 0), 0.5, colors.lightgrey),
                     ]))
-                
+
                 story.append(centered_table)
-    
+
     return story
 
 def create_pdf(images, case_title, notes, output_path, template='classic', orientation='portrait', images_per_slide=1, patient_info=None):
@@ -496,20 +496,20 @@ def create_pdf(images, case_title, notes, output_path, template='classic', orien
                 valid_images.append(img)
             elif img:
                 logging.warning(f"Invalid image path skipped: {img}")
-        
+
         images = valid_images
-        
+
         # Handle case with no valid images - log warning but continue
         if not images:
             logging.warning(f"Creating PDF with no valid images for case: {case_title}")
-        
+
         # Set page size based on orientation
         pagesize = A4 if orientation == 'portrait' else (A4[1], A4[0])
-        
+
         doc = SimpleDocTemplate(output_path, pagesize=pagesize, 
                               topMargin=0.5*inch, bottomMargin=0.5*inch,
                               leftMargin=0.5*inch, rightMargin=0.5*inch)
-        
+
         styles = getSampleStyleSheet()
         title_style = ParagraphStyle(
             'CustomTitle',
@@ -521,7 +521,7 @@ def create_pdf(images, case_title, notes, output_path, template='classic', orien
             textColor=colors.Color(int(0.8*255), int(0.6*255), int(0.2*255)),
             fontName='Helvetica-Bold'
         )
-        
+
         patient_style = ParagraphStyle(
             'PatientInfo',
             parent=styles['Normal'],
@@ -531,7 +531,7 @@ def create_pdf(images, case_title, notes, output_path, template='classic', orien
             textColor=colors.Color(int(0.4*255), int(0.4*255), int(0.4*255)),
             fontName='Helvetica-Bold'
         )
-        
+
         visit_style = ParagraphStyle(
             'VisitInfo',
             parent=styles['Normal'],
@@ -541,7 +541,7 @@ def create_pdf(images, case_title, notes, output_path, template='classic', orien
             textColor=colors.Color(int(0.6*255), int(0.6*255), int(0.6*255)),
             fontName='Helvetica'
         )
-        
+
         subtitle_style = ParagraphStyle(
             'Subtitle',
             parent=styles['Normal'],
@@ -551,7 +551,7 @@ def create_pdf(images, case_title, notes, output_path, template='classic', orien
             textColor=colors.Color(int(0.5*255), int(0.5*255), int(0.5*255)),
             fontName='Helvetica'
         )
-        
+
         heading_style = ParagraphStyle(
             'CustomHeading',
             parent=styles['Heading2'],
@@ -561,34 +561,34 @@ def create_pdf(images, case_title, notes, output_path, template='classic', orien
             textColor=colors.Color(int(0.3*255), int(0.3*255), int(0.3*255)),
             fontName='Helvetica-Bold'
         )
-        
+
         story = []
-        
+
         # Title page matching the medical design
         story.append(Paragraph(case_title, title_style))
-        
+
         # Add patient information if available
         if patient_info:
             story.append(Paragraph(f"Patient: {patient_info['name']}", patient_style))
             story.append(Paragraph(f"MRN: {patient_info['mrn']} | Clinic: {patient_info['clinic']}", visit_style))
             story.append(Paragraph(f"Visit Type: {patient_info['visit_type']}", visit_style))
-        
+
         if notes:
             # Add patient/case identifier in gray below title
             story.append(Paragraph(notes[:50] + "..." if len(notes) > 50 else notes, subtitle_style))
         story.append(Spacer(1, 0.5*inch))
-        
+
         if notes:
             story.append(Paragraph("Case Notes:", heading_style))
             story.append(Paragraph(notes, styles['Normal']))
-        
+
         story.append(Spacer(1, 0.5*inch))
         story.append(Paragraph(f"Generated on: {datetime.now().strftime('%B %d, %Y at %I:%M %p')}", styles['Normal']))
-        
+
         # Add page break before images
         from reportlab.platypus import PageBreak
         story.append(PageBreak())
-        
+
         # Add images based on template (handle empty image list)
         if images:
             if template == 'classic':
@@ -609,11 +609,11 @@ def create_pdf(images, case_title, notes, output_path, template='classic', orien
             # No images provided - add placeholder message
             story.append(Paragraph("No images were uploaded for this case.", heading_style))
             story.append(Spacer(1, 0.5*inch))
-        
+
         # Build PDF
         doc.build(story)
         return True
-        
+
     except Exception as e:
         logging.error(f"Error creating PDF: {str(e)}")
         return False
@@ -622,7 +622,7 @@ def create_pdf(images, case_title, notes, output_path, template='classic', orien
 def index():
     if current_user.is_authenticated:
         return redirect(url_for('dashboard'))
-    
+
     # For demo purposes, create and auto-login a demo user
     demo_user = User.query.filter_by(email='demo@example.com').first()
     if not demo_user:
@@ -636,10 +636,10 @@ def index():
         demo_user.set_password('demo123')
         db.session.add(demo_user)
         db.session.commit()
-    
+
     login_user(demo_user, remember=True)
     session.permanent = True
-    
+
     # Create demo data if none exists
     existing_patients = Patient.query.filter_by(user_id=demo_user.id).count()
     if existing_patients == 0:
@@ -661,7 +661,7 @@ def index():
         db.session.add(patient1)
         db.session.add(patient2)
         db.session.commit()
-        
+
         # Create demo cases
         case1 = Case(
             title='Initial Orthodontic Consultation',
@@ -697,7 +697,7 @@ def index():
         db.session.add(case2)
         db.session.add(case3)
         db.session.commit()
-    
+
     return redirect(url_for('dashboard'))
 
 @app.route('/dashboard')
@@ -719,37 +719,37 @@ def patient_list():
 def login():
     if current_user.is_authenticated:
         return redirect(url_for('dashboard'))
-    
+
     if request.method == 'POST':
         email = request.form.get('email')
         password = request.form.get('password')
         remember = bool(request.form.get('remember'))
-        
+
         if not email or not password:
             flash('Please provide both email and password.', 'error')
             return render_template('login.html')
-        
+
         user = User.query.filter_by(email=email.lower()).first()
-        
+
         if user and user.check_password(password):
             login_user(user, remember=remember)
             user.last_login = datetime.utcnow()
             db.session.commit()
-            
+
             next_page = request.args.get('next')
             if next_page:
                 return redirect(next_page)
             return redirect(url_for('dashboard'))
         else:
             flash('Invalid email or password.', 'error')
-    
+
     return render_template('login.html')
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     if current_user.is_authenticated:
         return redirect(url_for('dashboard'))
-    
+
     if request.method == 'POST':
         first_name = request.form.get('first_name', '').strip()
         last_name = request.form.get('last_name', '').strip()
@@ -759,30 +759,31 @@ def register():
         clinic_names = request.form.getlist('clinic_names[]')
         password = request.form.get('password', '')
         confirm_password = request.form.get('confirm_password', '')
-        
+
         # Filter out empty clinic names and strip whitespace
         clinic_names = [name.strip() for name in clinic_names if name.strip()]
-        
+
         # Validation
         if not all([first_name, last_name, email, department, position, password]) or not clinic_names:
             flash('Please fill in all required fields including at least one clinic.', 'error')
             return render_template('register.html')
-        
+
         if password != confirm_password:
             flash('Passwords do not match.', 'error')
             return render_template('register.html')
-        
+
         if len(password) < 8:
             flash('Password must be at least 8 characters long.', 'error')
             return render_template('register.html')
-        
+
         # Check if user already exists
         if User.query.filter_by(email=email).first():
             flash('An account with this email already exists.', 'error')
             return render_template('register.html')
-        
+
         # Create new user
         user = User(
+```python
             first_name=first_name,
             last_name=last_name,
             email=email,
@@ -790,11 +791,11 @@ def register():
             position=position
         )
         user.set_password(password)
-        
+
         try:
             db.session.add(user)
             db.session.commit()
-            
+
             # Create initial user settings with their clinics
             user_settings = UserSettings(
                 user_id=user.id,
@@ -803,17 +804,17 @@ def register():
                 position=position,
                 clinics_data=json.dumps(clinic_names)  # Store all clinics as JSON
             )
-            
+
             db.session.add(user_settings)
             db.session.commit()
-            
+
             flash('Registration successful! Please log in.', 'success')
             return redirect(url_for('login'))
         except Exception as e:
             db.session.rollback()
             flash('Registration failed. Please try again.', 'error')
             logging.error(f"Registration error: {e}")
-    
+
     return render_template('register.html')
 
 @app.route('/logout')
@@ -828,21 +829,21 @@ def forgot_password():
     """Handle forgot password requests"""
     if request.method == 'POST':
         email = request.form.get('email', '').strip().lower()
-        
+
         if not email:
             flash('Please provide an email address.', 'error')
             return render_template('forgot_password.html')
-        
+
         user = User.query.filter_by(email=email).first()
-        
+
         if user:
             # Generate reset token
             token = user.generate_reset_token()
             db.session.commit()
-            
+
             # Create reset URL
             reset_url = url_for('reset_password', token=token, _external=True)
-            
+
             # Send email (simplified version - in production you'd use a proper email service)
             try:
                 send_reset_email(user.email, user.first_name, reset_url)
@@ -853,44 +854,44 @@ def forgot_password():
         else:
             # Don't reveal whether email exists or not for security
             flash('If an account with that email exists, a password reset link has been sent.', 'info')
-        
+
         return redirect(url_for('login'))
-    
+
     return render_template('forgot_password.html')
 
 @app.route('/reset-password/<token>', methods=['GET', 'POST'])
 def reset_password(token):
     """Handle password reset with token"""
     user = User.query.filter_by(reset_token=token).first()
-    
+
     if not user or not user.verify_reset_token(token):
         flash('The password reset link is invalid or has expired.', 'error')
         return redirect(url_for('forgot_password'))
-    
+
     if request.method == 'POST':
         password = request.form.get('password', '')
         confirm_password = request.form.get('confirm_password', '')
-        
+
         if not password or not confirm_password:
             flash('Please provide both password fields.', 'error')
             return render_template('reset_password.html', token=token)
-        
+
         if password != confirm_password:
             flash('Passwords do not match.', 'error')
             return render_template('reset_password.html', token=token)
-        
+
         if len(password) < 8:
             flash('Password must be at least 8 characters long.', 'error')
             return render_template('reset_password.html', token=token)
-        
+
         # Update password and clear reset token
         user.set_password(password)
         user.clear_reset_token()
         db.session.commit()
-        
+
         flash('Your password has been reset successfully. Please log in.', 'success')
         return redirect(url_for('login'))
-    
+
     return render_template('reset_password.html', token=token)
 
 @app.route('/save_draft', methods=['POST'])
@@ -901,10 +902,10 @@ def save_draft():
         case_title = request.form.get('case_title', '').strip()
         notes = request.form.get('notes', '').strip()
         visit_type = request.form.get('visit_type', '').strip()
-        
+
         if not case_title:
             return jsonify({'success': False, 'message': 'Case title is required'})
-        
+
         # Get additional case information
         priority = request.form.get('priority', 'normal')
         category = request.form.get('category', 'orthodontics')
@@ -912,16 +913,16 @@ def save_draft():
         treatment_plan = request.form.get('treatment_plan', '').strip()
         diagnosis = request.form.get('diagnosis', '').strip()
         visit_description = request.form.get('visit_description', '').strip()
-        
+
         # Handle image categories
         image_categories = request.form.getlist('image_categories')
         image_categories_json = ','.join(image_categories) if image_categories else ''
-        
+
         # Get template and layout settings
         template = request.form.get('template', 'medical')
         orientation = request.form.get('orientation', 'portrait')
         images_per_slide = int(request.form.get('images_per_slide', 1))
-        
+
         # Handle patient info for drafts
         patient_id = None
         if visit_type == 'registration':
@@ -929,7 +930,7 @@ def save_draft():
             clinic = request.form.get('clinic', '').strip()
             first_name = request.form.get('first_name', '').strip()
             last_name = request.form.get('last_name', '').strip()
-            
+
             if all([mrn, clinic, first_name, last_name]):
                 # Check if patient exists
                 existing_patient = Patient.query.filter_by(mrn=mrn, user_id=current_user.id).first()
@@ -950,7 +951,7 @@ def save_draft():
             patient_id = request.form.get('patient_id', '').strip()
             if patient_id:
                 patient_id = int(patient_id)
-        
+
         # Save draft case (without PDF generation)
         draft_case = Case(
             title=f"[DRAFT] {case_title}",
@@ -971,12 +972,12 @@ def save_draft():
             diagnosis=diagnosis,
             image_categories=image_categories_json
         )
-        
+
         db.session.add(draft_case)
         db.session.commit()
-        
+
         return jsonify({'success': True, 'message': 'Draft saved successfully', 'draft_id': draft_case.id})
-        
+
     except Exception as e:
         return jsonify({'success': False, 'message': f'Error saving draft: {str(e)}'})
 
@@ -992,19 +993,19 @@ def send_reset_email(email, first_name, reset_url):
     # For now, this is a placeholder that logs the reset URL
     print(f"Password reset email would be sent to {email}")
     print(f"Reset URL: {reset_url}")
-    
+
     # You can uncomment and configure this for actual email sending:
     """
     smtp_server = "smtp.gmail.com"
     smtp_port = 587
     sender_email = "your-app@example.com"
     sender_password = "your-app-password"
-    
+
     message = MIMEMultipart("alternative")
     message["Subject"] = "Password Reset - Medical Case Manager"
     message["From"] = sender_email
     message["To"] = email
-    
+
     html = f'''
     <html>
       <body>
@@ -1017,10 +1018,10 @@ def send_reset_email(email, first_name, reset_url):
       </body>
     </html>
     '''
-    
+
     part = MIMEText(html, "html")
     message.attach(part)
-    
+
     with smtplib.SMTP(smtp_server, smtp_port) as server:
         server.starttls()
         server.login(sender_email, sender_password)
@@ -1032,10 +1033,10 @@ def success():
     success_info = session.get('success_info', {})
     if not success_info:
         return redirect(url_for('index'))
-    
+
     # Clear the session data
     session.pop('success_info', None)
-    
+
     return render_template('success.html', 
                          case_title=success_info.get('case_title', 'Unknown'),
                          template=success_info.get('template', 'unknown'),
@@ -1049,10 +1050,10 @@ def search_patients():
     """Search for patients by MRN"""
     data = request.get_json()
     mrn_search = data.get('mrn', '').strip()
-    
+
     if len(mrn_search) < 2:
         return jsonify({'patients': []})
-    
+
     # Search patients by MRN or name (partial match) for current user only
     patients = Patient.query.filter(
         Patient.user_id == current_user.id,
@@ -1063,7 +1064,7 @@ def search_patients():
             db.func.concat(Patient.first_name, ' ', Patient.last_name).ilike(f'%{mrn_search}%')
         )
     ).all()
-    
+
     patients_data = []
     for patient in patients:
         patients_data.append({
@@ -1073,7 +1074,7 @@ def search_patients():
             'last_name': patient.last_name,
             'clinic': patient.clinic
         })
-    
+
     return jsonify({'patients': patients_data})
 
 @app.route('/log')
@@ -1082,10 +1083,10 @@ def log():
     """Display all submitted cases with search and filter functionality"""
     search_query = request.args.get('search', '').strip()
     filter_param = request.args.get('filter', '').strip()
-    
+
     # Base query for current user
     query = Case.query.filter_by(user_id=current_user.id)
-    
+
     # Apply filters
     if filter_param:
         if filter_param.startswith('priority:'):
@@ -1098,7 +1099,7 @@ def log():
             query = query.filter(Case.title.ilike('[DRAFT]%'))
         elif filter_param == 'type:completed':
             query = query.filter(~Case.title.ilike('[DRAFT]%'))
-    
+
     if search_query:
         # Search in case title, notes, visit type, patient name, and MRN for current user only
         query = query.join(Patient, Case.patient_id == Patient.id, isouter=True).filter(
@@ -1114,7 +1115,7 @@ def log():
                 Patient.last_name.ilike(f'%{search_query}%')
             )
         )
-    
+
     cases = query.order_by(Case.created_at.desc()).all()
     return render_template('log.html', cases=cases, search_query=search_query, current_filter=filter_param)
 
@@ -1131,7 +1132,7 @@ def download_case(case_id):
     """Download PDF for a specific case"""
     case = Case.query.filter_by(id=case_id, user_id=current_user.id).first_or_404()
     pdf_path = os.path.join(app.config['UPLOAD_FOLDER'], case.pdf_filename)
-    
+
     if os.path.exists(pdf_path):
         return send_file(pdf_path, as_attachment=True, 
                         download_name=f"{case.title}_slides.pdf",
@@ -1149,35 +1150,35 @@ def upload_files():
         notes = request.form.get('notes', '').strip()
         visit_type = request.form.get('visit_type', '').strip()
         visit_description = request.form.get('visit_description', '').strip()
-        
+
         # Get additional case information
         priority = request.form.get('priority', 'normal')
         category = request.form.get('category', 'orthodontics')
         chief_complaint = request.form.get('chief_complaint', '').strip()
         treatment_plan = request.form.get('treatment_plan', '').strip()
         diagnosis = request.form.get('diagnosis', '').strip()
-        
+
         # Handle image categories
         image_categories = request.form.getlist('image_categories')
         image_categories_json = ','.join(image_categories) if image_categories else ''
-        
+
         # Get template and layout settings from form
         template = request.form.get('template', 'medical')
         orientation = request.form.get('orientation', 'portrait')
         images_per_slide = int(request.form.get('images_per_slide', 1))
-        
+
         if not case_title:
             flash('Please provide a case title.', 'error')
             return redirect(url_for('new_case'))
-        
+
         # Images are optional - no validation required
-            
+
         if not visit_type:
             flash('Please select a visit type.', 'error')
             return redirect(url_for('new_case'))
-        
+
         patient_id = None
-        
+
         # Handle visit-specific data
         if visit_type == 'registration':
             # Registration: Create new patient
@@ -1185,17 +1186,17 @@ def upload_files():
             clinic = request.form.get('clinic', '').strip()
             first_name = request.form.get('first_name', '').strip()
             last_name = request.form.get('last_name', '').strip()
-            
+
             if not all([mrn, clinic, first_name, last_name]):
                 flash('Please fill in all required patient information.', 'error')
                 return redirect(url_for('new_case'))
-            
+
             # Check if MRN already exists for this user
             existing_patient = Patient.query.filter_by(mrn=mrn, user_id=current_user.id).first()
             if existing_patient:
                 flash(f'Patient with MRN {mrn} already exists.', 'error')
                 return redirect(url_for('new_case'))
-            
+
             # Create new patient for current user
             new_patient = Patient(
                 mrn=mrn,
@@ -1207,24 +1208,24 @@ def upload_files():
             db.session.add(new_patient)
             db.session.commit()
             patient_id = new_patient.id
-            
+
         elif visit_type in ['orthodontic_visit', 'debond']:
             # Follow-up visit: Find existing patient
             patient_id = request.form.get('patient_id', '').strip()
-            
+
             if not patient_id:
                 flash('Please select a patient.', 'error')
                 return redirect(url_for('new_case'))
-            
+
             # Verify patient exists and belongs to current user
             patient = Patient.query.filter_by(id=patient_id, user_id=current_user.id).first()
             if not patient:
                 flash('Selected patient not found.', 'error')
                 return redirect(url_for('new_case'))
-        
+
         # Get visit description for follow-up visits
         visit_description = request.form.get('visit_description', '').strip() if visit_type != 'Registration' else None
-        
+
         # Handle specific image upload fields for the new structure
         image_fields = [
             'extra_oral_front', 'extra_oral_left', 'extra_oral_right',
@@ -1232,21 +1233,21 @@ def upload_files():
             'intra_oral_left', 'intra_oral_right'
         ]
         uploaded_files = []
-        
+
         for field_name in image_fields:
             if field_name in request.files:
                 file = request.files[field_name]
-                
+
                 if file and file.filename != '':
                     if not allowed_file(file.filename):
                         flash(f'Invalid file type for {field_name.upper()}. Please use JPEG, PNG, or WebP.', 'error')
                         return redirect(url_for('index'))
-                    
+
                     # Generate unique filename
                     filename = secure_filename(file.filename)
                     unique_filename = f"{uuid.uuid4()}_{field_name}_{filename}"
                     file_path = os.path.join(app.config['UPLOAD_FOLDER'], unique_filename)
-                    
+
                     try:
                         file.save(file_path)
                         # Optimize image immediately after upload
@@ -1256,11 +1257,11 @@ def upload_files():
                         logging.error(f"Error saving file {filename}: {str(e)}")
                         flash(f'Error saving file {filename}.', 'error')
                         return redirect(url_for('index'))
-        
+
         # Generate PDF
         pdf_filename = f"slides_{uuid.uuid4()}.pdf"
         pdf_path = os.path.join(app.config['UPLOAD_FOLDER'], pdf_filename)
-        
+
         # Get patient info for PDF if available
         patient_info = None
         if patient_id:
@@ -1272,7 +1273,7 @@ def upload_files():
                     'clinic': patient.clinic,
                     'visit_type': visit_type
                 }
-        
+
         if create_pdf(uploaded_files, case_title, notes, pdf_path, template, orientation, images_per_slide, patient_info):
             # Save case to database with visit information for current user
             case = Case(
@@ -1296,14 +1297,14 @@ def upload_files():
             )
             db.session.add(case)
             db.session.commit()
-            
+
             # Clean up uploaded image files
             for file_path in uploaded_files:
                 try:
                     os.unlink(file_path)
                 except:
                     pass
-            
+
             # Store success info in session for success page
             session['success_info'] = {
                 'case_title': case_title,
@@ -1313,12 +1314,12 @@ def upload_files():
                 'case_id': case.id,
                 'show_success_animation': True
             }
-            
+
             return redirect(url_for('new_case') + '?success=true')
         else:
             flash('Error generating PDF. Please try again.', 'error')
             return redirect(url_for('index'))
-            
+
     except Exception as e:
         logging.error(f"Error in upload_files: {str(e)}")
         flash('An error occurred while processing your request.', 'error')
@@ -1331,34 +1332,34 @@ def upload_single_files():
     try:
         logging.info(f"Upload request received from user {current_user.id}")
         logging.info(f"Request files: {list(request.files.keys())}")
-        
+
         if 'files' not in request.files:
             logging.warning("No 'files' key in request.files")
             return jsonify({'success': False, 'error': 'No files selected'})
-        
+
         files = request.files.getlist('files')
         logging.info(f"Found {len(files)} files")
-        
+
         if not files or all(f.filename == '' for f in files):
             logging.warning("No valid files found")
             return jsonify({'success': False, 'error': 'No files selected'})
-        
+
         uploaded_filenames = []
         upload_folder = app.config['UPLOAD_FOLDER']
-        
+
         # Create upload directory if it doesn't exist
         if not os.path.exists(upload_folder):
             os.makedirs(upload_folder)
             logging.info(f"Created upload directory: {upload_folder}")
-        
+
         for file in files:
             if file and file.filename and allowed_file(file.filename):
                 filename = secure_filename(file.filename)
                 unique_filename = f"{uuid.uuid4()}_{filename}"
                 filepath = os.path.join(upload_folder, unique_filename)
-                
+
                 logging.info(f"Saving file: {filename} as {unique_filename}")
-                
+
                 try:
                     file.save(filepath)
                     # Optimize the image
@@ -1375,10 +1376,10 @@ def upload_single_files():
                 error_msg = f"Invalid file: {file.filename if file else 'None'}"
                 logging.warning(error_msg)
                 return jsonify({'success': False, 'error': 'Invalid file type or empty file'})
-        
+
         logging.info(f"Upload completed successfully: {uploaded_filenames}")
         return jsonify({'success': True, 'filenames': uploaded_filenames})
-        
+
     except Exception as e:
         logging.error(f"Unexpected error in upload_single_files: {str(e)}")
         return jsonify({'success': False, 'error': f'Upload failed: {str(e)}'})
@@ -1389,27 +1390,27 @@ def upload_cropped_image():
     """Handle cropped image uploads"""
     try:
         logging.info(f"Crop upload request from user {current_user.id}")
-        
+
         if 'cropped_image' in request.files:
             cropped_file = request.files['cropped_image']
             placeholder_id = request.form.get('placeholder_id', '')
-            
+
             if cropped_file and cropped_file.filename:
                 upload_folder = app.config['UPLOAD_FOLDER']
                 if not os.path.exists(upload_folder):
                     os.makedirs(upload_folder)
-                
+
                 # Generate unique filename for cropped image
                 unique_filename = f"{uuid.uuid4()}_cropped.png"
                 filepath = os.path.join(upload_folder, unique_filename)
-                
+
                 try:
                     cropped_file.save(filepath)
                     optimize_image_for_pdf(filepath)
-                    
+
                     logging.info(f"Successfully saved cropped image: {unique_filename}")
                     return jsonify({'success': True, 'filename': unique_filename})
-                    
+
                 except Exception as e:
                     logging.error(f"Error saving cropped image: {str(e)}")
                     return jsonify({'success': False, 'error': f'Error saving cropped image: {str(e)}'})
@@ -1417,7 +1418,7 @@ def upload_cropped_image():
                 return jsonify({'success': False, 'error': 'No cropped image provided'})
         else:
             return jsonify({'success': False, 'error': 'No cropped image in request'})
-            
+
     except Exception as e:
         logging.error(f"Error in crop upload: {str(e)}")
         return jsonify({'success': False, 'error': f'Crop upload failed: {str(e)}'})
@@ -1425,117 +1426,61 @@ def upload_cropped_image():
 @app.route('/bulk_upload_categorize', methods=['POST'])
 @login_required
 def bulk_upload_categorize():
-    """Bulk upload with AI-powered image categorization"""
-    if 'files[]' not in request.files:
-        return jsonify({'success': False, 'error': 'No files selected'})
-    
-    files = request.files.getlist('files[]')
-    if not files or all(f.filename == '' for f in files):
-        return jsonify({'success': False, 'error': 'No files selected'})
-    
-    uploaded_files = []
-    upload_folder = app.config['UPLOAD_FOLDER']
-    
-    # Create upload directory if it doesn't exist
-    if not os.path.exists(upload_folder):
-        os.makedirs(upload_folder)
-    
-    # First, upload all files
-    file_paths = []
-    for file in files:
-        if file and allowed_file(file.filename):
-            filename = secure_filename(file.filename)
-            unique_filename = f"{uuid.uuid4()}_{filename}"
-            filepath = os.path.join(upload_folder, unique_filename)
-            
-            try:
-                file.save(filepath)
-                
-                # Optimize the image
-                optimize_image_for_pdf(filepath)
-                
-                file_paths.append(filepath)
-                uploaded_files.append({
-                    'filename': unique_filename,
-                    'original_name': filename,
-                    'path': filepath
-                })
-            except Exception as e:
-                logging.error(f"Error uploading file {filename}: {str(e)}")
-                return jsonify({'success': False, 'error': f'Error uploading {filename}: {str(e)}'})
-    
-    # Now classify all uploaded images using the trained AI model
+    """Handle bulk upload with AI categorization"""
     try:
-        from dental_ai_model import get_dental_classifier
+        if 'files[]' not in request.files:
+            return jsonify({'success': False, 'error': 'No files provided'})
+
+        files = request.files.getlist('files[]')
+        if not files or files[0].filename == '':
+            return jsonify({'success': False, 'error': 'No files selected'})
+
+        results = []
         classifier = get_dental_classifier()
-        
-        # Map dental AI categories to New Case layout categories
-        def map_dental_to_layout_category(dental_category):
-            mapping = {
-                'intraoral_left': 'intraoral_left_view',
-                'intraoral_right': 'intraoral_right_view', 
-                'intraoral_front': 'intraoral_frontal_view',
-                'upper_occlusal': 'intraoral_upper_occlusal_view',
-                'lower_occlusal': 'intraoral_lower_occlusal_view',
-                'extraoral_frontal': 'extraoral_frontal_view',
-                'extraoral_right': 'extraoral_right_view',
-                'extraoral_full_face_smile': 'extraoral_smiling_view',
-                'extraoral_zoomed_smile': 'extraoral_smiling_view'
-            }
-            return mapping.get(dental_category, 'other')
-        
-        # Use the custom trained model for classification
-        classification_results = []
-        for i, file_path in enumerate(file_paths):
-            try:
-                result = classifier.classify_image(file_path)
-                dental_category = result.get('classification', 'other')
-                layout_category = map_dental_to_layout_category(dental_category)
-                
-                classification_results.append({
-                    'filename': uploaded_files[i]['filename'],
-                    'classification': layout_category,
-                    'confidence': result.get('confidence', 0.0),
-                    'category_name': result.get('category_name', 'Other'),
-                    'dental_category': dental_category
-                })
-            except Exception as e:
-                logging.error(f"Classification failed for {file_path}: {e}")
-                classification_results.append({
-                    'filename': uploaded_files[i]['filename'],
-                    'classification': 'other',
-                    'confidence': 0.1,
-                    'category_name': 'Other',
-                    'dental_category': 'other'
-                })
-        summary = get_classification_summary(classification_results)
-        
-        # Merge classification results with uploaded files
-        for i, result in enumerate(classification_results):
-            if i < len(uploaded_files):
-                uploaded_files[i].update({
-                    'classification': result['classification'],
-                    'confidence': result['confidence'],
-                    'reasoning': result['reasoning'],
-                    'ai_success': result['success']
-                })
-        
+
+        for file in files:
+            if file and allowed_file(file.filename):
+                # Save file
+                filename = secure_filename(file.filename)
+                timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+                unique_filename = f"{timestamp}_{filename}"
+                filepath = os.path.join(app.config['UPLOAD_FOLDER'], unique_filename)
+                file.save(filepath)
+
+                # Classify with AI
+                try:
+                    classification_result = classifier.classify_image(filepath)
+                    logging.info(f"AI classification result: {classification_result}")
+
+                    results.append({
+                        'filename': unique_filename,
+                        'original_name': filename,
+                        'classification': classification_result['classification'],
+                        'confidence': classification_result['confidence'],
+                        'reasoning': classification_result.get('reasoning', 'AI classification')
+                    })
+                except Exception as e:
+                    logging.error(f"Error during AI classification: {e}")
+                    # Fallback classification
+                    results.append({
+                        'filename': unique_filename,
+                        'original_name': filename,
+                        'classification': 'intraoral_frontal_view',
+                        'confidence': 0.5,
+                        'reasoning': 'Default classification due to error'
+                    })
+
+        logging.info(f"Bulk upload completed: {len(results)} files processed")
+
         return jsonify({
             'success': True,
-            'files': uploaded_files,
-            'classification_summary': summary,
-            'message': f'Successfully uploaded and categorized {len(uploaded_files)} files'
+            'files': results,
+            'classification_summary': f"Processed {len(results)} images with AI categorization"
         })
-        
+
     except Exception as e:
-        logging.error(f"Error during AI classification: {str(e)}")
-        # Return files without classification if AI fails
-        return jsonify({
-            'success': True,
-            'files': uploaded_files,
-            'classification_error': str(e),
-            'message': f'Successfully uploaded {len(uploaded_files)} files (classification unavailable)'
-        })
+        logging.error(f"Bulk upload error: {e}")
+        return jsonify({'success': False, 'error': str(e)})
 
 @app.errorhandler(413)
 def too_large(e):
@@ -1558,10 +1503,10 @@ def api_cases():
             session.permanent = True
         else:
             return jsonify([])
-    
+
     cases = Case.query.filter_by(user_id=current_user.id).order_by(Case.created_at.desc()).all()
     cases_data = []
-    
+
     for case in cases:
         case_data = {
             'id': case.id,
@@ -1571,7 +1516,7 @@ def api_cases():
             'image_count': case.image_count,
             'patient': None
         }
-        
+
         if case.patient:
             case_data['patient'] = {
                 'id': case.patient.id,
@@ -1580,12 +1525,12 @@ def api_cases():
                 'mrn': case.patient.mrn,
                 'clinic': case.patient.clinic
             }
-            
+
         if case.visit_description:
             case_data['visit_description'] = case.visit_description
-            
+
         cases_data.append(case_data)
-    
+
     return jsonify(cases_data)
 
 @app.route('/api/patients')
@@ -1599,13 +1544,13 @@ def api_patients():
             session.permanent = True
         else:
             return jsonify([])
-    
+
     patients = Patient.query.filter_by(user_id=current_user.id).order_by(Patient.created_at.desc()).all()
     patients_data = []
-    
+
     for patient in patients:
         patient_cases = Case.query.filter_by(patient_id=patient.id, user_id=current_user.id).order_by(Case.created_at.desc()).all()
-        
+
         cases_data = []
         for case in patient_cases:
             case_data = {
@@ -1618,7 +1563,7 @@ def api_patients():
             if case.visit_description:
                 case_data['visit_description'] = case.visit_description
             cases_data.append(case_data)
-        
+
         patient_data = {
             'id': patient.id,
             'first_name': patient.first_name,
@@ -1629,9 +1574,9 @@ def api_patients():
             'cases_count': len(cases_data),
             'cases': cases_data
         }
-        
+
         patients_data.append(patient_data)
-    
+
     return jsonify(patients_data)
 
 @app.route('/api/user-settings', methods=['GET'])
@@ -1641,15 +1586,15 @@ def api_user_settings():
     logging.info(f"User authenticated: {current_user.is_authenticated}")
     if hasattr(current_user, 'id'):
         logging.info(f"Current user ID: {current_user.id}")
-    
+
     if not current_user.is_authenticated:
         logging.info("User not authenticated, returning defaults")
         return jsonify({'clinics': ['KFMC', 'DC']})
-    
+
     # Get settings from database
     user_settings = UserSettings.query.filter_by(user_id=current_user.id).first()
     logging.info(f"Found user settings: {user_settings}")
-    
+
     if user_settings:
         # Parse clinics from JSON
         try:
@@ -1658,7 +1603,7 @@ def api_user_settings():
         except (json.JSONDecodeError, TypeError) as e:
             logging.error(f"Error parsing clinics JSON: {e}")
             clinics = ['KFMC', 'DC']
-        
+
         settings = {
             'full_name': user_settings.full_name or '',
             'email': user_settings.email or '',
@@ -1666,7 +1611,7 @@ def api_user_settings():
             'gender': user_settings.gender or '',
             'clinics': clinics
         }
-        
+
         # Convert profile image path to URL if exists
         if user_settings.profile_image:
             settings['profile_image'] = url_for('serve_profile_image', filename=os.path.basename(user_settings.profile_image))
@@ -1679,7 +1624,7 @@ def api_user_settings():
             'gender': '',
             'clinics': []
         }
-    
+
     logging.info(f"Returning settings: {settings}")
     return jsonify(settings)
 
@@ -1708,11 +1653,11 @@ def api_model_status():
     try:
         from dental_ai_model import get_dental_classifier
         from training_setup import TrainingDataManager
-        
+
         classifier = get_dental_classifier()
         trainer = TrainingDataManager()
         stats = trainer.get_training_stats()
-        
+
         return jsonify({
             'is_trained': classifier.is_trained,
             'training_images': stats['total_images'],
@@ -1732,34 +1677,34 @@ def test_ai_classification():
     try:
         if 'test_image' not in request.files:
             return jsonify({'success': False, 'error': 'No image provided'})
-        
+
         file = request.files['test_image']
         if not file or file.filename == '':
             return jsonify({'success': False, 'error': 'No image provided'})
-        
+
         if not allowed_file(file.filename):
             return jsonify({'success': False, 'error': 'Invalid file type'})
-        
+
         # Save temporary file
         temp_filename = f"test_{uuid.uuid4()}_{secure_filename(file.filename)}"
         temp_path = os.path.join(app.config['UPLOAD_FOLDER'], temp_filename)
         file.save(temp_path)
-        
+
         try:
             # Optimize image
             optimize_image_for_pdf(temp_path)
-            
+
             # Classify the image
             from dental_ai_model import get_dental_classifier
             classifier = get_dental_classifier()
             result = classifier.classify_image(temp_path)
-            
+
             # Store temp file path for potential training data collection
             session['last_test_image'] = temp_path
             session['last_test_result'] = result
-            
+
             # Don't clean up temp file yet - keep for training data collection
-            
+
             return jsonify({
                 'success': True,
                 'classification': result['classification'],
@@ -1768,13 +1713,13 @@ def test_ai_classification():
                 'category_name': result['category_name'],
                 'temp_path': temp_path  # Return for correction endpoint
             })
-            
+
         except Exception as e:
             # Clean up temp file on error
             if os.path.exists(temp_path):
                 os.unlink(temp_path)
             raise e
-            
+
     except Exception as e:
         logging.error(f"Error in AI classification test: {e}")
         return jsonify({'success': False, 'error': str(e)})
@@ -1794,10 +1739,10 @@ def trigger_training():
 @app.route('/save_settings', methods=['POST'])
 def save_settings():
     """Save user settings to database"""
-    
+
     if not current_user.is_authenticated:
         return jsonify({'success': False, 'message': 'Not authenticated'}), 401
-    
+
     try:
         full_name = request.form.get('full_name', '').strip()
         email = request.form.get('email', '').strip()
@@ -1805,7 +1750,7 @@ def save_settings():
         gender = request.form.get('gender', '').strip()
         # Handle both clinics and clinics[] form field names
         clinics = request.form.getlist('clinics') or request.form.getlist('clinics[]')
-        
+
         # Handle profile image upload
         profile_image_path = None
         if 'profile_image' in request.files:
@@ -1814,26 +1759,26 @@ def save_settings():
                 # Create profiles directory if it doesn't exist
                 profiles_dir = os.path.join('uploads', 'profiles')
                 os.makedirs(profiles_dir, exist_ok=True)
-                
+
                 # Generate unique filename
                 filename = secure_filename(file.filename)
                 timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
                 filename = f"profile_{timestamp}_{filename}"
                 filepath = os.path.join(profiles_dir, filename)
-                
+
                 # Save and optimize the image
                 file.save(filepath)
                 optimize_image_for_pdf(filepath, max_size=(300, 300), quality=80)
                 profile_image_path = filepath
-        
+
         # Clean up clinic names and ensure we have at least default clinics
         clinics = [clinic.strip() for clinic in clinics if clinic.strip()]
         if not clinics:
             clinics = ['KFMC', 'DC']
-        
+
         # Get or create user settings
         user_settings = UserSettings.query.filter_by(user_id=current_user.id).first()
-        
+
         if user_settings:
             # Update existing settings
             user_settings.full_name = full_name
@@ -1856,14 +1801,14 @@ def save_settings():
                 profile_image=profile_image_path
             )
             db.session.add(user_settings)
-        
+
         db.session.commit()
-        
+
         logging.info(f"Settings saved to database: {full_name}, {email}, {position}, {gender}, {clinics}")
-        
+
         # Return JSON response for AJAX
         return jsonify({'success': True, 'message': 'Settings saved successfully!'})
-        
+
     except Exception as e:
         db.session.rollback()
         logging.error(f"Error saving settings: {str(e)}")
@@ -1887,10 +1832,10 @@ def correct_classification():
         data = request.get_json()
         correct_category = data.get('correct_category')
         temp_path = data.get('temp_path')
-        
+
         if not correct_category or not temp_path or not os.path.exists(temp_path):
             return jsonify({'success': False, 'error': 'Invalid correction data'})
-        
+
         # Map frontend categories to dental AI categories
         category_mapping = {
             'intraoral_left_view': 'intraoral_left',
@@ -1902,29 +1847,30 @@ def correct_classification():
             'extraoral_right_view': 'extraoral_right',
             'extraoral_smiling_view': 'extraoral_full_face_smile'
         }
-        
+
         dental_category = category_mapping.get(correct_category, correct_category)
-        
+
         # Add to training data
         from training_setup import TrainingDataManager
         trainer = TrainingDataManager()
         trainer.add_training_image(temp_path, dental_category, correct_classification=False)
-        
+
         # Clean up temp file
         os.unlink(temp_path)
-        
+
         # Get updated training stats
         stats = trainer.get_training_stats()
-        
+
         logging.info(f"Added corrected classification: {dental_category}")
-        
+
         return jsonify({
             'success': True,
             'message': f'Added to {dental_category} training data',
             'training_stats': stats
         })
-        
+
     except Exception as e:
         logging.error(f"Error correcting classification: {e}")
         return jsonify({'success': False, 'error': str(e)})
 
+# Analyzing the code and applying the changes to fix bulk upload AI categorization.

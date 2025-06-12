@@ -1450,28 +1450,56 @@ function handleBulkUpload(input) {
 function updateLayoutGuideWithResults(data) {
     const { files } = data;
     
-    // Map classifications to placeholder IDs
+    console.log('Processing AI categorization results:', files);
+    
+    // Map classifications to placeholder IDs (expand mapping for all possible classifications)
     const classificationMap = {
         'extraoral_right_view': 'placeholder_extraoral_right',
         'extraoral_frontal_view': 'placeholder_extraoral_frontal',
         'extraoral_smiling_view': 'placeholder_extraoral_smiling',
-        'extraoral_teeth_smile_view': 'placeholder_extraoral_smiling', // Map teeth smile to smiling
+        'extraoral_teeth_smile_view': 'placeholder_extraoral_smiling',
+        'extraoral_full_face_smile': 'placeholder_extraoral_smiling',
+        'extraoral_zoomed_smile': 'placeholder_extraoral_smiling',
         'intraoral_right_view': 'placeholder_intraoral_right',
         'intraoral_frontal_view': 'placeholder_intraoral_frontal',
+        'intraoral_front': 'placeholder_intraoral_frontal',
         'intraoral_left_view': 'placeholder_intraoral_left',
         'intraoral_upper_occlusal_view': 'placeholder_intraoral_upper',
-        'intraoral_lower_occlusal_view': 'placeholder_intraoral_lower'
+        'upper_occlusal': 'placeholder_intraoral_upper',
+        'intraoral_lower_occlusal_view': 'placeholder_intraoral_lower',
+        'lower_occlusal': 'placeholder_intraoral_lower'
     };
+    
+    let placedImages = 0;
     
     // Update each classified image in its designated position
     files.forEach((file, index) => {
         const placeholderId = classificationMap[file.classification];
+        console.log(`File ${file.original_name}: classification=${file.classification}, placeholderId=${placeholderId}`);
+        
         if (placeholderId) {
-            setTimeout(() => {
-                updatePlaceholderWithDirectImage(placeholderId, file);
-            }, index * 200); // Staggered placement for visual effect
+            const placeholder = document.getElementById(placeholderId);
+            if (placeholder) {
+                setTimeout(() => {
+                    updatePlaceholderWithDirectImage(placeholderId, file);
+                    placedImages++;
+                    console.log(`Placed image ${file.original_name} in ${placeholderId}`);
+                }, index * 300); // Staggered placement for visual effect
+            } else {
+                console.error(`Placeholder ${placeholderId} not found for ${file.original_name}`);
+            }
+        } else {
+            console.warn(`No placeholder mapping found for classification: ${file.classification}`);
         }
     });
+    
+    // Show completion message after all images are processed
+    setTimeout(() => {
+        console.log(`Successfully placed ${placedImages} out of ${files.length} images`);
+        if (placedImages > 0) {
+            showSuccessPopup(`Successfully organized ${placedImages} images in the layout guide!`);
+        }
+    }, files.length * 300 + 500);
 }
 
 function displayBulkUploadResults(data) {
@@ -2208,110 +2236,88 @@ function showUploadingState(placeholder) {
 
 function updatePlaceholderWithDirectImage(placeholderId, file) {
     const placeholder = document.getElementById(placeholderId);
-    if (!placeholder) return;
+    if (!placeholder) {
+        console.error(`Placeholder ${placeholderId} not found`);
+        return;
+    }
+    
+    console.log(`Updating placeholder ${placeholderId} with file ${file.filename}`);
     
     const confidenceColor = getConfidenceColor(file.confidence);
     const isExtraoral = file.classification.startsWith('extraoral');
     const isMobile = window.innerWidth <= 768;
     
-    // Apply proper sizing - fit image to container with cropping for tight borders
+    // Apply proper sizing - fit image to container with proper aspect ratio
     const imageClasses = isExtraoral ? 'layout-img extraoral' : 'layout-img';
-    const imageStyle = `height: 100%; width: 100%; object-fit: cover; cursor: pointer; border-radius: 0.375rem;`;
+    const imageStyle = `height: 100%; width: 100%; object-fit: contain; cursor: pointer; border-radius: 0.375rem;`;
     
     // Animate the transition
     placeholder.style.transition = 'all 0.3s ease';
     placeholder.classList.remove('border-dashed');
     placeholder.classList.add('border-success');
     
-    // Remove padding to eliminate space between border and image
-    placeholder.classList.remove('p-3');
-    placeholder.style.padding = '0';
+    // Set minimum height for proper display
+    const minHeight = isMobile ? '120px' : '150px';
+    placeholder.style.minHeight = minHeight;
+    placeholder.style.height = 'auto';
     
-    // Create image element to get natural dimensions
-    const tempImg = new Image();
-    tempImg.onload = function() {
-        // Calculate container dimensions based on image aspect ratio
-        const containerWidth = placeholder.offsetWidth;
-        const imageAspectRatio = this.naturalWidth / this.naturalHeight;
-        
-        // Calculate container dimensions to fit image's natural aspect ratio
-        const isMobile = window.innerWidth <= 768;
-        
-        let effectiveAspectRatio;
-        if (isExtraoral) {
-            // For extraoral images (rotated 90 degrees), swap width/height ratio
-            effectiveAspectRatio = 1 / imageAspectRatio;
-        } else {
-            // For intraoral images, use original aspect ratio
-            effectiveAspectRatio = imageAspectRatio;
-        }
-        
-        // Calculate height based on container width and image aspect ratio
-        let containerHeight = containerWidth / effectiveAspectRatio;
-        
-        // Apply specific size constraints for different image types
-        const isUpperLower = file.classification.includes('upper') || file.classification.includes('lower');
-        
-        let maxHeight, minHeight;
-        if (isUpperLower) {
-            // Make upper/lower jaw images square with fixed dimensions
-            if (file.classification.includes('lower')) {
-                // Lower jaw images - perfect squares
-                containerHeight = isMobile ? 60 : 75;
-                containerWidth = containerHeight; // Force square
-            } else {
-                // Upper jaw images - also perfect squares
-                containerHeight = isMobile ? 60 : 75;
-                containerWidth = containerHeight; // Force square
-            }
-        } else {
-            // Regular constraints for other images
-            maxHeight = isMobile ? 250 : 350;
-            minHeight = isMobile ? 60 : 80;
-            containerHeight = Math.max(minHeight, Math.min(maxHeight, containerHeight));
-        }
-        
-        // Update placeholder to match image dimensions exactly
-        placeholder.style.height = `${containerHeight}px`;
-        placeholder.style.minHeight = `${containerHeight}px`;
-        if (isUpperLower) {
-            placeholder.style.width = `${containerWidth}px`;
-            placeholder.style.minWidth = `${containerWidth}px`;
-        }
-    };
-    tempImg.src = `/uploads/${file.filename}`;
-    
+    // Add a loading indicator first
     placeholder.innerHTML = `
-        <div class="position-relative w-100 h-100">
-            <img src="/uploads/${file.filename}" alt="${file.original_name}" class="${imageClasses}" style="${imageStyle}" onclick="showImageModal('/uploads/${file.filename}', '${file.original_name}', '${file.classification}')">
-            <span class="badge ${confidenceColor} position-absolute top-0 end-0 m-1" style="font-size: 0.7rem;">
-                ${Math.round(file.confidence * 100)}%
-            </span>
-            <div class="position-absolute" style="top: 5px; left: 5px; z-index: 10; display: flex; flex-direction: column; gap: 3px;">
-                <button type="button" class="btn btn-sm btn-danger" onclick="event.preventDefault(); event.stopPropagation(); removeDirectImage('${placeholderId}')" style="padding: ${isMobile ? '0.2rem 0.3rem' : '0.25rem 0.4rem'}; border-radius: 50%; width: ${isMobile ? '20px' : '24px'}; height: ${isMobile ? '20px' : '24px'}; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 4px rgba(0,0,0,0.3);">
-                    <i class="bi bi-x" style="font-size: ${isMobile ? '0.6rem' : '0.8rem'};"></i>
-                </button>
-                <button type="button" class="btn btn-sm btn-warning" onclick="event.preventDefault(); event.stopPropagation(); replaceDirectImage('${placeholderId}')" style="padding: ${isMobile ? '0.2rem 0.3rem' : '0.25rem 0.4rem'}; border-radius: 50%; width: ${isMobile ? '20px' : '24px'}; height: ${isMobile ? '20px' : '24px'}; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 4px rgba(0,0,0,0.3);" title="Replace image">
-                    <i class="bi bi-arrow-repeat" style="font-size: ${isMobile ? '0.5rem' : '0.7rem'};"></i>
-                </button>
-                <button type="button" class="btn btn-sm btn-primary" onclick="event.preventDefault(); event.stopPropagation(); cropImage('/uploads/${file.filename}', '${placeholderId}')" style="padding: ${isMobile ? '0.2rem 0.3rem' : '0.25rem 0.4rem'}; border-radius: 50%; width: ${isMobile ? '20px' : '24px'}; height: ${isMobile ? '20px' : '24px'}; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 4px rgba(0,0,0,0.3);" title="Crop image">
-                    <i class="bi bi-crop" style="font-size: ${isMobile ? '0.5rem' : '0.7rem'};"></i>
-                </button>
+        <div class="d-flex align-items-center justify-content-center h-100">
+            <div class="spinner-border text-success" role="status">
+                <span class="visually-hidden">Loading...</span>
             </div>
         </div>
-        <input type="hidden" name="image_files" value="${file.filename}">
     `;
     
-    // Remove onclick handler from the placeholder to prevent accidental uploads
-    placeholder.removeAttribute('onclick');
+    // Load image and update placeholder
+    const img = new Image();
+    img.onload = function() {
+        placeholder.innerHTML = `
+            <div class="position-relative w-100 h-100">
+                <img src="/uploads/${file.filename}" alt="${file.original_name}" class="${imageClasses}" style="${imageStyle}" onclick="showImageModal('/uploads/${file.filename}', '${file.original_name}', '${file.classification}')">
+                <span class="badge ${confidenceColor} position-absolute top-0 end-0 m-1" style="font-size: 0.7rem;">
+                    ${Math.round(file.confidence * 100)}% AI
+                </span>
+                <div class="position-absolute" style="top: 5px; left: 5px; z-index: 10; display: flex; flex-direction: column; gap: 3px;">
+                    <button type="button" class="btn btn-sm btn-danger" onclick="event.preventDefault(); event.stopPropagation(); removeDirectImage('${placeholderId}')" style="padding: 0.25rem 0.4rem; border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 4px rgba(0,0,0,0.3);" title="Remove image">
+                        <i class="bi bi-x" style="font-size: 0.8rem;"></i>
+                    </button>
+                    <button type="button" class="btn btn-sm btn-warning" onclick="event.preventDefault(); event.stopPropagation(); replaceDirectImage('${placeholderId}')" style="padding: 0.25rem 0.4rem; border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 4px rgba(0,0,0,0.3);" title="Replace image">
+                        <i class="bi bi-arrow-repeat" style="font-size: 0.7rem;"></i>
+                    </button>
+                </div>
+            </div>
+            <input type="hidden" name="image_files" value="${file.filename}">
+            <div class="small text-center text-muted mt-1">${file.original_name}</div>
+        `;
+        
+        // Remove onclick handler from the placeholder to prevent accidental uploads
+        placeholder.removeAttribute('onclick');
+        
+        // Animate appearance
+        placeholder.style.opacity = '0';
+        placeholder.style.transform = 'scale(0.8)';
+        setTimeout(() => {
+            placeholder.style.opacity = '1';
+            placeholder.style.transform = 'scale(1)';
+        }, 100);
+        
+        console.log(`Successfully updated placeholder ${placeholderId} with image`);
+    };
     
-    // Animate appearance
-    placeholder.style.opacity = '0';
-    placeholder.style.transform = 'scale(0.8)';
-    setTimeout(() => {
-        placeholder.style.opacity = '1';
-        placeholder.style.transform = 'scale(1)';
-    }, 100);
+    img.onerror = function() {
+        console.error(`Failed to load image: /uploads/${file.filename}`);
+        placeholder.innerHTML = `
+            <div class="text-center text-danger p-3">
+                <i class="bi bi-exclamation-triangle"></i>
+                <div class="small">Failed to load image</div>
+                <div class="small">${file.original_name}</div>
+            </div>
+        `;
+    };
+    
+    img.src = `/uploads/${file.filename}`;
 }
 
 function replaceDirectImage(placeholderId) {
