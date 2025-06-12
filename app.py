@@ -5,7 +5,7 @@ from flask import Flask, render_template, request, redirect, url_for, flash, sen
 from werkzeug.utils import secure_filename
 from werkzeug.middleware.proxy_fix import ProxyFix
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
-from PIL import Image
+from PIL import Image, ExifTags
 from reportlab.lib.pagesizes import letter, A4
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Image as RLImage
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
@@ -92,6 +92,26 @@ def optimize_image_for_pdf(image_path, max_size=(800, 600), quality=70):
     """Quickly optimize image for PDF generation"""
     try:
         with Image.open(image_path) as img:
+            # Handle EXIF orientation to prevent unwanted rotation
+            try:
+                # Use ImageOps to handle EXIF orientation automatically
+                from PIL import ImageOps
+                img = ImageOps.exif_transpose(img)
+            except (AttributeError, TypeError, ImportError):
+                # Fallback to manual EXIF handling if ImageOps not available
+                try:
+                    exif = img._getexif()
+                    if exif is not None:
+                        orientation = exif.get(274)  # Orientation tag
+                        if orientation == 3:
+                            img = img.rotate(180, expand=True)
+                        elif orientation == 6:
+                            img = img.rotate(270, expand=True)
+                        elif orientation == 8:
+                            img = img.rotate(90, expand=True)
+                except:
+                    pass
+            
             # Convert to RGB if needed
             if img.mode in ('RGBA', 'LA', 'P'):
                 img = img.convert('RGB')
@@ -116,6 +136,25 @@ def optimize_image(image_path, max_width=800, max_height=600, quality=85):
     """Optimize image for PDF generation"""
     try:
         with Image.open(image_path) as img:
+            # Handle EXIF orientation to prevent unwanted rotation
+            try:
+                from PIL import ImageOps
+                img = ImageOps.exif_transpose(img)
+            except (AttributeError, TypeError, ImportError):
+                # Fallback to manual EXIF handling if ImageOps not available
+                try:
+                    exif = img._getexif()
+                    if exif is not None:
+                        orientation = exif.get(274)  # Orientation tag
+                        if orientation == 3:
+                            img = img.rotate(180, expand=True)
+                        elif orientation == 6:
+                            img = img.rotate(270, expand=True)
+                        elif orientation == 8:
+                            img = img.rotate(90, expand=True)
+                except:
+                    pass
+            
             # Convert to RGB if necessary
             if img.mode in ('RGBA', 'LA', 'P'):
                 img = img.convert('RGB')
@@ -1319,20 +1358,65 @@ def upload_files():
         flash('An error occurred while processing your request.', 'error')
         return redirect(url_for('index'))
 
-@app.route('/upload_files', methods=['POST'])
+@app.route('/upload_single_files', methods=['POST'])
 @login_required
 def upload_single_files():
-    """Handle single file uploads for direct placement"""
+    """Handle single file uploads for direct placement - BYPASSES AI CLASSIFICATION"""
     try:
-        logging.info(f"Upload request received from user {current_user.id}")
+        logging.info(f"Direct upload request from user {current_user.id}")
         logging.info(f"Request files: {list(request.files.keys())}")
+        logging.info(f"Request form: {list(request.form.keys())}")
 
+        # Check for direct upload (single file with forced classification)
+        direct_classification = request.form.get('direct_classification')
+        placeholder_id = request.form.get('placeholder_id')
+        
+        if direct_classification and placeholder_id:
+            logging.info(f"DIRECT UPLOAD: {direct_classification} → {placeholder_id}")
+            
+            # Handle single file direct upload (bypass AI)
+            if 'file' not in request.files:
+                return jsonify({'success': False, 'error': 'No file provided for direct upload'})
+            
+            file = request.files['file']
+            if not file or file.filename == '':
+                return jsonify({'success': False, 'error': 'No file selected'})
+            
+            if not allowed_file(file.filename):
+                return jsonify({'success': False, 'error': 'Invalid file type'})
+            
+            upload_folder = app.config['UPLOAD_FOLDER']
+            if not os.path.exists(upload_folder):
+                os.makedirs(upload_folder)
+            
+            # Generate unique filename
+            filename = secure_filename(file.filename)
+            unique_filename = f"{uuid.uuid4()}_direct_{direct_classification}_{filename}"
+            filepath = os.path.join(upload_folder, unique_filename)
+            
+            try:
+                file.save(filepath)
+                optimize_image_for_pdf(filepath)
+                
+                logging.info(f"DIRECT UPLOAD SUCCESS: {unique_filename} classified as {direct_classification}")
+                return jsonify({
+                    'success': True, 
+                    'filename': unique_filename,
+                    'classification': direct_classification,
+                    'message': f'Image uploaded directly to {direct_classification}'
+                })
+                
+            except Exception as e:
+                logging.error(f"Error in direct upload: {str(e)}")
+                return jsonify({'success': False, 'error': f'Upload failed: {str(e)}'})
+        
+        # Original bulk upload logic (with AI classification)
         if 'files' not in request.files:
             logging.warning("No 'files' key in request.files")
             return jsonify({'success': False, 'error': 'No files selected'})
 
         files = request.files.getlist('files')
-        logging.info(f"Found {len(files)} files")
+        logging.info(f"Found {len(files)} files for bulk upload")
 
         if not files or all(f.filename == '' for f in files):
             logging.warning("No valid files found")
@@ -1371,7 +1455,7 @@ def upload_single_files():
                 logging.warning(error_msg)
                 return jsonify({'success': False, 'error': 'Invalid file type or empty file'})
 
-        logging.info(f"Upload completed successfully: {uploaded_filenames}")
+        logging.info(f"Bulk upload completed successfully: {uploaded_filenames}")
         return jsonify({'success': True, 'filenames': uploaded_filenames})
 
     except Exception as e:
@@ -1417,6 +1501,73 @@ def upload_cropped_image():
         logging.error(f"Error in crop upload: {str(e)}")
         return jsonify({'success': False, 'error': f'Crop upload failed: {str(e)}'})
 
+@app.route('/edit_image', methods=['POST'])
+@login_required
+def edit_image():
+    """Handle image editing (rotation, cropping)"""
+    try:
+        data = request.get_json()
+        image_filename = data.get('image_filename')
+        placeholder_id = data.get('placeholder_id')
+        rotation = data.get('rotation', 0)
+        crop_data = data.get('crop_data')
+        
+        if not image_filename:
+            return jsonify({'success': False, 'error': 'No image filename provided'})
+        
+        # Get the original image path
+        original_path = os.path.join(app.config['UPLOAD_FOLDER'], image_filename)
+        if not os.path.exists(original_path):
+            return jsonify({'success': False, 'error': 'Original image not found'})
+        
+        # Create edited image
+        with Image.open(original_path) as img:
+            # Apply rotation if specified
+            if rotation != 0:
+                img = img.rotate(-rotation, expand=True)  # Negative for correct direction
+            
+            # Apply cropping if specified
+            if crop_data:
+                # Convert relative crop coordinates to absolute
+                img_width, img_height = img.size
+                crop_x = int((crop_data['x'] / crop_data['imageWidth']) * img_width)
+                crop_y = int((crop_data['y'] / crop_data['imageHeight']) * img_height)
+                crop_w = int((crop_data['width'] / crop_data['imageWidth']) * img_width)
+                crop_h = int((crop_data['height'] / crop_data['imageHeight']) * img_height)
+                
+                # Ensure crop coordinates are within image bounds
+                crop_x = max(0, min(crop_x, img_width))
+                crop_y = max(0, min(crop_y, img_height))
+                crop_w = max(1, min(crop_w, img_width - crop_x))
+                crop_h = max(1, min(crop_h, img_height - crop_y))
+                
+                # Crop the image
+                img = img.crop((crop_x, crop_y, crop_x + crop_w, crop_y + crop_h))
+            
+            # Save the edited image with a new filename
+            edited_filename = f"{uuid.uuid4()}_edited_{image_filename}"
+            edited_path = os.path.join(app.config['UPLOAD_FOLDER'], edited_filename)
+            
+            # Convert to RGB if needed before saving
+            if img.mode in ('RGBA', 'LA', 'P'):
+                img = img.convert('RGB')
+            
+            img.save(edited_path, 'JPEG', quality=90, optimize=True)
+            
+            # Optimize for PDF
+            optimize_image_for_pdf(edited_path)
+            
+            logging.info(f"Successfully edited image: {edited_filename}")
+            return jsonify({
+                'success': True, 
+                'filename': edited_filename,
+                'message': 'Image edited successfully!'
+            })
+    
+    except Exception as e:
+        logging.error(f"Error editing image: {str(e)}")
+        return jsonify({'success': False, 'error': f'Failed to edit image: {str(e)}'})
+
 @app.route('/bulk_upload_categorize', methods=['POST'])
 @login_required
 def bulk_upload_categorize():
@@ -1429,19 +1580,20 @@ def bulk_upload_categorize():
         if not files or files[0].filename == '':
             return jsonify({'success': False, 'error': 'No files selected'})
 
-        # Map modelmhanna AI categories to frontend expected categories
+        # Map modelmhanna AI categories to frontend expected categories  
         def map_ai_to_frontend_category(ai_category):
             """Convert modelmhanna AI categories to frontend expected format"""
+            # Now using direct AI categories (no _view suffix needed)
             category_mapping = {
-                'extraoral_frontal': 'extraoral_frontal_view',
-                'extraoral_full_face_smile': 'extraoral_smiling_view',
-                'extraoral_right': 'extraoral_right_view',
-                'extraoral_zoomed_smile': 'extraoral_teeth_smile_view',
-                'intraoral_front': 'intraoral_frontal_view',
-                'intraoral_left': 'intraoral_left_view',
-                'intraoral_right': 'intraoral_right_view',
-                'lower_occlusal': 'intraoral_lower_occlusal_view',
-                'upper_occlusal': 'intraoral_upper_occlusal_view'
+                'extraoral_frontal': 'extraoral_frontal',
+                'extraoral_full_face_smile': 'extraoral_full_face_smile', 
+                'extraoral_right': 'extraoral_right',
+                'extraoral_zoomed_smile': 'extraoral_zoomed_smile',
+                'intraoral_front': 'intraoral_front',
+                'intraoral_left': 'intraoral_left',
+                'intraoral_right': 'intraoral_right',
+                'lower_occlusal': 'lower_occlusal',
+                'upper_occlusal': 'upper_occlusal'
             }
             return category_mapping.get(ai_category, ai_category)
 
@@ -1830,16 +1982,17 @@ def test_ai_classification():
         # Map modelmhanna AI categories to frontend expected categories
         def map_ai_to_frontend_category(ai_category):
             """Convert modelmhanna AI categories to frontend expected format"""
+            # Now using direct AI categories (no _view suffix needed)
             category_mapping = {
-                'extraoral_frontal': 'extraoral_frontal_view',
-                'extraoral_full_face_smile': 'extraoral_smiling_view',
-                'extraoral_right': 'extraoral_right_view',
-                'extraoral_zoomed_smile': 'extraoral_teeth_smile_view',
-                'intraoral_front': 'intraoral_frontal_view',
-                'intraoral_left': 'intraoral_left_view',
-                'intraoral_right': 'intraoral_right_view',
-                'lower_occlusal': 'intraoral_lower_occlusal_view',
-                'upper_occlusal': 'intraoral_upper_occlusal_view'
+                'extraoral_frontal': 'extraoral_frontal',
+                'extraoral_full_face_smile': 'extraoral_full_face_smile',
+                'extraoral_right': 'extraoral_right', 
+                'extraoral_zoomed_smile': 'extraoral_zoomed_smile',
+                'intraoral_front': 'intraoral_front',
+                'intraoral_left': 'intraoral_left',
+                'intraoral_right': 'intraoral_right',
+                'lower_occlusal': 'lower_occlusal',
+                'upper_occlusal': 'upper_occlusal'
             }
             return category_mapping.get(ai_category, ai_category)
 

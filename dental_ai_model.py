@@ -79,7 +79,7 @@ class FallbackDentalClassifier:
             self.is_trained = False
 
     def extract_features(self, image_path: str) -> np.ndarray:
-        """Extract simple features from image"""
+        """Extract enhanced features from image for better extraoral classification"""
         try:
             with Image.open(image_path) as img:
                 # Convert to RGB if needed
@@ -96,26 +96,134 @@ class FallbackDentalClassifier:
                 mean_rgb = np.mean(img_array, axis=(0, 1))
                 std_rgb = np.std(img_array, axis=(0, 1))
 
-                # Simple texture features
+                # Enhanced texture features for extraoral distinction
                 gray = np.mean(img_array, axis=2)
                 gradient_x = np.gradient(gray, axis=1)
                 gradient_y = np.gradient(gray, axis=0)
+                
+                # Additional features to distinguish extraoral types
+                # Face detection features (simple edge detection for face boundaries)
+                edges = np.gradient(gray)
+                edge_density = np.mean(np.abs(edges))
+                
+                # Aspect ratio and shape features
+                height, width = gray.shape
+                aspect_ratio = width / height
+                
+                # Brightness distribution (helpful for smile detection)
+                brightness_mean = np.mean(gray)
+                brightness_std = np.std(gray)
+                
+                # Regional analysis (divide into quadrants)
+                h_mid, w_mid = height // 2, width // 2
+                top_brightness = np.mean(gray[:h_mid, :])
+                bottom_brightness = np.mean(gray[h_mid:, :])
+                left_brightness = np.mean(gray[:, :w_mid])
+                right_brightness = np.mean(gray[:, w_mid:])
+                
                 texture_features = [
                     np.mean(np.abs(gradient_x)),
                     np.mean(np.abs(gradient_y)),
-                    np.std(gray)
+                    np.std(gray),
+                    edge_density,
+                    aspect_ratio,
+                    brightness_mean,
+                    brightness_std,
+                    top_brightness,
+                    bottom_brightness,
+                    left_brightness,
+                    right_brightness
                 ]
 
-                # Combine features
+                # Combine all features
                 features = np.concatenate([mean_rgb, std_rgb, texture_features])
                 return features
 
         except Exception as e:
             logging.error(f"Feature extraction failed: {e}")
-            return np.zeros(9)  # Return zero features on error
+            return np.zeros(17)  # Return zero features on error (updated size)
+
+    def _rule_based_extraoral_refinement(self, image_path: str, predicted_category: str, confidence: float, probabilities: dict) -> Dict[str, Any]:
+        """Apply rule-based refinement for extraoral images"""
+        try:
+            # Only apply to extraoral images
+            if not predicted_category.startswith('extraoral'):
+                return None
+                
+            # Extract additional features for rule-based classification
+            with Image.open(image_path) as img:
+                if img.mode != 'RGB':
+                    img = img.convert('RGB')
+                img = img.resize((224, 224))
+                img_array = np.array(img)
+                
+                # Analyze image characteristics
+                height, width = img_array.shape[:2]
+                aspect_ratio = width / height
+                
+                # Color analysis
+                brightness = np.mean(img_array)
+                
+                # Regional brightness analysis
+                h_mid, w_mid = height // 2, width // 2
+                center_brightness = np.mean(img_array[h_mid-50:h_mid+50, w_mid-50:w_mid+50])
+                bottom_half_brightness = np.mean(img_array[h_mid:, :])
+                
+                # Edge detection for smile (more edges in mouth area)
+                gray = np.mean(img_array, axis=2)
+                # Simple gradient-based edge detection (no scipy needed)
+                grad_x = np.gradient(gray, axis=1)
+                grad_y = np.gradient(gray, axis=0)
+                edges = np.sqrt(grad_x**2 + grad_y**2)
+                bottom_center_edges = np.mean(edges[int(height*0.6):int(height*0.9), int(width*0.3):int(width*0.7)])
+                
+                # Rule-based logic
+                rules_applied = []
+                
+                # Rule 1: Zoomed smile detection
+                if (bottom_center_edges > np.mean(edges) * 1.5 and 
+                    bottom_half_brightness > brightness * 0.9 and
+                    confidence < 0.8):
+                    rules_applied.append("high_mouth_detail")
+                    predicted_category = 'extraoral_zoomed_smile'
+                    confidence = min(0.85, confidence + 0.2)
+                
+                # Rule 2: Right view detection (asymmetric lighting)
+                left_brightness = np.mean(img_array[:, :w_mid])
+                right_brightness = np.mean(img_array[:, w_mid:])
+                brightness_asymmetry = abs(left_brightness - right_brightness) / max(left_brightness, right_brightness)
+                
+                if (brightness_asymmetry > 0.15 and 
+                    aspect_ratio > 1.1 and
+                    confidence < 0.8):
+                    rules_applied.append("asymmetric_lighting")
+                    predicted_category = 'extraoral_right'
+                    confidence = min(0.85, confidence + 0.2)
+                
+                # Rule 3: Full face smile (wide aspect ratio + high brightness variation)
+                brightness_std = np.std(img_array)
+                if (aspect_ratio > 1.3 and 
+                    brightness_std > np.mean(img_array) * 0.3 and
+                    confidence < 0.8):
+                    rules_applied.append("wide_face_view")
+                    predicted_category = 'extraoral_full_face_smile'
+                    confidence = min(0.85, confidence + 0.2)
+                
+                if rules_applied:
+                    logging.info(f"Rule-based refinement applied: {rules_applied} -> {predicted_category}")
+                    return {
+                        'classification': predicted_category,
+                        'confidence': confidence,
+                        'rules_applied': rules_applied
+                    }
+                    
+        except Exception as e:
+            logging.error(f"Rule-based refinement failed: {e}")
+            
+        return None
 
     def classify_image(self, image_path: str) -> Dict[str, Any]:
-        """Classify a dental image using fallback model"""
+        """Classify a dental image using fallback model with rule-based refinement"""
         try:
             if not self.is_trained:
                 return self._fallback_classification()
@@ -137,6 +245,14 @@ class FallbackDentalClassifier:
             for i, category in enumerate(self.label_encoder.classes_):
                 prob_dict[category] = probabilities[i] if i < len(probabilities) else 0.0
 
+            # Apply rule-based refinement for extraoral images
+            refinement = self._rule_based_extraoral_refinement(image_path, predicted_category, confidence, prob_dict)
+            if refinement:
+                predicted_category = refinement['classification']
+                confidence = refinement['confidence']
+                # Update probabilities to reflect rule-based decision
+                prob_dict[predicted_category] = confidence
+                
             # Map to user-friendly names
             category_names = {
                 'extraoral_frontal': 'Extraoral Frontal',
@@ -150,18 +266,23 @@ class FallbackDentalClassifier:
                 'upper_occlusal': 'Upper Occlusal'
             }
 
-            logging.info(f"Fallback classification: {predicted_category} (confidence: {confidence:.3f})")
+            logging.info(f"Enhanced classification: {predicted_category} (confidence: {confidence:.3f})")
 
-            return {
+            result = {
                 'classification': predicted_category,
                 'confidence': confidence,
                 'probabilities': prob_dict,
                 'category_name': category_names.get(predicted_category, 'Unknown'),
-                'model_used': 'fallback_sklearn'
+                'model_used': 'fallback_sklearn_enhanced'
             }
+            
+            if refinement and 'rules_applied' in refinement:
+                result['rules_applied'] = refinement['rules_applied']
+                
+            return result
 
         except Exception as e:
-            logging.error(f"Fallback classification failed for {image_path}: {e}")
+            logging.error(f"Enhanced classification failed for {image_path}: {e}")
             return self._fallback_classification()
 
     def _fallback_classification(self) -> Dict[str, Any]:

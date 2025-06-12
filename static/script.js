@@ -1454,20 +1454,27 @@ function updateLayoutGuideWithResults(data) {
     
     // Map classifications to placeholder IDs (expand mapping for all possible classifications)
     const classificationMap = {
+        // Direct AI model classifications
+        'extraoral_right': 'placeholder_extraoral_right',
+        'extraoral_frontal': 'placeholder_extraoral_frontal',
+        'extraoral_full_face_smile': 'placeholder_extraoral_smiling',
+        'extraoral_zoomed_smile': 'placeholder_extraoral_teeth_smile',
+        'intraoral_right': 'placeholder_intraoral_right',
+        'intraoral_front': 'placeholder_intraoral_frontal',
+        'intraoral_left': 'placeholder_intraoral_left',
+        'upper_occlusal': 'placeholder_intraoral_upper',
+        'lower_occlusal': 'placeholder_intraoral_lower',
+        
+        // Legacy _view format support
         'extraoral_right_view': 'placeholder_extraoral_right',
         'extraoral_frontal_view': 'placeholder_extraoral_frontal',
         'extraoral_smiling_view': 'placeholder_extraoral_smiling',
         'extraoral_teeth_smile_view': 'placeholder_extraoral_teeth_smile',
-        'extraoral_full_face_smile': 'placeholder_extraoral_smiling',
-        'extraoral_zoomed_smile': 'placeholder_extraoral_teeth_smile',
         'intraoral_right_view': 'placeholder_intraoral_right',
         'intraoral_frontal_view': 'placeholder_intraoral_frontal',
-        'intraoral_front': 'placeholder_intraoral_frontal',
         'intraoral_left_view': 'placeholder_intraoral_left',
         'intraoral_upper_occlusal_view': 'placeholder_intraoral_upper',
-        'upper_occlusal': 'placeholder_intraoral_upper',
-        'intraoral_lower_occlusal_view': 'placeholder_intraoral_lower',
-        'lower_occlusal': 'placeholder_intraoral_lower'
+        'intraoral_lower_occlusal_view': 'placeholder_intraoral_lower'
     };
     
     let placedImages = 0;
@@ -2167,44 +2174,66 @@ function handleDirectUpload(input, classification) {
     const placeholderId = getPlaceholderIdFromClassification(classification);
     const placeholder = document.getElementById(placeholderId);
     
-    if (!placeholder) return;
+    if (!placeholder) {
+        console.error(`Placeholder not found for classification: ${classification}`);
+        return;
+    }
+    
+    console.log(`Direct upload: ${file.name} → ${classification} → ${placeholderId}`);
     
     // Show loading state
     showUploadingState(placeholder);
     
-    // Create form data and upload
+    // Create form data and upload - use single file upload endpoint to avoid AI classification
     const formData = new FormData();
-    formData.append('files', file);
+    formData.append('file', file);
+    formData.append('direct_classification', classification); // Tell server this is a direct upload
+    formData.append('placeholder_id', placeholderId);
     
-    fetch('/upload_files', {
+    fetch('/upload_single_files', {
         method: 'POST',
         body: formData
     })
     .then(response => response.json())
     .then(data => {
-        if (data.success && data.filenames.length > 0) {
-            // Create file object for display
+        if (data.success && data.filename) {
+            // Create file object for display - use the EXACT classification specified by user
             const fileObj = {
-                filename: data.filenames[0],
+                filename: data.filename,
                 original_name: file.name,
-                classification: classification,
-                confidence: 0.95 // High confidence for direct placement
+                classification: classification, // Force the exact classification from the upload box
+                confidence: 1.0 // 100% confidence for direct placement
             };
+            
+            console.log(`Successfully uploaded to ${placeholderId}:`, fileObj);
             
             // Update placeholder with uploaded image
             updatePlaceholderWithDirectImage(placeholderId, fileObj);
         } else {
-            showUploadError(placeholder, 'Upload failed');
+            console.error('Upload failed:', data.error || 'Unknown error');
+            showUploadError(placeholder, data.error || 'Upload failed');
         }
     })
     .catch(error => {
         console.error('Upload error:', error);
-        showUploadError(placeholder, 'Upload error');
+        showUploadError(placeholder, 'Upload error occurred');
     });
 }
 
 function getPlaceholderIdFromClassification(classification) {
     const mappings = {
+        // AI model classifications to placeholder IDs
+        'extraoral_right': 'placeholder_extraoral_right',
+        'extraoral_frontal': 'placeholder_extraoral_frontal',
+        'extraoral_full_face_smile': 'placeholder_extraoral_smiling',      // FIXED: Full face smile goes to smiling placeholder
+        'extraoral_zoomed_smile': 'placeholder_extraoral_teeth_smile',     // FIXED: Zoomed smile goes to teeth smile placeholder
+        'intraoral_right': 'placeholder_intraoral_right',
+        'intraoral_front': 'placeholder_intraoral_frontal',
+        'intraoral_left': 'placeholder_intraoral_left',
+        'upper_occlusal': 'placeholder_intraoral_upper',
+        'lower_occlusal': 'placeholder_intraoral_lower',
+        
+        // Legacy support for old view format (if needed)
         'extraoral_right_view': 'placeholder_extraoral_right',
         'extraoral_frontal_view': 'placeholder_extraoral_frontal',
         'extraoral_smiling_view': 'placeholder_extraoral_smiling',
@@ -2242,7 +2271,7 @@ function updatePlaceholderWithDirectImage(placeholderId, file) {
         return;
     }
     
-    console.log(`Updating placeholder ${placeholderId} with file ${file.filename}`);
+    console.log(`Updating placeholder ${placeholderId} with file ${file.filename} (classification: ${file.classification})`);
     
     const confidenceColor = getConfidenceColor(file.confidence);
     const isExtraoral = file.classification.startsWith('extraoral');
@@ -2444,15 +2473,15 @@ function resetPlaceholderToOriginal(placeholder, category) {
 
 function getClassificationFromCategory(category) {
     const mappings = {
-        'extraoral_right': 'extraoral_right_view',
-        'extraoral_frontal': 'extraoral_frontal_view',
-        'extraoral_smiling': 'extraoral_smiling_view',
-        'extraoral_teeth_smile': 'extraoral_teeth_smile_view',
-        'intraoral_right': 'intraoral_right_view',
-        'intraoral_frontal': 'intraoral_frontal_view',
-        'intraoral_left': 'intraoral_left_view',
-        'intraoral_upper': 'intraoral_upper_occlusal_view',
-        'intraoral_lower': 'intraoral_lower_occlusal_view'
+        'extraoral_right': 'extraoral_right',
+        'extraoral_frontal': 'extraoral_frontal', 
+        'extraoral_smiling': 'extraoral_full_face_smile',      // FIXED: Maps to full face smile
+        'extraoral_teeth_smile': 'extraoral_zoomed_smile',     // FIXED: Maps to zoomed smile
+        'intraoral_right': 'intraoral_right',
+        'intraoral_frontal': 'intraoral_front',
+        'intraoral_left': 'intraoral_left',
+        'intraoral_upper': 'upper_occlusal',
+        'intraoral_lower': 'lower_occlusal'
     };
     return mappings[category];
 }
@@ -2594,6 +2623,53 @@ window.addEventListener('resize', function() {
     clearTimeout(resizeTimeout);
     resizeTimeout = setTimeout(refreshLayoutResponsiveness, 250);
 });
+
+// Helper functions for showing messages
+function showError(message) {
+    // Create or update error alert
+    let existingAlert = document.querySelector('.alert-danger');
+    if (existingAlert) {
+        existingAlert.remove();
+    }
+    
+    const alertHtml = `
+        <div class="alert alert-danger alert-dismissible fade show position-fixed" 
+             style="top: 20px; right: 20px; z-index: 9999; max-width: 400px;">
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    `;
+    document.body.insertAdjacentHTML('beforeend', alertHtml);
+    
+    // Auto-dismiss after 5 seconds
+    setTimeout(() => {
+        const alert = document.querySelector('.alert-danger');
+        if (alert) alert.remove();
+    }, 5000);
+}
+
+function showSuccessPopup(message) {
+    // Create or update success alert
+    let existingAlert = document.querySelector('.alert-success');
+    if (existingAlert) {
+        existingAlert.remove();
+    }
+    
+    const alertHtml = `
+        <div class="alert alert-success alert-dismissible fade show position-fixed" 
+             style="top: 20px; right: 20px; z-index: 9999; max-width: 400px;">
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    `;
+    document.body.insertAdjacentHTML('beforeend', alertHtml);
+    
+    // Auto-dismiss after 3 seconds
+    setTimeout(() => {
+        const alert = document.querySelector('.alert-success');
+        if (alert) alert.remove();
+    }, 3000);
+}
 
 // Add touch-friendly interactions for mobile
 if ('ontouchstart' in window) {
@@ -3421,26 +3497,72 @@ function saveEditedImage(placeholderId) {
         };
     }
     
-    // In a real implementation, you would send this data to the server
-    // For now, we'll just show a success message and close the modal
+    // Extract filename from image src
+    const imageSrc = window.editImageSrc;
+    const filename = imageSrc.split('/').pop().split('?')[0]; // Remove query params if any
     
-    console.log('Saving image with:', {
-        placeholderId: placeholderId,
+    // Send the edit data to server
+    const editData = {
+        image_filename: filename,
+        placeholder_id: placeholderId,
         rotation: rotation,
-        cropData: cropData,
-        imageSrc: window.editImageSrc
+        crop_data: cropData
+    };
+    
+    // Show loading state
+    const saveBtn = event.target;
+    const originalText = saveBtn.innerHTML;
+    saveBtn.innerHTML = '<i class="bi bi-hourglass-split"></i> Saving...';
+    saveBtn.disabled = true;
+    
+    fetch('/edit_image', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(editData)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Update the image in the placeholder
+            const placeholder = document.getElementById(placeholderId);
+            if (placeholder) {
+                const img = placeholder.querySelector('img');
+                if (img) {
+                    img.src = '/uploads/' + data.filename + '?t=' + Date.now();
+                }
+                
+                // Update hidden input if exists
+                const hiddenInput = placeholder.querySelector('input[name="image_files"]');
+                if (hiddenInput) {
+                    hiddenInput.value = data.filename;
+                }
+            }
+            
+            showSuccessPopup(data.message || 'Image edited successfully!');
+            
+            // Clean up event handlers
+            if (window.cleanupCropHandlers) {
+                window.cleanupCropHandlers();
+            }
+            
+            // Close the modal
+            const modal = bootstrap.Modal.getInstance(document.getElementById('imageEditModal'));
+            if (modal) {
+                modal.hide();
+            }
+        } else {
+            showError(data.error || 'Failed to save image edits');
+        }
+    })
+    .catch(error => {
+        console.error('Error saving edited image:', error);
+        showError('Failed to save image edits. Please try again.');
+    })
+    .finally(() => {
+        // Restore button state
+        saveBtn.innerHTML = originalText;
+        saveBtn.disabled = false;
     });
-    
-    showSuccessPopup('Image edited successfully!');
-    
-    // Clean up event handlers
-    if (window.cleanupCropHandlers) {
-        window.cleanupCropHandlers();
-    }
-    
-    // Close the modal
-    const modal = bootstrap.Modal.getInstance(document.getElementById('imageEditModal'));
-    if (modal) {
-        modal.hide();
-    }
 }

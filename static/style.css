@@ -197,7 +197,6 @@
 /* Extraoral image display - anticlockwise 90-degree rotation */
 .layout-img.extraoral,
 img.layout-img.extraoral {
-    transform: rotate(-90deg) !important;
     transform-origin: center center !important;
     width: 100% !important;
     height: 100% !important;
@@ -206,7 +205,6 @@ img.layout-img.extraoral {
 
 .layout-img.extraoral-right,
 img.layout-img.extraoral-right {
-    transform: rotate(-90deg) !important;
     transform-origin: center center !important;
     width: 100% !important;
     height: 100% !important;
@@ -215,7 +213,6 @@ img.layout-img.extraoral-right {
 
 .layout-img.extraoral-front,
 img.layout-img.extraoral-front {
-    transform: rotate(-90deg) !important;
     transform-origin: center center !important;
     width: 100% !important;
     height: 100% !important;
@@ -224,14 +221,11 @@ img.layout-img.extraoral-front {
 
 .layout-img.extraoral-smile,
 img.layout-img.extraoral-smile {
-    transform: rotate(-90deg) !important;
     transform-origin: center center !important;
     width: 100% !important;
     height: 100% !important;
     object-fit: contain !important;
 }
-
-
 
 @keyframes fadeInScale {
     0% {
@@ -347,9 +341,9 @@ img.layout-img.extraoral-smile {
         width: 100% !important;
     }
     
-    /* Preserve extraoral rotation on mobile */
+    /* Preserve extraoral rotation on mobile - REMOVED AUTOMATIC ROTATION */
     .image-card-hover img.extraoral {
-        transform: rotate(-90deg) !important;
+        /* transform: rotate(-90deg) !important; - REMOVED */
     }
     
     /* Section headers mobile */
@@ -584,9 +578,9 @@ img.layout-img.extraoral-smile {
         object-fit: cover;
     }
     
-    /* Preserve extraoral rotation on mobile structured layout */
+    /* Preserve extraoral rotation on mobile structured layout - REMOVED AUTOMATIC ROTATION */
     .layout-card-mobile .layout-img.extraoral {
-        transform: rotate(-90deg) !important;
+        /* transform: rotate(-90deg) !important; - REMOVED */
     }
     
     .layout-label {
