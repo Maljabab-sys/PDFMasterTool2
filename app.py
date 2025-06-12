@@ -1692,9 +1692,8 @@ def serve_profile_image(filename):
 @app.route('/uploads/<filename>')
 @login_required
 def serve_uploaded_file(filename):
-    """Serve uploaded files for the current user"""
-    user_upload_dir = os.path.join('uploads', str(current_user.id))
-    return send_from_directory(user_upload_dir, filename)
+    """Serve uploaded files"""
+    return send_from_directory('uploads', filename)
 
 @app.route('/ai_test')
 @login_required
