@@ -138,12 +138,6 @@
                         </div>
                     </div>
 
-
-
-
-
-
-
                     <!-- AI-Powered Image Layout Guide -->
                     <div class="card border-primary mb-4">
                         <div class="card-header bg-primary text-white">
@@ -168,7 +162,8 @@
                                         <div class="spinner-border text-info me-2" role="status" style="width: 1rem; height: 1rem;">
                                             <span class="visually-hidden">Loading...</span>
                                         </div>
-                                        <span class="text-info">Processing images...</span>
+                                        <!-- Processing text hidden - only showing loader animation -->
+                                        <span class="text-info" style="display: none;">Processing images...</span>
                                     </div>
                                     <span class="badge bg-info" id="progressPercentage">0%</span>
                                 </div>
@@ -231,6 +226,20 @@
                                             </div>
                                         </div>
                                     </div>
+                                    <!-- Additional Extraoral View - Centered -->
+                                    <div class="row g-2 justify-content-center mt-2">
+                                        <div class="col-4">
+                                            <div id="placeholder_extraoral_teeth_smile" class="layout-placeholder-box text-center p-3 border border-dashed rounded bg-light position-relative" style="min-height: 120px; cursor: pointer;" onclick="triggerFileUpload('extraoral_teeth_smile')">
+                                                <div class="loading-content d-flex flex-column align-items-center justify-content-center h-100">
+                                                    <i class="bi bi-emoji-laughing text-muted d-block d-md-none" style="font-size: 1.2rem;"></i>
+                                                    <i class="bi bi-emoji-laughing text-muted d-none d-md-block" style="font-size: 1.5rem;"></i>
+                                                    <div class="small text-muted mt-1">Zoomed Smile View</div>
+                                                    <div class="small text-info mt-1">Click to upload</div>
+                                                </div>
+                                                <input type="file" id="upload_extraoral_teeth_smile" class="d-none" accept="image/*" onchange="handleDirectUpload(this, 'extraoral_teeth_smile_view')">
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                                 
                                     <!-- Intraoral Section -->
@@ -271,30 +280,30 @@
                                             </div>
                                         </div>
                                     </div>
-                                    <div class="row g-2 justify-content-center">
-                                        <div class="col-6">
-                                            <div id="placeholder_intraoral_upper" class="layout-placeholder-box text-center p-2 border border-dashed rounded bg-light position-relative" style="min-height: 100px; cursor: pointer;" onclick="triggerFileUpload('intraoral_upper')">
-                                                <div class="loading-content d-flex flex-column align-items-center justify-content-center h-100">
-                                                    <i class="bi bi-arrow-up text-muted d-block d-md-none" style="font-size: 1rem;"></i>
-                                                    <i class="bi bi-arrow-up text-muted d-none d-md-block" style="font-size: 1.2rem;"></i>
-                                                    <div class="small text-muted mt-1">Upper Jaw View</div>
-                                                    <div class="small text-info mt-1">Click to upload</div>
-                                                </div>
-                                                <input type="file" id="upload_intraoral_upper" class="d-none" accept="image/*" onchange="handleDirectUpload(this, 'intraoral_upper_occlusal_view')">
-                                            </div>
-                                        </div>
-                                        <div class="col-6">
-                                            <div id="placeholder_intraoral_lower" class="layout-placeholder-box text-center p-2 border border-dashed rounded bg-light position-relative" style="min-height: 100px; cursor: pointer;" onclick="triggerFileUpload('intraoral_lower')">
-                                                <div class="loading-content d-flex flex-column align-items-center justify-content-center h-100">
-                                                    <i class="bi bi-arrow-down text-muted d-block d-md-none" style="font-size: 1rem;"></i>
-                                                    <i class="bi bi-arrow-down text-muted d-none d-md-block" style="font-size: 1.2rem;"></i>
-                                                    <div class="small text-muted mt-1">Lower Jaw View</div>
-                                                    <div class="small text-info mt-1">Click to upload</div>
-                                                </div>
-                                                <input type="file" id="upload_intraoral_lower" class="d-none" accept="image/*" onchange="handleDirectUpload(this, 'intraoral_lower_occlusal_view')">
-                                            </div>
-                                        </div>
-                                    </div>
+                                                        <div class="row g-2 justify-content-center">
+                        <div class="col-4">
+                            <div id="placeholder_intraoral_upper" class="layout-placeholder-box text-center p-3 border border-dashed rounded bg-light position-relative" style="min-height: 120px; cursor: pointer;" onclick="triggerFileUpload('intraoral_upper')">
+                                <div class="loading-content d-flex flex-column align-items-center justify-content-center h-100">
+                                    <i class="bi bi-arrow-up text-muted d-block d-md-none" style="font-size: 1.2rem;"></i>
+                                    <i class="bi bi-arrow-up text-muted d-none d-md-block" style="font-size: 1.5rem;"></i>
+                                    <div class="small text-muted mt-1">Upper Jaw View</div>
+                                    <div class="small text-info mt-1">Click to upload</div>
+                                </div>
+                                <input type="file" id="upload_intraoral_upper" class="d-none" accept="image/*" onchange="handleDirectUpload(this, 'intraoral_upper_occlusal_view')">
+                            </div>
+                        </div>
+                        <div class="col-4">
+                            <div id="placeholder_intraoral_lower" class="layout-placeholder-box text-center p-3 border border-dashed rounded bg-light position-relative" style="min-height: 120px; cursor: pointer;" onclick="triggerFileUpload('intraoral_lower')">
+                                <div class="loading-content d-flex flex-column align-items-center justify-content-center h-100">
+                                    <i class="bi bi-arrow-down text-muted d-block d-md-none" style="font-size: 1.2rem;"></i>
+                                    <i class="bi bi-arrow-down text-muted d-none d-md-block" style="font-size: 1.5rem;"></i>
+                                    <div class="small text-muted mt-1">Lower Jaw View</div>
+                                    <div class="small text-info mt-1">Click to upload</div>
+                                </div>
+                                <input type="file" id="upload_intraoral_lower" class="d-none" accept="image/*" onchange="handleDirectUpload(this, 'intraoral_lower_occlusal_view')">
+                            </div>
+                        </div>
+                    </div>
                                     </div>
                                 </div>
                             </div>
@@ -704,8 +713,6 @@
                             </label>
                         </div>
                     </div>
-
-
 
                     <!-- Crop Container -->
                     <div class="crop-container" style="height: 60vh; position: relative; background: #000; border: 1px solid #444; display: flex; align-items: center; justify-content: center; overflow: hidden;">

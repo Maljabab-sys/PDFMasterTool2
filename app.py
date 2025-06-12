@@ -4,9 +4,7 @@ import json
 from flask import Flask, render_template, request, redirect, url_for, flash, send_file, jsonify, session, send_from_directory
 from werkzeug.utils import secure_filename
 from werkzeug.middleware.proxy_fix import ProxyFix
-from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
-from sqlalchemy.orm import DeclarativeBase
 from PIL import Image
 from reportlab.lib.pagesizes import letter, A4
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Image as RLImage
@@ -20,14 +18,10 @@ from datetime import datetime
 from image_classifier import classify_bulk_images, get_classification_summary
 from dental_ai_model import get_dental_classifier, initialize_dental_classifier
 from training_setup import TrainingDataManager
+from database import db
 
 # Configure logging
 logging.basicConfig(level=logging.DEBUG)
-
-class Base(DeclarativeBase):
-    pass
-
-db = SQLAlchemy(model_class=Base)
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("SESSION_SECRET", "dev-secret-key-change-in-production")
@@ -37,7 +31,7 @@ app.config['SESSION_COOKIE_SAMESITE'] = None
 app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
 
 # Configure the database
-app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get("DATABASE_URL")
+app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get("DATABASE_URL", "sqlite:///app.db")
 app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
     "pool_recycle": 300,
     "pool_pre_ping": True,
@@ -53,13 +47,14 @@ login_manager.login_message_category = 'info'
 
 @login_manager.user_loader
 def load_user(user_id):
+    # Import here to avoid circular import
+    from models import User
     return User.query.get(int(user_id))
-
-# Import models to ensure they're registered with SQLAlchemy
-from models import User, Patient, Case, UserSettings
 
 # Initialize database with models
 with app.app_context():
+    # Import models here to avoid circular import
+    from models import User, Patient, Case, UserSettings
     db.create_all()
 
 # Initialize background training
@@ -1425,7 +1420,7 @@ def upload_cropped_image():
 @app.route('/bulk_upload_categorize', methods=['POST'])
 @login_required
 def bulk_upload_categorize():
-    """Handle bulk upload with AI categorization"""
+    """Handle bulk upload with modelmhanna AI categorization"""
     try:
         if 'files[]' not in request.files:
             return jsonify({'success': False, 'error': 'No files provided'})
@@ -1434,8 +1429,33 @@ def bulk_upload_categorize():
         if not files or files[0].filename == '':
             return jsonify({'success': False, 'error': 'No files selected'})
 
+        # Map modelmhanna AI categories to frontend expected categories
+        def map_ai_to_frontend_category(ai_category):
+            """Convert modelmhanna AI categories to frontend expected format"""
+            category_mapping = {
+                'extraoral_frontal': 'extraoral_frontal_view',
+                'extraoral_full_face_smile': 'extraoral_smiling_view',
+                'extraoral_right': 'extraoral_right_view',
+                'extraoral_zoomed_smile': 'extraoral_teeth_smile_view',
+                'intraoral_front': 'intraoral_frontal_view',
+                'intraoral_left': 'intraoral_left_view',
+                'intraoral_right': 'intraoral_right_view',
+                'lower_occlusal': 'intraoral_lower_occlusal_view',
+                'upper_occlusal': 'intraoral_upper_occlusal_view'
+            }
+            return category_mapping.get(ai_category, ai_category)
+
         results = []
         classifier = get_dental_classifier()
+        
+        # Log which model is being used
+        model_info = "unknown"
+        if hasattr(classifier, 'model_path'):
+            model_info = f"modelmhanna PyTorch ({classifier.model_path})"
+        elif hasattr(classifier, '__class__'):
+            model_info = classifier.__class__.__name__
+        
+        logging.info(f"Using AI classifier: {model_info}")
 
         for file in files:
             if file and allowed_file(file.filename):
@@ -1446,35 +1466,101 @@ def bulk_upload_categorize():
                 filepath = os.path.join(app.config['UPLOAD_FOLDER'], unique_filename)
                 file.save(filepath)
 
-                # Classify with AI
+                # Optimize image for better AI classification
+                optimize_image_for_pdf(filepath)
+
+                # Classify with modelmhanna AI
                 try:
                     classification_result = classifier.classify_image(filepath)
-                    logging.info(f"AI classification result: {classification_result}")
+                    logging.info(f"Modelmhanna AI classification for {filename}: {classification_result}")
 
-                    results.append({
+                    # Extract detailed information
+                    ai_classification = classification_result.get('classification', 'unknown')
+                    confidence = classification_result.get('confidence', 0.0)
+                    category_name = classification_result.get('category_name', ai_classification)
+                    model_used = classification_result.get('model_used', 'unknown')
+                    probabilities = classification_result.get('probabilities', {})
+
+                    # Map AI category to frontend expected format
+                    frontend_classification = map_ai_to_frontend_category(ai_classification)
+                    
+                    logging.info(f"Mapped {ai_classification} -> {frontend_classification} for {filename}")
+
+                    # Create detailed result
+                    result = {
                         'filename': unique_filename,
                         'original_name': filename,
-                        'classification': classification_result['classification'],
-                        'confidence': classification_result['confidence'],
-                        'reasoning': classification_result.get('reasoning', 'AI classification')
-                    })
+                        'classification': frontend_classification,  # Use mapped category
+                        'ai_classification': ai_classification,     # Keep original for reference
+                        'confidence': round(confidence, 3),
+                        'category_name': category_name,
+                        'model_used': model_used,
+                        'reasoning': f"Classified as {category_name} with {confidence:.1%} confidence using {model_used}",
+                        'probabilities': {k: round(v, 3) for k, v in probabilities.items()},
+                        'success': True
+                    }
+
+                    # Add confidence level indicator
+                    if confidence >= 0.8:
+                        result['confidence_level'] = 'high'
+                    elif confidence >= 0.6:
+                        result['confidence_level'] = 'medium'
+                    else:
+                        result['confidence_level'] = 'low'
+
+                    results.append(result)
+
                 except Exception as e:
-                    logging.error(f"Error during AI classification: {e}")
-                    # Fallback classification
+                    logging.error(f"Error during modelmhanna AI classification for {filename}: {e}")
+                    # Enhanced fallback classification
                     results.append({
                         'filename': unique_filename,
                         'original_name': filename,
-                        'classification': 'intraoral_frontal_view',
-                        'confidence': 0.5,
-                        'reasoning': 'Default classification due to error'
+                        'classification': 'intraoral_frontal_view',  # Use frontend format
+                        'ai_classification': 'intraoral_front',     # Original AI format
+                        'confidence': 0.3,
+                        'category_name': 'Intraoral Front (Fallback)',
+                        'model_used': 'fallback_error',
+                        'reasoning': f'Default classification due to error: {str(e)}',
+                        'probabilities': {},
+                        'confidence_level': 'low',
+                        'success': False,
+                        'error': str(e)
                     })
 
-        logging.info(f"Bulk upload completed: {len(results)} files processed")
+        # Generate classification summary
+        total_files = len(results)
+        successful_classifications = len([r for r in results if r.get('success', False)])
+        high_confidence = len([r for r in results if r.get('confidence_level') == 'high'])
+        medium_confidence = len([r for r in results if r.get('confidence_level') == 'medium'])
+        low_confidence = len([r for r in results if r.get('confidence_level') == 'low'])
+
+        # Count categories (using frontend categories)
+        category_counts = {}
+        for result in results:
+            category = result.get('category_name', 'Unknown')
+            category_counts[category] = category_counts.get(category, 0) + 1
+
+        summary = {
+            'total_files': total_files,
+            'successful_classifications': successful_classifications,
+            'failed_classifications': total_files - successful_classifications,
+            'confidence_distribution': {
+                'high': high_confidence,
+                'medium': medium_confidence,
+                'low': low_confidence
+            },
+            'category_distribution': category_counts,
+            'model_used': model_info
+        }
+
+        logging.info(f"Modelmhanna bulk upload completed: {total_files} files processed, {successful_classifications} successful")
 
         return jsonify({
             'success': True,
             'files': results,
-            'classification_summary': f"Processed {len(results)} images with AI categorization"
+            'summary': summary,
+            'classification_summary': f"Processed {total_files} images with modelmhanna AI: {successful_classifications} successful, {high_confidence} high confidence"
         })
 
     except Exception as e:
@@ -1648,31 +1734,88 @@ def ai_test():
 @app.route('/api/model-status')
 @login_required
 def api_model_status():
-    """Get current model status and training information"""
+    """Get current modelmhanna AI model status and training information"""
     try:
-        from dental_ai_model import get_dental_classifier
-        from training_setup import TrainingDataManager
-
         classifier = get_dental_classifier()
-        trainer = TrainingDataManager()
-        stats = trainer.get_training_stats()
-
-        return jsonify({
+        
+        # Get basic model information
+        model_info = {
             'is_trained': classifier.is_trained,
-            'training_images': stats['total_images'],
             'categories': classifier.categories,
             'train_accuracy': getattr(classifier, 'last_train_accuracy', None),
             'val_accuracy': getattr(classifier, 'last_val_accuracy', None),
             'last_training': getattr(classifier, 'last_training_time', None)
-        })
+        }
+
+        # Add model-specific information
+        if hasattr(classifier, 'model_path'):
+            model_info['model_type'] = 'modelmhanna_pytorch'
+            model_info['model_path'] = classifier.model_path
+            model_info['model_exists'] = os.path.exists(classifier.model_path)
+            if model_info['model_exists']:
+                # Get model file size
+                model_size = os.path.getsize(classifier.model_path)
+                model_info['model_size_mb'] = round(model_size / (1024 * 1024), 2)
+        else:
+            model_info['model_type'] = 'fallback_sklearn'
+
+        # Get training data statistics
+        try:
+            from training_setup import TrainingDataManager
+            trainer = TrainingDataManager()
+            stats = trainer.get_training_stats()
+            model_info['training_images'] = stats['total_images']
+            model_info['training_categories'] = stats.get('categories', {})
+        except Exception as e:
+            logging.warning(f"Could not get training stats: {e}")
+            model_info['training_images'] = 0
+            model_info['training_categories'] = {}
+
+        # Add modelmhanna data directory information
+        modelmhanna_data_path = "modelmhanna/data"
+        if os.path.exists(modelmhanna_data_path):
+            model_info['modelmhanna_data_available'] = True
+            # Count images in each category
+            category_counts = {}
+            for category in classifier.categories:
+                category_path = os.path.join(modelmhanna_data_path, category)
+                if os.path.exists(category_path):
+                    image_files = [f for f in os.listdir(category_path) 
+                                 if f.lower().endswith(('.png', '.jpg', '.jpeg', '.webp', '.gif'))]
+                    category_counts[category] = len(image_files)
+                else:
+                    category_counts[category] = 0
+            model_info['modelmhanna_category_counts'] = category_counts
+            model_info['modelmhanna_total_images'] = sum(category_counts.values())
+        else:
+            model_info['modelmhanna_data_available'] = False
+            model_info['modelmhanna_category_counts'] = {}
+            model_info['modelmhanna_total_images'] = 0
+
+        # Add performance indicators
+        if model_info['is_trained']:
+            if model_info['model_type'] == 'modelmhanna_pytorch':
+                model_info['performance_level'] = 'excellent'
+                model_info['performance_description'] = 'Using trained modelmhanna PyTorch model'
+            else:
+                model_info['performance_level'] = 'good'
+                model_info['performance_description'] = 'Using fallback sklearn model'
+        else:
+            model_info['performance_level'] = 'basic'
+            model_info['performance_description'] = 'Model not trained, using default classifications'
+
+        logging.info(f"Model status: {model_info['model_type']}, trained: {model_info['is_trained']}")
+
+        return jsonify(model_info)
+
     except Exception as e:
-        logging.error(f"Error getting model status: {e}")
+        logging.error(f"Error getting modelmhanna model status: {e}")
         return jsonify({'error': str(e)}), 500
 
 @app.route('/test-ai-classification', methods=['POST'])
 @login_required
 def test_ai_classification():
-    """Test AI classification on uploaded image"""
+    """Test modelmhanna AI classification on uploaded image"""
     try:
         if 'test_image' not in request.files:
             return jsonify({'success': False, 'error': 'No image provided'})
@@ -1684,34 +1827,98 @@ def test_ai_classification():
         if not allowed_file(file.filename):
             return jsonify({'success': False, 'error': 'Invalid file type'})
 
+        # Map modelmhanna AI categories to frontend expected categories
+        def map_ai_to_frontend_category(ai_category):
+            """Convert modelmhanna AI categories to frontend expected format"""
+            category_mapping = {
+                'extraoral_frontal': 'extraoral_frontal_view',
+                'extraoral_full_face_smile': 'extraoral_smiling_view',
+                'extraoral_right': 'extraoral_right_view',
+                'extraoral_zoomed_smile': 'extraoral_teeth_smile_view',
+                'intraoral_front': 'intraoral_frontal_view',
+                'intraoral_left': 'intraoral_left_view',
+                'intraoral_right': 'intraoral_right_view',
+                'lower_occlusal': 'intraoral_lower_occlusal_view',
+                'upper_occlusal': 'intraoral_upper_occlusal_view'
+            }
+            return category_mapping.get(ai_category, ai_category)
+
         # Save temporary file
         temp_filename = f"test_{uuid.uuid4()}_{secure_filename(file.filename)}"
         temp_path = os.path.join(app.config['UPLOAD_FOLDER'], temp_filename)
         file.save(temp_path)
 
         try:
-            # Optimize image
+            # Optimize image for better AI classification
             optimize_image_for_pdf(temp_path)
 
-            # Classify the image
-            from dental_ai_model import get_dental_classifier
+            # Classify the image using modelmhanna AI
             classifier = get_dental_classifier()
             result = classifier.classify_image(temp_path)
+
+            # Log which model was used
+            model_used = result.get('model_used', 'unknown')
+            logging.info(f"Modelmhanna AI test classification using {model_used}: {result}")
+
+            # Map AI category to frontend format
+            ai_classification = result['classification']
+            frontend_classification = map_ai_to_frontend_category(ai_classification)
+            
+            logging.info(f"Test classification mapped {ai_classification} -> {frontend_classification}")
 
             # Store temp file path for potential training data collection
             session['last_test_image'] = temp_path
             session['last_test_result'] = result
 
-            # Don't clean up temp file yet - keep for training data collection
-
-            return jsonify({
+            # Enhanced response with detailed information
+            response_data = {
                 'success': True,
-                'classification': result['classification'],
-                'confidence': result['confidence'],
-                'probabilities': result['probabilities'],
+                'classification': frontend_classification,  # Use mapped category
+                'ai_classification': ai_classification,     # Keep original for reference
+                'confidence': round(result['confidence'], 3),
+                'probabilities': {k: round(v, 3) for k, v in result.get('probabilities', {}).items()},
                 'category_name': result['category_name'],
-                'temp_path': temp_path  # Return for correction endpoint
-            })
+                'model_used': model_used,
+                'temp_path': temp_path,  # Return for correction endpoint
+                'reasoning': f"Classified as {result['category_name']} with {result['confidence']:.1%} confidence"
+            }
+
+            # Add confidence level
+            confidence = result['confidence']
+            if confidence >= 0.8:
+                response_data['confidence_level'] = 'high'
+                response_data['confidence_description'] = 'High confidence - very reliable classification'
+            elif confidence >= 0.6:
+                response_data['confidence_level'] = 'medium'
+                response_data['confidence_description'] = 'Medium confidence - fairly reliable classification'
+            else:
+                response_data['confidence_level'] = 'low'
+                response_data['confidence_description'] = 'Low confidence - classification may need review'
+
+            # Add top 3 predictions for better insight (map all to frontend format)
+            if 'probabilities' in result:
+                sorted_probs = sorted(result['probabilities'].items(), key=lambda x: x[1], reverse=True)
+                response_data['top_predictions'] = [
+                    {
+                        'category': map_ai_to_frontend_category(category),  # Map to frontend format
+                        'ai_category': category,  # Keep original
+                        'probability': round(prob, 3),
+                        'category_name': {
+                            'extraoral_frontal': 'Extraoral Frontal',
+                            'extraoral_full_face_smile': 'Extraoral Full Face Smile',
+                            'extraoral_right': 'Extraoral Right',
+                            'extraoral_zoomed_smile': 'Extraoral Zoomed Smile',
+                            'intraoral_front': 'Intraoral Front',
+                            'intraoral_left': 'Intraoral Left',
+                            'intraoral_right': 'Intraoral Right',
+                            'lower_occlusal': 'Lower Occlusal',
+                            'upper_occlusal': 'Upper Occlusal'
+                        }.get(category, category)
+                    }
+                    for category, prob in sorted_probs[:3]
+                ]
+
+            return jsonify(response_data)
 
         except Exception as e:
             # Clean up temp file on error
@@ -1720,7 +1927,7 @@ def test_ai_classification():
             raise e
 
     except Exception as e:
-        logging.error(f"Error in AI classification test: {e}")
+        logging.error(f"Error in modelmhanna AI classification test: {e}")
         return jsonify({'success': False, 'error': str(e)})
 
 @app.route('/trigger-training', methods=['POST'])
@@ -1813,16 +2020,12 @@ def save_settings():
         logging.error(f"Error saving settings: {str(e)}")
         return jsonify({'success': False, 'message': 'Error saving settings. Please try again.'}), 500
 
-
-
 @app.errorhandler(500)
 def server_error(e):
     logging.error(f"Server error: {str(e)}")
     flash('An internal server error occurred. Please try again.', 'error')
     user = current_user if current_user.is_authenticated else None
     return render_template('index.html', user=user), 500
-
-
 
 @app.route('/correct_classification', methods=['POST'])
 def correct_classification():
@@ -1872,4 +2075,5 @@ def correct_classification():
         logging.error(f"Error correcting classification: {e}")
         return jsonify({'success': False, 'error': str(e)})
 
-# Analyzing the code and applying the changes to fix bulk upload AI categorization.
+if __name__ == '__main__':
+    app.run(debug=True, host='0.0.0.0', port=5000)

@@ -1457,9 +1457,9 @@ function updateLayoutGuideWithResults(data) {
         'extraoral_right_view': 'placeholder_extraoral_right',
         'extraoral_frontal_view': 'placeholder_extraoral_frontal',
         'extraoral_smiling_view': 'placeholder_extraoral_smiling',
-        'extraoral_teeth_smile_view': 'placeholder_extraoral_smiling',
+        'extraoral_teeth_smile_view': 'placeholder_extraoral_teeth_smile',
         'extraoral_full_face_smile': 'placeholder_extraoral_smiling',
-        'extraoral_zoomed_smile': 'placeholder_extraoral_smiling',
+        'extraoral_zoomed_smile': 'placeholder_extraoral_teeth_smile',
         'intraoral_right_view': 'placeholder_intraoral_right',
         'intraoral_frontal_view': 'placeholder_intraoral_frontal',
         'intraoral_front': 'placeholder_intraoral_frontal',
@@ -1798,9 +1798,7 @@ function updatePlaceholderWithImage(placeholderId, file, index) {
         </div>
         <div class="p-2">
             <div class="mb-2">
-                <small class="text-muted text-truncate d-block" title="${file.original_name}">
-                    ${file.original_name.length > 15 ? file.original_name.substring(0, 15) + '...' : file.original_name}
-                </small>
+                                        <!-- Filename text removed for cleaner UI -->
             </div>
             
             <div class="mb-2">
@@ -1872,16 +1870,9 @@ function updateProgressBar(percentage) {
         progressBadge.textContent = percentage + '%';
     }
     
+    // Hide the processing text - only show the loader animation
     if (progressText) {
-        if (percentage < 30) {
-            progressText.textContent = 'Uploading images...';
-        } else if (percentage < 70) {
-            progressText.textContent = 'Processing images...';
-        } else if (percentage < 95) {
-            progressText.textContent = 'Categorizing images...';
-        } else {
-            progressText.textContent = 'Finalizing layout...';
-        }
+        progressText.style.display = 'none';
     }
 }
 
@@ -1926,11 +1917,18 @@ function createLayoutCard(file, colClass = 'col-md-4', label = '') {
     const confidenceColor = getConfidenceColor(file.confidence);
     const index = file.originalIndex;
     
-    // Responsive image styles
+    // Responsive image styles with specific handling for zoomed smile
     const isExtraoral = file.classification.startsWith('extraoral');
-    const imageStyle = isExtraoral 
-        ? "height: 200px; width: 150px; object-fit: cover; cursor: pointer; margin: 0 auto; display: block; transform: rotate(-90deg);" 
-        : "height: 150px; width: 100%; object-fit: cover; cursor: pointer;";
+    const isZoomedSmile = file.classification === 'extraoral_teeth_smile_view';
+    
+    let imageStyle;
+    if (isExtraoral) {
+        // For extraoral images, use larger container and fit the full image properly
+        imageStyle = "height: 280px; width: 100%; object-fit: contain; cursor: pointer; margin: 0 auto; display: block;";
+    } else {
+        // Intraoral images
+        imageStyle = "height: 150px; width: 100%; object-fit: cover; cursor: pointer;";
+    }
     
     return `
         <div class="${colClass} layout-card-mobile">
@@ -1944,9 +1942,7 @@ function createLayoutCard(file, colClass = 'col-md-4', label = '') {
                 </div>
                 <div class="card-body p-2">
                     <div class="mb-2">
-                        <small class="text-muted text-truncate d-block" title="${file.original_name}">
-                            ${file.original_name.length > 20 ? file.original_name.substring(0, 20) + '...' : file.original_name}
-                        </small>
+                        <!-- Filename text removed for cleaner UI -->
                     </div>
                     
                     <div class="mb-2">
@@ -1976,11 +1972,18 @@ function createImageCard(file, category) {
     const confidenceColor = getConfidenceColor(file.confidence);
     const index = file.originalIndex;
     
-    // Determine image display style based on classification
+    // Determine image display style based on classification with specific handling for zoomed smile
     const isExtraoral = file.classification.startsWith('extraoral');
-    const imageStyle = isExtraoral 
-        ? "height: 180px; width: 120px; object-fit: cover; cursor: pointer; margin: 0 auto; display: block; transform: rotate(-90deg);" 
-        : "height: 120px; width: 100%; object-fit: cover; cursor: pointer;";
+    const isZoomedSmile = file.classification === 'extraoral_teeth_smile_view';
+    
+    let imageStyle;
+    if (isExtraoral) {
+        // For extraoral images, use larger container and fit the full image properly
+        imageStyle = "height: 240px; width: 100%; object-fit: contain; cursor: pointer; margin: 0 auto; display: block;";
+    } else {
+        // Intraoral images
+        imageStyle = "height: 120px; width: 100%; object-fit: cover; cursor: pointer;";
+    }
     
     return `
         <div class="col-md-3 col-lg-2">
@@ -1990,12 +1993,13 @@ function createImageCard(file, category) {
                     <span class="badge ${confidenceColor} position-absolute top-0 end-0 m-1" id="badge_${index}">
                         ${Math.round(file.confidence * 100)}%
                     </span>
+                    <button type="button" class="btn btn-sm btn-info position-absolute" onclick="event.stopPropagation(); editImage('/uploads/${file.filename}', 'bulk_${index}')" style="top: 5px; left: 5px; padding: 0.25rem 0.4rem; border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 4px rgba(0,0,0,0.3);" title="Edit image">
+                        <i class="bi bi-pencil" style="font-size: 0.7rem;"></i>
+                    </button>
                 </div>
                 <div class="card-body p-2">
                     <div class="mb-2">
-                        <small class="text-muted text-truncate d-block" title="${file.original_name}">
-                            ${file.original_name.length > 15 ? file.original_name.substring(0, 15) + '...' : file.original_name}
-                        </small>
+                        <!-- Filename text removed for cleaner UI -->
                     </div>
                     
                     <div class="mb-2">
@@ -2057,12 +2061,8 @@ function updateClassificationDisplay(index, newClassification) {
 }
 
 function showImageModal(imageSrc, imageName, classification = '') {
-    // Determine if this is an extraoral image based on classification
-    const isExtraoralModal = classification.startsWith('extraoral');
-    
-    const imageStyle = isExtraoralModal ? 
-        "max-height: 70vh; transform: rotate(-90deg);" : 
-        "max-height: 70vh;";
+    // No rotation applied - show images in their original orientation
+    const imageStyle = "max-height: 70vh;";
     
     // Create modal HTML
     const modalHtml = `
@@ -2208,6 +2208,7 @@ function getPlaceholderIdFromClassification(classification) {
         'extraoral_right_view': 'placeholder_extraoral_right',
         'extraoral_frontal_view': 'placeholder_extraoral_frontal',
         'extraoral_smiling_view': 'placeholder_extraoral_smiling',
+        'extraoral_teeth_smile_view': 'placeholder_extraoral_teeth_smile',
         'intraoral_right_view': 'placeholder_intraoral_right',
         'intraoral_frontal_view': 'placeholder_intraoral_frontal',
         'intraoral_left_view': 'placeholder_intraoral_left',
@@ -2245,21 +2246,32 @@ function updatePlaceholderWithDirectImage(placeholderId, file) {
     
     const confidenceColor = getConfidenceColor(file.confidence);
     const isExtraoral = file.classification.startsWith('extraoral');
+    const isZoomedSmile = file.classification === 'extraoral_teeth_smile_view' || placeholderId === 'placeholder_extraoral_teeth_smile';
     const isMobile = window.innerWidth <= 768;
     
     // Apply proper sizing - fit image to container with proper aspect ratio
     const imageClasses = isExtraoral ? 'layout-img extraoral' : 'layout-img';
-    const imageStyle = `height: 100%; width: 100%; object-fit: contain; cursor: pointer; border-radius: 0.375rem;`;
+    
+    // For extraoral images, use object-fit: contain to show full image, for intraoral use cover
+    const objectFit = isExtraoral ? 'contain' : 'cover';
+    const imageStyle = `height: 100%; width: 100%; object-fit: ${objectFit}; cursor: pointer; border-radius: 0.375rem;`;
     
     // Animate the transition
     placeholder.style.transition = 'all 0.3s ease';
     placeholder.classList.remove('border-dashed');
     placeholder.classList.add('border-success');
     
-    // Set minimum height for proper display
-    const minHeight = isMobile ? '120px' : '150px';
-    placeholder.style.minHeight = minHeight;
-    placeholder.style.height = 'auto';
+    // Adjust container size for extraoral images to show full image properly
+    if (isExtraoral) {
+        placeholder.style.minHeight = isMobile ? '240px' : '280px';
+        placeholder.style.height = isMobile ? '240px' : '280px';
+        placeholder.style.maxHeight = isMobile ? '300px' : '350px';
+    } else {
+        // Set minimum height for intraoral images
+        const minHeight = isMobile ? '120px' : '150px';
+        placeholder.style.minHeight = minHeight;
+        placeholder.style.height = 'auto';
+    }
     
     // Add a loading indicator first
     placeholder.innerHTML = `
@@ -2283,13 +2295,16 @@ function updatePlaceholderWithDirectImage(placeholderId, file) {
                     <button type="button" class="btn btn-sm btn-danger" onclick="event.preventDefault(); event.stopPropagation(); removeDirectImage('${placeholderId}')" style="padding: 0.25rem 0.4rem; border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 4px rgba(0,0,0,0.3);" title="Remove image">
                         <i class="bi bi-x" style="font-size: 0.8rem;"></i>
                     </button>
+                    <button type="button" class="btn btn-sm btn-info" onclick="event.preventDefault(); event.stopPropagation(); editImage('/uploads/${file.filename}', '${placeholderId}')" style="padding: 0.25rem 0.4rem; border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 4px rgba(0,0,0,0.3);" title="Edit image">
+                        <i class="bi bi-pencil" style="font-size: 0.7rem;"></i>
+                    </button>
                     <button type="button" class="btn btn-sm btn-warning" onclick="event.preventDefault(); event.stopPropagation(); replaceDirectImage('${placeholderId}')" style="padding: 0.25rem 0.4rem; border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 4px rgba(0,0,0,0.3);" title="Replace image">
                         <i class="bi bi-arrow-repeat" style="font-size: 0.7rem;"></i>
                     </button>
                 </div>
             </div>
             <input type="hidden" name="image_files" value="${file.filename}">
-            <div class="small text-center text-muted mt-1">${file.original_name}</div>
+                            <!-- Filename text removed for cleaner UI -->
         `;
         
         // Remove onclick handler from the placeholder to prevent accidental uploads
@@ -2312,7 +2327,7 @@ function updatePlaceholderWithDirectImage(placeholderId, file) {
             <div class="text-center text-danger p-3">
                 <i class="bi bi-exclamation-triangle"></i>
                 <div class="small">Failed to load image</div>
-                <div class="small">${file.original_name}</div>
+                <!-- Filename text removed for cleaner UI -->
             </div>
         `;
     };
@@ -2326,6 +2341,7 @@ function replaceDirectImage(placeholderId) {
         'placeholder_extraoral_right': 'extraoral_right',
         'placeholder_extraoral_frontal': 'extraoral_frontal', 
         'placeholder_extraoral_smiling': 'extraoral_smiling',
+        'placeholder_extraoral_teeth_smile': 'extraoral_teeth_smile',
         'placeholder_intraoral_right': 'intraoral_right',
         'placeholder_intraoral_frontal': 'intraoral_frontal',
         'placeholder_intraoral_left': 'intraoral_left',
@@ -2366,6 +2382,7 @@ function removeDirectImage(placeholderId) {
         'placeholder_extraoral_right': 'extraoral_right',
         'placeholder_extraoral_frontal': 'extraoral_frontal',
         'placeholder_extraoral_smiling': 'extraoral_smiling',
+        'placeholder_extraoral_teeth_smile': 'extraoral_teeth_smile',
         'placeholder_intraoral_right': 'intraoral_right',
         'placeholder_intraoral_frontal': 'intraoral_frontal',
         'placeholder_intraoral_left': 'intraoral_left',
@@ -2384,6 +2401,7 @@ function resetPlaceholderToOriginal(placeholder, category) {
         'extraoral_right': 'bi-person',
         'extraoral_frontal': 'bi-person',
         'extraoral_smiling': 'bi-emoji-smile',
+        'extraoral_teeth_smile': 'bi-emoji-laughing',
         'intraoral_right': 'bi-arrow-right',
         'intraoral_frontal': 'bi-circle',
         'intraoral_left': 'bi-arrow-left',
@@ -2395,6 +2413,7 @@ function resetPlaceholderToOriginal(placeholder, category) {
         'extraoral_right': 'Right Side View',
         'extraoral_frontal': 'Frontal View',
         'extraoral_smiling': 'Frontal Smile View',
+        'extraoral_teeth_smile': 'Zoomed Smile View',
         'intraoral_right': 'Right Side View',
         'intraoral_frontal': 'Frontal View',
         'intraoral_left': 'Left Side View',
@@ -2428,6 +2447,7 @@ function getClassificationFromCategory(category) {
         'extraoral_right': 'extraoral_right_view',
         'extraoral_frontal': 'extraoral_frontal_view',
         'extraoral_smiling': 'extraoral_smiling_view',
+        'extraoral_teeth_smile': 'extraoral_teeth_smile_view',
         'intraoral_right': 'intraoral_right_view',
         'intraoral_frontal': 'intraoral_frontal_view',
         'intraoral_left': 'intraoral_left_view',
@@ -2987,4 +3007,440 @@ function applyCropToImage(cropData, placeholderId) {
     };
     
     img.src = cropData.originalSrc;
+}
+
+// Image editing functionality
+function editImage(imageSrc, placeholderId) {
+    const modalHtml = `
+        <div class="modal fade" id="imageEditModal" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-xl modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Edit Image</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="row">
+                            <div class="col-md-8">
+                                <div class="position-relative" id="imageEditContainer" style="background: #f8f9fa; border-radius: 8px; min-height: 400px; display: flex; align-items: center; justify-content: center; overflow: hidden;">
+                                    <img id="editableImage" src="${imageSrc}" alt="Editable Image" style="max-width: 100%; max-height: 500px; transform-origin: center;" />
+                                    <div id="cropOverlayEdit" style="display: none; position: absolute; border: 2px dashed #007bff; background: rgba(0,123,255,0.1); cursor: move; min-width: 50px; min-height: 50px;">
+                                        <div class="crop-handle" data-handle="nw" style="position: absolute; top: -5px; left: -5px; width: 10px; height: 10px; background: #007bff; cursor: nw-resize; border-radius: 50%;"></div>
+                                        <div class="crop-handle" data-handle="ne" style="position: absolute; top: -5px; right: -5px; width: 10px; height: 10px; background: #007bff; cursor: ne-resize; border-radius: 50%;"></div>
+                                        <div class="crop-handle" data-handle="sw" style="position: absolute; bottom: -5px; left: -5px; width: 10px; height: 10px; background: #007bff; cursor: sw-resize; border-radius: 50%;"></div>
+                                        <div class="crop-handle" data-handle="se" style="position: absolute; bottom: -5px; right: -5px; width: 10px; height: 10px; background: #007bff; cursor: se-resize; border-radius: 50%;"></div>
+                                        <div class="crop-handle" data-handle="n" style="position: absolute; top: -5px; left: 50%; transform: translateX(-50%); width: 10px; height: 10px; background: #007bff; cursor: n-resize; border-radius: 50%;"></div>
+                                        <div class="crop-handle" data-handle="s" style="position: absolute; bottom: -5px; left: 50%; transform: translateX(-50%); width: 10px; height: 10px; background: #007bff; cursor: s-resize; border-radius: 50%;"></div>
+                                        <div class="crop-handle" data-handle="w" style="position: absolute; top: 50%; left: -5px; transform: translateY(-50%); width: 10px; height: 10px; background: #007bff; cursor: w-resize; border-radius: 50%;"></div>
+                                        <div class="crop-handle" data-handle="e" style="position: absolute; top: 50%; right: -5px; transform: translateY(-50%); width: 10px; height: 10px; background: #007bff; cursor: e-resize; border-radius: 50%;"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="card">
+                                    <div class="card-header">
+                                        <h6 class="mb-0"><i class="bi bi-arrow-clockwise"></i> Rotation</h6>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="d-grid gap-2">
+                                            <button class="btn btn-outline-primary" onclick="rotateImage(-90)">
+                                                <i class="bi bi-arrow-counterclockwise"></i> Rotate Left 90°
+                                            </button>
+                                            <button class="btn btn-outline-primary" onclick="rotateImage(90)">
+                                                <i class="bi bi-arrow-clockwise"></i> Rotate Right 90°
+                                            </button>
+                                            <button class="btn btn-outline-primary" onclick="rotateImage(180)">
+                                                <i class="bi bi-arrow-repeat"></i> Rotate 180°
+                                            </button>
+                                            <button class="btn btn-outline-secondary" onclick="resetRotation()">
+                                                <i class="bi bi-bootstrap-reboot"></i> Reset Rotation
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="card mt-3">
+                                    <div class="card-header">
+                                        <h6 class="mb-0"><i class="bi bi-crop"></i> Crop</h6>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="mb-3">
+                                            <label class="form-label">Aspect Ratio</label>
+                                            <select class="form-select" id="cropAspectRatio" onchange="setCropAspectRatio()">
+                                                <option value="free">Free Size</option>
+                                                <option value="9:16">9:16 Landscape</option>
+                                                <option value="5:7">5:7 Portrait</option>
+                                            </select>
+                                        </div>
+                                        <div class="d-grid gap-2">
+                                            <button class="btn btn-outline-success" onclick="startCropping()" id="startCropBtn">
+                                                <i class="bi bi-crop"></i> Start Crop
+                                            </button>
+                                            <button class="btn btn-outline-warning" onclick="resetCrop()" id="resetCropBtn" style="display: none;">
+                                                <i class="bi bi-arrow-clockwise"></i> Reset Crop
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="card mt-3">
+                                    <div class="card-body">
+                                        <div class="d-grid gap-2">
+                                            <button class="btn btn-success" onclick="saveEditedImage('${placeholderId}')">
+                                                <i class="bi bi-check-lg"></i> Save Changes
+                                            </button>
+                                            <button class="btn btn-secondary" data-bs-dismiss="modal">
+                                                <i class="bi bi-x-lg"></i> Cancel
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // Remove existing modal if any
+    const existingModal = document.getElementById('imageEditModal');
+    if (existingModal) {
+        existingModal.remove();
+    }
+    
+    // Add modal to body
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+    
+    // Show modal
+    const modal = new bootstrap.Modal(document.getElementById('imageEditModal'));
+    modal.show();
+    
+    // Initialize editing variables
+    window.currentRotation = 0;
+    window.currentCropData = null;
+    window.cropActive = false;
+    window.editImageSrc = imageSrc;
+    window.editPlaceholderId = placeholderId;
+    
+    // Clean up modal when hidden
+    document.getElementById('imageEditModal').addEventListener('hidden.bs.modal', function() {
+        setTimeout(() => {
+            const modalElement = document.getElementById('imageEditModal');
+            if (modalElement) {
+                modalElement.remove();
+            }
+        }, 100);
+    });
+}
+
+function rotateImage(degrees) {
+    const image = document.getElementById('editableImage');
+    if (!image) return;
+    
+    window.currentRotation = (window.currentRotation + degrees) % 360;
+    image.style.transform = `rotate(${window.currentRotation}deg)`;
+}
+
+function resetRotation() {
+    const image = document.getElementById('editableImage');
+    if (!image) return;
+    
+    window.currentRotation = 0;
+    image.style.transform = 'rotate(0deg)';
+}
+
+function startCropping() {
+    const container = document.getElementById('imageEditContainer');
+    const image = document.getElementById('editableImage');
+    const cropOverlay = document.getElementById('cropOverlayEdit');
+    const resetBtn = document.getElementById('resetCropBtn');
+    const startBtn = document.getElementById('startCropBtn');
+    
+    if (!container || !image || !cropOverlay) return;
+    
+    // Show crop overlay and controls
+    cropOverlay.style.display = 'block';
+    resetBtn.style.display = 'block';
+    startBtn.style.display = 'none';
+    
+    // Get image dimensions and position relative to container
+    const containerRect = container.getBoundingClientRect();
+    const imageRect = image.getBoundingClientRect();
+    
+    // Calculate image position relative to container
+    const imageLeft = imageRect.left - containerRect.left;
+    const imageTop = imageRect.top - containerRect.top;
+    const imageWidth = imageRect.width;
+    const imageHeight = imageRect.height;
+    
+    // Calculate initial crop area (center 60% of image)
+    let cropWidth = imageWidth * 0.6;
+    let cropHeight = imageHeight * 0.6;
+    
+    // Apply aspect ratio if selected
+    const aspectRatio = document.getElementById('cropAspectRatio').value;
+    
+    if (aspectRatio === '9:16') {
+        cropHeight = cropWidth * (16/9);
+        if (cropHeight > imageHeight * 0.8) {
+            cropHeight = imageHeight * 0.8;
+            cropWidth = cropHeight * (9/16);
+        }
+    } else if (aspectRatio === '5:7') {
+        cropHeight = cropWidth * (7/5);
+        if (cropHeight > imageHeight * 0.8) {
+            cropHeight = imageHeight * 0.8;
+            cropWidth = cropHeight * (5/7);
+        }
+    }
+    
+    // Center the crop area on the image
+    const cropLeft = imageLeft + (imageWidth - cropWidth) / 2;
+    const cropTop = imageTop + (imageHeight - cropHeight) / 2;
+    
+    // Position crop overlay
+    cropOverlay.style.width = cropWidth + 'px';
+    cropOverlay.style.height = cropHeight + 'px';
+    cropOverlay.style.left = cropLeft + 'px';
+    cropOverlay.style.top = cropTop + 'px';
+    
+    window.cropActive = true;
+    setupCropHandlersEdit();
+}
+
+function setCropAspectRatio() {
+    if (window.cropActive) {
+        startCropping(); // Restart cropping with new aspect ratio
+    }
+}
+
+function resetCrop() {
+    const cropOverlay = document.getElementById('cropOverlayEdit');
+    const resetBtn = document.getElementById('resetCropBtn');
+    const startBtn = document.getElementById('startCropBtn');
+    
+    if (cropOverlay) {
+        cropOverlay.style.display = 'none';
+    }
+    if (resetBtn) {
+        resetBtn.style.display = 'none';
+    }
+    if (startBtn) {
+        startBtn.style.display = 'block';
+    }
+    
+    window.cropActive = false;
+    window.currentCropData = null;
+}
+
+function setupCropHandlersEdit() {
+    const cropOverlay = document.getElementById('cropOverlayEdit');
+    const container = document.getElementById('imageEditContainer');
+    const image = document.getElementById('editableImage');
+    
+    if (!cropOverlay || !container || !image) return;
+    
+    let isDragging = false;
+    let isResizing = false;
+    let currentHandle = null;
+    let startX, startY, startWidth, startHeight, startLeft, startTop;
+    
+    // Get image boundaries
+    const getImageBounds = () => {
+        const containerRect = container.getBoundingClientRect();
+        const imageRect = image.getBoundingClientRect();
+        return {
+            left: imageRect.left - containerRect.left,
+            top: imageRect.top - containerRect.top,
+            width: imageRect.width,
+            height: imageRect.height
+        };
+    };
+    
+    // Handle mouse down on crop overlay
+    const handleMouseDown = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        
+        if (e.target.classList.contains('crop-handle')) {
+            isResizing = true;
+            currentHandle = e.target.dataset.handle;
+        } else if (e.target === cropOverlay) {
+            isDragging = true;
+        }
+        
+        startX = e.clientX;
+        startY = e.clientY;
+        startWidth = parseInt(cropOverlay.style.width);
+        startHeight = parseInt(cropOverlay.style.height);
+        startLeft = parseInt(cropOverlay.style.left);
+        startTop = parseInt(cropOverlay.style.top);
+    };
+    
+    // Handle mouse move
+    const handleMouseMove = (e) => {
+        if (!isDragging && !isResizing) return;
+        
+        const deltaX = e.clientX - startX;
+        const deltaY = e.clientY - startY;
+        const imageBounds = getImageBounds();
+        
+        if (isDragging) {
+            // Move the crop area
+            let newLeft = startLeft + deltaX;
+            let newTop = startTop + deltaY;
+            
+            // Constrain to image boundaries
+            newLeft = Math.max(imageBounds.left, Math.min(newLeft, imageBounds.left + imageBounds.width - startWidth));
+            newTop = Math.max(imageBounds.top, Math.min(newTop, imageBounds.top + imageBounds.height - startHeight));
+            
+            cropOverlay.style.left = newLeft + 'px';
+            cropOverlay.style.top = newTop + 'px';
+            
+        } else if (isResizing && currentHandle) {
+            // Resize the crop area
+            let newWidth = startWidth;
+            let newHeight = startHeight;
+            let newLeft = startLeft;
+            let newTop = startTop;
+            
+            const aspectRatio = document.getElementById('cropAspectRatio').value;
+            
+            // Calculate new dimensions based on handle
+            switch (currentHandle) {
+                case 'se': // Bottom-right
+                    newWidth = startWidth + deltaX;
+                    newHeight = startHeight + deltaY;
+                    break;
+                case 'sw': // Bottom-left
+                    newWidth = startWidth - deltaX;
+                    newHeight = startHeight + deltaY;
+                    newLeft = startLeft + deltaX;
+                    break;
+                case 'ne': // Top-right
+                    newWidth = startWidth + deltaX;
+                    newHeight = startHeight - deltaY;
+                    newTop = startTop + deltaY;
+                    break;
+                case 'nw': // Top-left
+                    newWidth = startWidth - deltaX;
+                    newHeight = startHeight - deltaY;
+                    newLeft = startLeft + deltaX;
+                    newTop = startTop + deltaY;
+                    break;
+                case 'n': // Top
+                    newHeight = startHeight - deltaY;
+                    newTop = startTop + deltaY;
+                    break;
+                case 's': // Bottom
+                    newHeight = startHeight + deltaY;
+                    break;
+                case 'w': // Left
+                    newWidth = startWidth - deltaX;
+                    newLeft = startLeft + deltaX;
+                    break;
+                case 'e': // Right
+                    newWidth = startWidth + deltaX;
+                    break;
+            }
+            
+            // Apply aspect ratio constraints
+            if (aspectRatio === '9:16') {
+                newHeight = newWidth * (16/9);
+            } else if (aspectRatio === '5:7') {
+                newHeight = newWidth * (7/5);
+            }
+            
+            // Ensure minimum size
+            newWidth = Math.max(50, newWidth);
+            newHeight = Math.max(50, newHeight);
+            
+            // Constrain to image boundaries
+            newLeft = Math.max(imageBounds.left, Math.min(newLeft, imageBounds.left + imageBounds.width - newWidth));
+            newTop = Math.max(imageBounds.top, Math.min(newTop, imageBounds.top + imageBounds.height - newHeight));
+            
+            // Ensure crop doesn't exceed image boundaries
+            if (newLeft + newWidth > imageBounds.left + imageBounds.width) {
+                newWidth = imageBounds.left + imageBounds.width - newLeft;
+            }
+            if (newTop + newHeight > imageBounds.top + imageBounds.height) {
+                newHeight = imageBounds.top + imageBounds.height - newTop;
+            }
+            
+            // Apply new dimensions
+            cropOverlay.style.width = newWidth + 'px';
+            cropOverlay.style.height = newHeight + 'px';
+            cropOverlay.style.left = newLeft + 'px';
+            cropOverlay.style.top = newTop + 'px';
+        }
+    };
+    
+    // Handle mouse up
+    const handleMouseUp = () => {
+        isDragging = false;
+        isResizing = false;
+        currentHandle = null;
+    };
+    
+    // Add event listeners
+    cropOverlay.addEventListener('mousedown', handleMouseDown);
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+    
+    // Store cleanup function
+    window.cleanupCropHandlers = () => {
+        cropOverlay.removeEventListener('mousedown', handleMouseDown);
+        document.removeEventListener('mousemove', handleMouseMove);
+        document.removeEventListener('mouseup', handleMouseUp);
+    };
+}
+
+function saveEditedImage(placeholderId) {
+    // Get current transformation data
+    const rotation = window.currentRotation || 0;
+    const cropOverlay = document.getElementById('cropOverlayEdit');
+    const image = document.getElementById('editableImage');
+    const container = document.getElementById('imageEditContainer');
+    
+    let cropData = null;
+    
+    if (window.cropActive && cropOverlay && cropOverlay.style.display !== 'none') {
+        // Get crop data relative to image
+        const containerRect = container.getBoundingClientRect();
+        const imageRect = image.getBoundingClientRect();
+        const cropRect = cropOverlay.getBoundingClientRect();
+        
+        cropData = {
+            x: cropRect.left - imageRect.left,
+            y: cropRect.top - imageRect.top,
+            width: cropRect.width,
+            height: cropRect.height,
+            imageWidth: imageRect.width,
+            imageHeight: imageRect.height
+        };
+    }
+    
+    // In a real implementation, you would send this data to the server
+    // For now, we'll just show a success message and close the modal
+    
+    console.log('Saving image with:', {
+        placeholderId: placeholderId,
+        rotation: rotation,
+        cropData: cropData,
+        imageSrc: window.editImageSrc
+    });
+    
+    showSuccessPopup('Image edited successfully!');
+    
+    // Clean up event handlers
+    if (window.cleanupCropHandlers) {
+        window.cleanupCropHandlers();
+    }
+    
+    // Close the modal
+    const modal = bootstrap.Modal.getInstance(document.getElementById('imageEditModal'));
+    if (modal) {
+        modal.hide();
+    }
 }

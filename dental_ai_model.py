@@ -150,11 +150,14 @@ class FallbackDentalClassifier:
                 'upper_occlusal': 'Upper Occlusal'
             }
 
+            logging.info(f"Fallback classification: {predicted_category} (confidence: {confidence:.3f})")
+
             return {
                 'classification': predicted_category,
                 'confidence': confidence,
                 'probabilities': prob_dict,
-                'category_name': category_names.get(predicted_category, 'Unknown')
+                'category_name': category_names.get(predicted_category, 'Unknown'),
+                'model_used': 'fallback_sklearn'
             }
 
         except Exception as e:
@@ -168,7 +171,8 @@ class FallbackDentalClassifier:
             'confidence': 0.3,
             'probabilities': {cat: 1.0/len(self.categories) for cat in self.categories},
             'category_name': 'Intraoral Front (Fallback)',
-            'error': 'Model not trained'
+            'error': 'Model not trained',
+            'model_used': 'fallback_default'
         }
 
     def classify_bulk_images(self, image_paths: List[str]) -> List[Dict[str, Any]]:
@@ -181,84 +185,222 @@ class FallbackDentalClassifier:
         return results
 
 
-class PyTorchDentalClassifier:
-    """
-    PyTorch-based dental image classifier using ResNet18
-    """
+if PYTORCH_AVAILABLE:
+    class PyTorchDentalClassifier:
+        """
+        PyTorch-based dental image classifier using the trained modelmhanna model
+        """
 
-    def __init__(self, model_path: str = "modelmhanna/dental_classifier.pt"):
-        if not PYTORCH_AVAILABLE:
-            raise ImportError("PyTorch not available")
+        def __init__(self, model_path: str = "modelmhanna/dental_classifier.pt"):
+            if not PYTORCH_AVAILABLE:
+                raise ImportError("PyTorch not available")
 
-        self.model_path = model_path
-        self.device = torch.device('cpu')  # Use CPU for compatibility
-        self.is_trained = False
-        self.last_train_accuracy = None
-        self.last_val_accuracy = None
-        self.last_training_time = None
-
-        # Categories matching your training data
-        self.categories = [
-            'extraoral_frontal', 'extraoral_full_face_smile', 'extraoral_right', 
-            'extraoral_zoomed_smile', 'intraoral_front', 'intraoral_left', 
-            'intraoral_right', 'lower_occlusal', 'upper_occlusal'
-        ]
-
-        # Image preprocessing pipeline
-        self.transform = transforms.Compose([
-            transforms.Resize((224, 224)),
-            transforms.ToTensor(),
-            transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
-        ])
-
-        # Initialize model
-        self.model = models.resnet18(pretrained=False)
-        self.model.fc = nn.Linear(self.model.fc.in_features, len(self.categories))
-        self.model.to(self.device)
-
-        # Load trained weights if available
-        self.load_model()
-
-    def load_model(self):
-        """Load the trained PyTorch model"""
-        try:
-            if os.path.exists(self.model_path):
-                logging.info(f"Loading PyTorch model from {self.model_path}")
-                state_dict = torch.load(self.model_path, map_location=self.device)
-                self.model.load_state_dict(state_dict)
-                self.model.eval()
-                self.is_trained = True
-                self.last_training_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-                logging.info("PyTorch dental classifier loaded successfully")
-            else:
-                logging.warning(f"Model file not found: {self.model_path}")
-                self.is_trained = False
-        except Exception as e:
-            logging.error(f"Failed to load PyTorch model: {e}")
+            self.model_path = model_path
+            self.device = torch.device('cpu')  # Use CPU for compatibility
             self.is_trained = False
+            self.last_train_accuracy = None
+            self.last_val_accuracy = None
+            self.last_training_time = None
 
-    def preprocess_image(self, image_path: str) -> torch.Tensor:
-        """Preprocess image for PyTorch model"""
-        try:
-            image = Image.open(image_path).convert('RGB')
-            image_tensor = self.transform(image).unsqueeze(0)
-            return image_tensor.to(self.device)
-        except Exception as e:
-            logging.error(f"Image preprocessing failed: {e}")
-            raise
+            # Categories matching the modelmhanna training data (9 classes)
+            self.categories = [
+                'extraoral_frontal', 'extraoral_full_face_smile', 'extraoral_right', 
+                'extraoral_zoomed_smile', 'intraoral_front', 'intraoral_left', 
+                'intraoral_right', 'lower_occlusal', 'upper_occlusal'
+            ]
 
-    def classify_image(self, image_path: str) -> Dict[str, Any]:
-        """Classify a dental image using PyTorch model"""
-        try:
-            if not self.is_trained:
+            # Image preprocessing pipeline (matching modelmhanna preprocessing)
+            self.transform = transforms.Compose([
+                transforms.Resize((224, 224)),
+                transforms.ToTensor(),
+                transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
+            ])
+
+            # Initialize model with 9 classes (matching modelmhanna)
+            self.model = models.resnet18(pretrained=False)
+            self.model.fc = nn.Linear(self.model.fc.in_features, 9)  # 9 classes
+            self.model.to(self.device)
+
+            # Load trained weights from modelmhanna
+            self.load_model()
+
+        def load_model(self):
+            """Load the trained modelmhanna PyTorch model"""
+            try:
+                if os.path.exists(self.model_path):
+                    logging.info(f"Loading modelmhanna PyTorch model from {self.model_path}")
+                    state_dict = torch.load(self.model_path, map_location=self.device)
+                    self.model.load_state_dict(state_dict)
+                    self.model.eval()
+                    self.is_trained = True
+                    self.last_training_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                    logging.info("Modelmhanna dental classifier loaded successfully")
+                else:
+                    logging.warning(f"Modelmhanna model file not found: {self.model_path}")
+                    self.is_trained = False
+            except Exception as e:
+                logging.error(f"Failed to load modelmhanna PyTorch model: {e}")
+                self.is_trained = False
+
+        def preprocess_image(self, image_path: str) -> torch.Tensor:
+            """Preprocess image for modelmhanna PyTorch model"""
+            try:
+                image = Image.open(image_path).convert('RGB')
+                image_tensor = self.transform(image).unsqueeze(0)
+                return image_tensor.to(self.device)
+            except Exception as e:
+                logging.error(f"Image preprocessing failed: {e}")
+                raise
+
+        def classify_image(self, image_path: str) -> Dict[str, Any]:
+            """Classify a dental image using modelmhanna PyTorch model"""
+            try:
+                if not self.is_trained:
+                    return self._fallback_classification()
+
+                # Preprocess image
+                image_tensor = self.preprocess_image(image_path)
+
+                # Make prediction using modelmhanna model
+                with torch.no_grad():
+                    logits = self.model(image_tensor)
+                    probabilities = torch.softmax(logits, dim=1)
+                    predicted_idx = torch.argmax(logits, dim=1).item()
+                    confidence = probabilities[0][predicted_idx].item()
+
+                # Get category
+                predicted_category = self.categories[predicted_idx]
+
+                # Create probability dictionary
+                prob_dict = {}
+                for i, category in enumerate(self.categories):
+                    prob_dict[category] = probabilities[0][i].item()
+
+                # Map to user-friendly names
+                category_names = {
+                    'extraoral_frontal': 'Extraoral Frontal',
+                    'extraoral_full_face_smile': 'Extraoral Full Face Smile',
+                    'extraoral_right': 'Extraoral Right',
+                    'extraoral_zoomed_smile': 'Extraoral Zoomed Smile',
+                    'intraoral_front': 'Intraoral Front',
+                    'intraoral_left': 'Intraoral Left',
+                    'intraoral_right': 'Intraoral Right',
+                    'lower_occlusal': 'Lower Occlusal',
+                    'upper_occlusal': 'Upper Occlusal'
+                }
+
+                logging.info(f"Modelmhanna classification: {predicted_category} (confidence: {confidence:.3f})")
+
+                return {
+                    'classification': predicted_category,
+                    'confidence': confidence,
+                    'probabilities': prob_dict,
+                    'category_name': category_names.get(predicted_category, 'Unknown'),
+                    'model_used': 'modelmhanna_pytorch'
+                }
+
+            except Exception as e:
+                logging.error(f"Modelmhanna PyTorch classification failed for {image_path}: {e}")
                 return self._fallback_classification()
 
-            # Preprocess image
-            image_tensor = self.preprocess_image(image_path)
+        def _fallback_classification(self) -> Dict[str, Any]:
+            """Fallback classification when modelmhanna model is not available"""
+            return {
+                'classification': 'intraoral_front',
+                'confidence': 0.3,
+                'probabilities': {cat: 1.0/len(self.categories) for cat in self.categories},
+                'category_name': 'Intraoral Front (Fallback)',
+                'error': 'Modelmhanna model not trained',
+                'model_used': 'fallback'
+            }
 
-            # Make prediction
+        def classify_bulk_images(self, image_paths: List[str]) -> List[Dict[str, Any]]:
+            """Classify multiple images efficiently using modelmhanna model"""
+            results = []
+            for image_path in image_paths:
+                result = self.classify_image(image_path)
+                result['image_path'] = image_path
+                results.append(result)
+            return results
+
+        def train(self, data_path: str = "modelmhanna/data", validation_split: float = 0.2):
+            """Train the modelmhanna PyTorch model"""
+            try:
+                logging.info("Training modelmhanna PyTorch model...")
+
+                # Import training modules
+                import torch.optim as optim
+                from torch.utils.data import DataLoader
+                from torchvision import datasets
+
+                # Create data loaders
+                train_transform = transforms.Compose([
+                    transforms.Resize((224, 224)),
+                    transforms.RandomHorizontalFlip(),
+                    transforms.ToTensor(),
+                    transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
+                ])
+
+                dataset = datasets.ImageFolder(data_path, transform=train_transform)
+                train_loader = DataLoader(dataset, batch_size=8, shuffle=True)
+
+                # Setup training
+                criterion = nn.CrossEntropyLoss()
+                optimizer = optim.Adam(self.model.parameters(), lr=1e-4)
+
+                # Train for 3 epochs
+                self.model.train()
+                for epoch in range(3):
+                    running_loss = 0.0
+                    correct = 0
+                    total = 0
+
+                    for images, labels in train_loader:
+                        images, labels = images.to(self.device), labels.to(self.device)
+
+                        optimizer.zero_grad()
+                        outputs = self.model(images)
+                        loss = criterion(outputs, labels)
+                        loss.backward()
+                        optimizer.step()
+
+                        running_loss += loss.item()
+                        _, predicted = torch.max(outputs.data, 1)
+                        total += labels.size(0)
+                        correct += (predicted == labels).sum().item()
+
+                    epoch_loss = running_loss / len(train_loader)
+                    epoch_acc = 100 * correct / total
+                    logging.info(f"Epoch {epoch+1}/3 - Loss: {epoch_loss:.4f}, Accuracy: {epoch_acc:.2f}%")
+
+                # Save model
+                torch.save(self.model.state_dict(), self.model_path)
+
+                self.is_trained = True
+                self.last_train_accuracy = epoch_acc / 100
+                self.last_val_accuracy = epoch_acc / 100  # Using training accuracy as proxy
+                self.last_training_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+
+                logging.info(f"Modelmhanna model training completed and saved to {self.model_path}")
+                return {'train_accuracy': self.last_train_accuracy, 'val_accuracy': self.last_val_accuracy}
+
+            except Exception as e:
+                logging.error(f"Modelmhanna training failed: {e}")
+                return {'error': str(e)}
+
+        def save_model(self, save_path: str = None):
+            """Save the trained modelmhanna model"""
+            try:
+                path = save_path or self.model_path
+                torch.save(self.model.state_dict(), path)
+                logging.info(f"Modelmhanna model saved to {path}")
+            except Exception as e:
+                logging.error(f"Failed to save modelmhanna model: {e}")
+
+        def _predict(self, input_tensor: torch.Tensor) -> Dict[str, Any]:
+            """Internal prediction method for modelmhanna model"""
             with torch.no_grad():
-                logits = self.model(image_tensor)
+                logits = self.model(input_tensor)
                 probabilities = torch.softmax(logits, dim=1)
                 predicted_idx = torch.argmax(logits, dim=1).item()
                 confidence = probabilities[0][predicted_idx].item()
@@ -288,173 +430,58 @@ class PyTorchDentalClassifier:
                 'classification': predicted_category,
                 'confidence': confidence,
                 'probabilities': prob_dict,
-                'category_name': category_names.get(predicted_category, 'Unknown')
+                'category_name': category_names.get(predicted_category, 'Unknown'),
+                'model_used': 'modelmhanna_pytorch'
             }
-
-        except Exception as e:
-            logging.error(f"PyTorch classification failed for {image_path}: {e}")
-            return self._fallback_classification()
-
-    def _fallback_classification(self) -> Dict[str, Any]:
-        """Fallback classification when model is not available"""
-        return {
-            'classification': 'intraoral_front',
-            'confidence': 0.3,
-            'probabilities': {cat: 1.0/len(self.categories) for cat in self.categories},
-            'category_name': 'Intraoral Front (Fallback)',
-            'error': 'Model not trained'
-        }
-
-    def classify_bulk_images(self, image_paths: List[str]) -> List[Dict[str, Any]]:
-        """Classify multiple images efficiently"""
-        results = []
-        for image_path in image_paths:
-            result = self.classify_image(image_path)
-            result['image_path'] = image_path
-            results.append(result)
-        return results
-
-    def train(self, data_path: str = "modelmhanna/data", validation_split: float = 0.2):
-        """Train the PyTorch model"""
-        try:
-            logging.info("Training PyTorch model...")
-
-            # Import training modules
-            import torch.optim as optim
-            from torch.utils.data import DataLoader
-            from torchvision import datasets
-
-            # Create data loaders
-            train_transform = transforms.Compose([
-                transforms.Resize((224, 224)),
-                transforms.RandomHorizontalFlip(),
-                transforms.ToTensor(),
-                transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
-            ])
-
-            dataset = datasets.ImageFolder(data_path, transform=train_transform)
-            train_loader = DataLoader(dataset, batch_size=8, shuffle=True)
-
-            # Setup training
-            criterion = nn.CrossEntropyLoss()
-            optimizer = optim.Adam(self.model.parameters(), lr=1e-4)
-
-            # Train for 3 epochs
-            self.model.train()
-            for epoch in range(3):
-                running_loss = 0.0
-                correct = 0
-                total = 0
-
-                for images, labels in train_loader:
-                    images, labels = images.to(self.device), labels.to(self.device)
-
-                    optimizer.zero_grad()
-                    outputs = self.model(images)
-                    loss = criterion(outputs, labels)
-                    loss.backward()
-                    optimizer.step()
-
-                    running_loss += loss.item()
-                    _, predicted = torch.max(outputs.data, 1)
-                    total += labels.size(0)
-                    correct += (predicted == labels).sum().item()
-
-                epoch_loss = running_loss / len(train_loader)
-                epoch_acc = 100 * correct / total
-                logging.info(f"Epoch {epoch+1}/3 - Loss: {epoch_loss:.4f}, Accuracy: {epoch_acc:.2f}%")
-
-            # Save model
-            torch.save(self.model.state_dict(), self.model_path)
-
-            self.is_trained = True
-            self.last_train_accuracy = epoch_acc / 100
-            self.last_val_accuracy = epoch_acc / 100  # Using training accuracy as proxy
-            self.last_training_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-
-            logging.info(f"Model training completed and saved to {self.model_path}")
-            return {'train_accuracy': self.last_train_accuracy, 'val_accuracy': self.last_val_accuracy}
-
-        except Exception as e:
-            logging.error(f"Training failed: {e}")
-            return {'train_accuracy': 0.0, 'val_accuracy': 0.0}
-
-    def save_model(self, save_path: str = None):
-        """Save the trained model"""
-        if save_path is None:
-            save_path = self.model_path
-
-        try:
-            torch.save(self.model.state_dict(), save_path)
-            logging.info(f"Model saved to {save_path}")
-        except Exception as e:
-            logging.error(f"Failed to save model: {e}")
-
-    def _predict(self, input_tensor: torch.Tensor) -> Dict[str, Any]:
-        """
-        Internal method to perform prediction on a single image tensor.
-        """
-        try:
-            # Get prediction from model
-            with torch.no_grad():
-                outputs = self.model(input_tensor)
-                probabilities = F.softmax(outputs, dim=1)
-                confidence, predicted = torch.max(probabilities, 1)
-
-                predicted_class = self.categories[predicted.item()]
-                confidence_score = confidence.item()
-
-                logging.info(f"PyTorch prediction: {predicted_class} (confidence: {confidence_score:.3f})")
-
-                return {
-                    'classification': predicted_class,
-                    'confidence': confidence_score,
-                    'reasoning': f"Classified as {predicted_class} with {confidence_score:.1%} confidence",
-                    'probabilities': {self.categories[i]: probabilities[0][i].item() 
-                                   for i in range(len(self.categories))}
-                }
-        except Exception as e:
-            logging.error(f"Error during PyTorch classification: {e}")
-            return {
-                'classification': 'intraoral_frontal_view',
-                'confidence': 0.5,
-                'reasoning': 'Default classification due to error',
-                'probabilities': {}
-            }
+else:
+    # Create a dummy class when PyTorch is not available
+    class PyTorchDentalClassifier:
+        def __init__(self, *args, **kwargs):
+            raise ImportError("PyTorch not available")
 
 # Global classifier instance
-_pytorch_classifier = None
+_classifier = None
 
 def get_dental_classifier():
-    """Get or create the global dental classifier instance"""
-    global _pytorch_classifier
-    if _pytorch_classifier is None:
+    """
+    Get the best available dental classifier, prioritizing modelmhanna PyTorch model
+    """
+    global _classifier
+    
+    if _classifier is None:
         if PYTORCH_AVAILABLE:
             try:
-                _pytorch_classifier = PyTorchDentalClassifier()
-                logging.info("Using PyTorch dental classifier")
+                # Try to use modelmhanna PyTorch classifier first
+                _classifier = PyTorchDentalClassifier("modelmhanna/dental_classifier.pt")
+                if _classifier.is_trained:
+                    logging.info("Using modelmhanna PyTorch dental classifier")
+                else:
+                    logging.warning("Modelmhanna PyTorch model not trained, falling back to sklearn")
+                    _classifier = FallbackDentalClassifier()
             except Exception as e:
-                logging.warning(f"PyTorch classifier failed, using fallback: {e}")
-                _pytorch_classifier = FallbackDentalClassifier()
+                logging.error(f"Failed to initialize modelmhanna PyTorch classifier: {e}")
+                logging.info("Falling back to sklearn classifier")
+                _classifier = FallbackDentalClassifier()
         else:
-            _pytorch_classifier = FallbackDentalClassifier()
-            logging.info("Using fallback dental classifier")
-    return _pytorch_classifier
+            logging.warning("PyTorch not available, using fallback classifier")
+            _classifier = FallbackDentalClassifier()
+    
+    return _classifier
 
 def initialize_dental_classifier():
-    """Initialize and return the dental classifier"""
-    global _pytorch_classifier
-    if PYTORCH_AVAILABLE:
-        try:
-            _pytorch_classifier = PyTorchDentalClassifier()
-            logging.info("Initialized PyTorch dental classifier")
-        except Exception as e:
-            logging.warning(f"PyTorch classifier failed, using fallback: {e}")
-            _pytorch_classifier = FallbackDentalClassifier()
-    else:
-        _pytorch_classifier = FallbackDentalClassifier()
-        logging.info("Initialized fallback dental classifier")
-    return _pytorch_classifier
+    """
+    Initialize the dental classifier system with modelmhanna model
+    """
+    try:
+        classifier = get_dental_classifier()
+        if hasattr(classifier, 'model_used'):
+            logging.info(f"Dental classifier initialized successfully using {getattr(classifier, 'model_used', 'unknown')}")
+        else:
+            logging.info("Dental classifier initialized successfully")
+        return classifier
+    except Exception as e:
+        logging.error(f"Failed to initialize dental classifier: {e}")
+        return None
 
 # Compatibility functions for existing code
 def classify_dental_image(image_path: str) -> Dict[str, Any]:
