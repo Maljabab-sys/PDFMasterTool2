@@ -121,7 +121,7 @@ class DentalImageClassifier:
                 hist = img.histogram()
                 total_pixels = max(width * height, 1)
                 hist_features = []
-                
+
                 # RGB histogram features
                 for i in range(0, 256, 32):  # 8 bins per channel
                     r_sum = sum(hist[i:i+32])
@@ -132,7 +132,7 @@ class DentalImageClassifier:
                         g_sum / total_pixels, 
                         b_sum / total_pixels
                     ])
-                
+
                 features.extend(hist_features[:24])  # 24 histogram features
 
                 # 6. Enhanced texture analysis
@@ -145,10 +145,10 @@ class DentalImageClassifier:
 
                 # Convert to numpy array and handle NaN/inf values
                 features_array = np.array(features, dtype=np.float64)
-                
+
                 # Replace NaN and inf values with safe defaults
                 features_array = np.nan_to_num(features_array, nan=0.0, posinf=1000.0, neginf=-1000.0)
-                
+
                 # Clip extreme values to prevent overflow
                 features_array = np.clip(features_array, -1e6, 1e6)
 
@@ -162,7 +162,7 @@ class DentalImageClassifier:
     def _calculate_enhanced_texture_features(self, gray_array: np.ndarray) -> List[float]:
         """Calculate enhanced texture features from grayscale image"""
         features = []
-        
+
         try:
             # Enhanced texture measures
             # 1. Local variance in multiple neighborhood sizes
@@ -170,7 +170,7 @@ class DentalImageClassifier:
             for window_size in [3, 5]:
                 local_vars = []
                 half_window = window_size // 2
-                
+
                 # Sample fewer points to reduce computation
                 step_size = max(8, min(rows, cols) // 10)
                 for i in range(half_window, rows-half_window, step_size):
@@ -202,11 +202,11 @@ class DentalImageClassifier:
             if gray_array.size > 1:
                 grad_x = np.abs(np.diff(gray_array, axis=1))
                 grad_y = np.abs(np.diff(gray_array, axis=0))
-                
+
                 # Gradient magnitude - handle shape mismatch
                 min_rows = min(grad_x.shape[0], grad_y.shape[0])
                 min_cols = min(grad_x.shape[1], grad_y.shape[1])
-                
+
                 if min_rows > 0 and min_cols > 0:
                     grad_x_crop = grad_x[:min_rows, :min_cols]
                     grad_y_crop = grad_y[:min_rows, :min_cols]
@@ -227,7 +227,7 @@ class DentalImageClassifier:
                     np.std(grad_mag) if grad_mag.size > 0 else 0.0,
                     np.max(grad_mag) if grad_mag.size > 0 else 0.0
                 ]
-                
+
                 # Clean any NaN or inf values
                 grad_features = [f if np.isfinite(f) else 0.0 for f in grad_features]
                 features.extend(grad_features)
@@ -248,17 +248,17 @@ class DentalImageClassifier:
     def _calculate_pattern_features(self, gray_array: np.ndarray) -> List[float]:
         """Calculate pattern features for texture analysis"""
         features = []
-        
+
         try:
             rows, cols = gray_array.shape
-            
+
             if rows < 3 or cols < 3:
                 return [0.0, 0.0, 0.0, 0.0]
-            
+
             # Simplified Local Binary Pattern with safety checks
             patterns = []
             step = max(4, min(rows, cols) // 20)  # Adaptive step size
-            
+
             for i in range(1, rows-1, step):
                 for j in range(1, cols-1, step):
                     try:
@@ -268,19 +268,19 @@ class DentalImageClassifier:
                             float(gray_array[i, j+1]), float(gray_array[i+1, j+1]), float(gray_array[i+1, j]),
                             float(gray_array[i+1, j-1]), float(gray_array[i, j-1])
                         ]
-                        
+
                         # Count neighbors greater than center
                         pattern = sum(1 for n in neighbors if n > center and np.isfinite(n))
                         patterns.append(pattern)
                     except:
                         patterns.append(0)
-            
+
             if patterns and len(patterns) > 0:
                 mean_pattern = np.mean(patterns)
                 std_pattern = np.std(patterns)
                 dark_ratio = patterns.count(0) / len(patterns)
                 bright_ratio = patterns.count(8) / len(patterns)
-                
+
                 # Ensure all values are finite
                 features.extend([
                     mean_pattern if np.isfinite(mean_pattern) else 0.0,
@@ -290,49 +290,49 @@ class DentalImageClassifier:
                 ])
             else:
                 features.extend([0.0, 0.0, 0.0, 0.0])
-                
+
         except Exception as e:
             logging.error(f"Pattern feature calculation failed: {e}")
             features = [0.0, 0.0, 0.0, 0.0]
-        
+
         return features
 
     def _calculate_dental_specific_features(self, gray_array: np.ndarray, edge_array: np.ndarray) -> List[float]:
         """Calculate features specific to dental image classification"""
         features = []
-        
+
         try:
             rows, cols = gray_array.shape
             total_pixels = max(rows * cols, 1)
-            
+
             # 1. Darkness concentration (for occlusal views - dark areas between teeth)
             try:
                 dark_threshold = np.percentile(gray_array, 20)
                 dark_pixels = gray_array < dark_threshold
                 dark_ratio = np.sum(dark_pixels) / total_pixels
-                
+
                 # Simple dark region analysis without scipy
                 avg_dark_region_size = np.sum(dark_pixels) / total_pixels
-                
+
                 features.extend([
                     min(dark_ratio, 1.0),  # Cap at 1.0
                     min(avg_dark_region_size, 1.0),  # Normalized region size
                 ])
             except:
                 features.extend([0.0, 0.0])
-            
+
             # 2. Edge concentration patterns with safety checks
             try:
                 if edge_array.shape == gray_array.shape and rows > 8 and cols > 8:
                     center_y, center_x = rows // 2, cols // 2
                     quarter_y, quarter_x = max(rows // 4, 1), max(cols // 4, 1)
-                    
+
                     # Ensure we don't go out of bounds
                     start_y, end_y = max(quarter_y, 0), min(3*quarter_y, rows)
                     start_x, end_x = max(quarter_x, 0), min(3*quarter_x, cols)
-                    
+
                     center_region = edge_array[start_y:end_y, start_x:end_x]
-                    
+
                     # Build edge region safely
                     edge_regions = []
                     if quarter_y > 0:
@@ -343,18 +343,18 @@ class DentalImageClassifier:
                         edge_regions.append(edge_array[:, :quarter_x].flatten())
                     if 3*quarter_x < cols:
                         edge_regions.append(edge_array[:, 3*quarter_x:].flatten())
-                    
+
                     if edge_regions:
                         edge_region = np.concatenate(edge_regions)
                     else:
                         edge_region = np.array([0])
-                    
+
                     center_edge_density = np.mean(center_region) if center_region.size > 0 else 0
                     edge_edge_density = np.mean(edge_region) if edge_region.size > 0 else 0
-                    
+
                     # Safe division
                     center_vs_edge_ratio = center_edge_density / max(edge_edge_density, 0.1)
-                    
+
                     features.extend([
                         min(center_edge_density, 255.0),
                         min(edge_edge_density, 255.0),
@@ -364,21 +364,21 @@ class DentalImageClassifier:
                     features.extend([0.0, 0.0, 0.0])
             except:
                 features.extend([0.0, 0.0, 0.0])
-            
+
             # 3. Symmetry features with extensive safety checks
             try:
                 if cols > 4 and rows > 0:
                     left_half = gray_array[:, :cols//2]
                     right_half = gray_array[:, cols//2:]
-                    
+
                     if right_half.size > 0:
                         right_half = np.fliplr(right_half)
                         min_width = min(left_half.shape[1], right_half.shape[1])
-                        
+
                         if min_width > 0 and left_half.shape[0] == right_half.shape[0]:
                             left_crop = left_half[:, -min_width:].astype(np.float64)
                             right_crop = right_half[:, :min_width].astype(np.float64)
-                            
+
                             if left_crop.shape == right_crop.shape:
                                 diff = np.abs(left_crop - right_crop)
                                 symmetry_score = np.mean(diff)
@@ -391,18 +391,18 @@ class DentalImageClassifier:
                         symmetry_score = 255.0
                 else:
                     symmetry_score = 255.0
-                    
+
                 features.extend([
                     symmetry_score / 255.0,  # Normalized symmetry score
                 ])
             except:
                 features.extend([1.0])  # Default to maximum asymmetry
-                
+
         except Exception as e:
             logging.error(f"Dental-specific feature calculation failed: {e}")
             # Return safe default values
             features = [0.0, 0.0, 0.0, 0.0, 0.0, 1.0]
-        
+
         return features
 
     def preprocess_image(self, image_data: bytes) -> np.ndarray:
@@ -603,21 +603,21 @@ class DentalImageClassifier:
         logging.info("Applying data augmentation...")
         X_augmented = []
         y_augmented = []
-        
+
         for i, (sample, label) in enumerate(zip(X, y)):
             # Add original sample
             X_augmented.append(sample)
             y_augmented.append(label)
-            
+
             # Add augmented versions
             augmented_samples = self._augment_features(sample)
             for aug_sample in augmented_samples:
                 X_augmented.append(aug_sample)
                 y_augmented.append(label)
-        
+
         X = np.array(X_augmented)
         y = np.array(y_augmented)
-        
+
         logging.info(f"After augmentation: {len(X)} training samples")
 
         # Check if we have enough data for proper validation split
@@ -745,13 +745,24 @@ def get_dental_classifier():
     return dental_classifier
 
 def auto_train_if_needed():
-    """Automatically train the model if training data is available and model is not trained"""
+    """Automatically train the model if training data is available and model isn't trained"""
     try:
         from training_setup import TrainingDataManager
         trainer = TrainingDataManager()
         stats = trainer.get_training_stats()
 
         classifier = get_dental_classifier()
+
+        # Check if model file exists and try to load it
+        model_save_path = "models/dental_classifier.pkl"
+        if os.path.exists(model_save_path):
+            try:
+                classifier.load_model()
+                if classifier.is_trained:
+                    logging.info(f"Loaded existing trained model. Train accuracy: {getattr(classifier, 'last_train_accuracy', 'N/A')}")
+                    return
+            except Exception as e:
+                logging.warning(f"Failed to load existing model: {e}")
 
         # Train if we have enough data (at least 20 images) and model isn't trained
         if stats['total_images'] >= 20 and not classifier.is_trained:
@@ -761,7 +772,6 @@ def auto_train_if_needed():
             results = classifier.train(trainer.base_path)
 
             # Save the trained model
-            model_save_path = "models/dental_classifier.pkl"
             os.makedirs("models", exist_ok=True)
             classifier.save_model(model_save_path)
 
