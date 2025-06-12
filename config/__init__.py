@@ -3,5 +3,5 @@
 
 from .database import db
 from .models import User, Patient, Case, UserSettings
-
+ 
 __all__ = ['db', 'User', 'Patient', 'Case', 'UserSettings'] 
