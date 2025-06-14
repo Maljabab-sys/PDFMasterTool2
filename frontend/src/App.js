@@ -5,6 +5,7 @@ import CssBaseline from '@mui/material/CssBaseline';
 import { AuthProvider } from './contexts/AuthContext';
 import { AIProvider } from './contexts/AIContext';
 import { LanguageProvider, useLanguage } from './contexts/LanguageContext';
+import { SidebarProvider } from './contexts/SidebarContext';
 import Navigation from './components/Navigation/Navigation';
 import Login from './pages/Login/Login';
 import Register from './pages/Register/Register';
@@ -375,7 +376,8 @@ function AppContent() {
     <CustomThemeProvider>
       <AuthProvider>
         <AIProvider>
-          <Router>
+          <SidebarProvider>
+            <Router>
     <div className="App">
               <Routes>
                 {/* Public Routes */}
@@ -431,6 +433,7 @@ function AppContent() {
               </Routes>
     </div>
           </Router>
+          </SidebarProvider>
         </AIProvider>
       </AuthProvider>
     </CustomThemeProvider>

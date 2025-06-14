@@ -27,7 +27,7 @@ app.config['JWT_SECRET_KEY'] = os.environ.get('JWT_SECRET_KEY', 'jwt-secret-stri
 app.config['JWT_ACCESS_TOKEN_EXPIRES'] = timedelta(hours=24)
 
 # Initialize extensions
-CORS(app, origins=['http://localhost:3000'], supports_credentials=True, allow_headers=['Content-Type', 'Authorization'])  # Allow React frontend
+CORS(app, origins=['http://localhost:3000', 'http://localhost:3001'], supports_credentials=True, allow_headers=['Content-Type', 'Authorization'])  # Allow React frontend
 db.init_app(app)
 jwt = JWTManager(app)
 
@@ -58,13 +58,28 @@ def login():
         user = User.query.filter_by(email=email).first()
         
         if user and user.check_password(password):
-            access_token = create_access_token(identity=user.id)
+            access_token = create_access_token(identity=str(user.id))
+            
+            # Parse clinics from JSON
+            clinics_list = []
+            if user.clinics:
+                try:
+                    import json
+                    clinics_list = json.loads(user.clinics)
+                except:
+                    clinics_list = []
+            
             return jsonify({
                 'token': access_token,
                 'user': {
                     'id': user.id,
                     'email': user.email,
-                    'name': user.full_name
+                    'fullName': user.full_name,
+                    'specialty': user.specialty,
+                    'gender': user.gender,
+                    'profileImage': user.profile_image,
+                    'clinics': clinics_list,
+                    'notifications': user.notifications_enabled
                 }
             }), 200
         else:
@@ -107,13 +122,18 @@ def register():
         db.session.add(user)
         db.session.commit()
 
-        access_token = create_access_token(identity=user.id)
+        access_token = create_access_token(identity=str(user.id))
         return jsonify({
             'token': access_token,
             'user': {
                 'id': user.id,
                 'email': user.email,
-                'name': user.full_name
+                'fullName': user.full_name,
+                'specialty': user.specialty,
+                'gender': user.gender,
+                'profileImage': user.profile_image,
+                'clinics': [],
+                'notifications': user.notifications_enabled
             }
         }), 201
 
@@ -126,13 +146,27 @@ def register():
 def verify_token():
     try:
         user_id = get_jwt_identity()
-        user = User.query.get(user_id)
+        user = User.query.get(int(user_id))
         
         if user:
+            # Parse clinics from JSON
+            clinics_list = []
+            if user.clinics:
+                try:
+                    import json
+                    clinics_list = json.loads(user.clinics)
+                except:
+                    clinics_list = []
+            
             return jsonify({
                 'id': user.id,
                 'email': user.email,
-                'name': user.full_name
+                'fullName': user.full_name,
+                'specialty': user.specialty,
+                'gender': user.gender,
+                'profileImage': user.profile_image,
+                'clinics': clinics_list,
+                'notifications': user.notifications_enabled
             }), 200
         else:
             return jsonify({'error': 'User not found'}), 404
@@ -146,6 +180,98 @@ def verify_token():
 def logout():
     # With JWT, logout is handled client-side by removing the token
     return jsonify({'message': 'Logged out successfully'}), 200
+
+@app.route('/api/auth/profile', methods=['PUT'])
+@jwt_required()
+def update_profile():
+    try:
+        user_id = get_jwt_identity()
+        logging.info(f"Profile update request for user_id: {user_id}")
+        
+        user = User.query.get(int(user_id))
+        
+        if not user:
+            logging.error(f"User not found for id: {user_id}")
+            return jsonify({'error': 'User not found'}), 404
+            
+        data = request.get_json()
+        logging.info(f"Profile update data: {data}")
+        
+        if not data:
+            logging.error("No JSON data received")
+            return jsonify({'error': 'No data provided'}), 400
+        
+        # Update user fields
+        if 'fullName' in data and data['fullName']:
+            name_parts = data['fullName'].strip().split(' ', 1)
+            user.first_name = name_parts[0]
+            user.last_name = name_parts[1] if len(name_parts) > 1 else ''
+            logging.info(f"Updated name: {user.first_name} {user.last_name}")
+        
+        if 'email' in data and data['email']:
+            # Check if email is already taken by another user
+            existing_user = User.query.filter_by(email=data['email']).first()
+            if existing_user and existing_user.id != user.id:
+                return jsonify({'error': 'Email already in use'}), 400
+            user.email = data['email']
+            logging.info(f"Updated email: {user.email}")
+        
+        # Handle profile image (for now, just store as text - in production you'd save to file system)
+        if 'profileImage' in data:
+            user.profile_image = data['profileImage']
+            logging.info("Updated profile image")
+        
+        # Handle clinics (store as JSON string)
+        if 'clinics' in data:
+            import json
+            user.clinics = json.dumps(data['clinics'])
+            logging.info(f"Updated clinics: {data['clinics']}")
+        
+        # Handle specialty
+        if 'specialty' in data:
+            user.specialty = data['specialty']
+            logging.info(f"Updated specialty: {user.specialty}")
+        
+        # Handle gender
+        if 'gender' in data:
+            user.gender = data['gender']
+            logging.info(f"Updated gender: {user.gender}")
+        
+        # Handle preferences
+        if 'notifications' in data:
+            user.notifications_enabled = data['notifications']
+            logging.info(f"Updated notifications: {user.notifications_enabled}")
+        
+        db.session.commit()
+        logging.info("Profile updated successfully")
+        
+        # Return updated user data
+        clinics_list = []
+        if user.clinics:
+            try:
+                import json
+                clinics_list = json.loads(user.clinics)
+            except:
+                clinics_list = []
+        
+        return jsonify({
+            'user': {
+                'id': user.id,
+                'email': user.email,
+                'fullName': user.full_name,
+                'specialty': user.specialty,
+                'gender': user.gender,
+                'profileImage': user.profile_image,
+                'clinics': clinics_list,
+                'notifications': user.notifications_enabled
+            }
+        }), 200
+        
+    except Exception as e:
+        logging.error(f"Profile update error: {e}")
+        import traceback
+        logging.error(f"Traceback: {traceback.format_exc()}")
+        return jsonify({'error': f'Failed to update profile: {str(e)}'}), 500
 
 # AI Routes
 @app.route('/api/ai/model-status', methods=['GET'])
@@ -359,4 +485,4 @@ def create_tables():
 
 if __name__ == '__main__':
     create_tables()  # Initialize database tables
-    app.run(debug=True, host='0.0.0.0', port=5000) 
+    app.run(debug=True, host='0.0.0.0', port=5001) 

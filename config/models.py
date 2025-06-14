@@ -20,6 +20,13 @@ class User(UserMixin, db.Model):
     reset_token = db.Column(db.String(255), nullable=True)
     reset_token_expires = db.Column(db.DateTime, nullable=True)
     
+    # Profile fields
+    profile_image = db.Column(db.Text, nullable=True)  # Base64 encoded image or file path
+    clinics = db.Column(db.Text, nullable=True)  # JSON string of clinic names
+    notifications_enabled = db.Column(db.Boolean, default=True)
+    specialty = db.Column(db.String(100), nullable=True)  # Dental specialty
+    gender = db.Column(db.String(20), nullable=True)  # Gender
+    
     def set_password(self, password):
         """Set password hash"""
         self.password_hash = generate_password_hash(password)

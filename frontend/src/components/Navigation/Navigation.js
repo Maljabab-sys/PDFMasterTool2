@@ -19,9 +19,11 @@ import {
   AppBar,
   Toolbar,
   Badge,
+  Tooltip,
 } from '@mui/material';
 import {
   Menu as MenuIcon,
+  Close as CloseIcon,
   Dashboard as DashboardIcon,
   AddBox as AddBoxIcon,
   People as PeopleIcon,
@@ -39,6 +41,7 @@ import {
 import { useAuth } from '../../contexts/AuthContext';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { useCustomTheme } from '../../App';
+import { useSidebar } from '../../contexts/SidebarContext';
 
 const expandedWidth = 220;
 const collapsedWidth = 64;
@@ -51,9 +54,14 @@ const Navigation = ({ children }) => {
   const { user, logout } = useAuth();
   const { t, language, toggleLanguage } = useLanguage();
   const { darkMode, toggleDarkMode } = useCustomTheme();
+  const { collapsed, toggleSidebar } = useSidebar();
 
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [collapsed, setCollapsed] = useState(false);
+  
+  // Debug: Log when collapsed state changes
+  React.useEffect(() => {
+    console.log('Navigation: collapsed state changed to:', collapsed);
+  }, [collapsed]);
   const profileButtonRef = useRef(null);
   const [userMenuAnchor, setUserMenuAnchor] = useState(null);
   const [languageMenuAnchor, setLanguageMenuAnchor] = useState(null);
@@ -103,78 +111,117 @@ const Navigation = ({ children }) => {
         flexDirection: 'column',
         bgcolor: 'background.paper',
         borderRight: `1px solid ${theme.palette.divider}`,
+        borderRadius: 0, // Remove rounded corners
       }}
     >
-      {/* Header with toggle button */}
+      {/* Header with toggle button - moved to top for mobile */}
       <Box
         sx={{
           display: 'flex',
           alignItems: 'center',
-          justifyContent: collapsed ? 'center' : 'space-between',
-          p: 2,
-          minHeight: 64,
+          justifyContent: 'center',
+          p: isMobile ? 1 : 1,
+          minHeight: isMobile ? 48 : 48,
+          order: isMobile ? -1 : 0, // Move to top on mobile
+          borderBottom: isMobile ? `1px solid ${theme.palette.divider}` : 'none',
+          mb: isMobile ? '-1px' : 0, // Negative margin to overlap with List
         }}
       >
-        {!collapsed && (
-          <Typography variant="h6" sx={{ fontWeight: 600, color: 'primary.main' }}>
-            DentalAI
-          </Typography>
-        )}
         {!isMobile && (
           <IconButton
-            onClick={() => setCollapsed(!collapsed)}
+            size="medium"
+            onClick={() => {
+              console.log('Toggle button clicked, current collapsed state:', collapsed);
+              toggleSidebar();
+            }}
             sx={{
-              bgcolor: 'action.hover',
-              '&:hover': { bgcolor: 'action.selected' },
+              bgcolor: theme.palette.mode === 'dark' ? 'grey.800' : 'grey.100',
+              '&:hover': { 
+                bgcolor: theme.palette.mode === 'dark' ? 'grey.700' : 'grey.200',
+                transform: 'scale(1.05)'
+              },
+              borderRadius: 2,
+              p: 1.5,
+              minWidth: 48,
+              minHeight: 48,
+              display: 'flex',
+              visibility: 'visible',
+              transition: 'all 0.2s ease-in-out',
+              boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+              color: 'white',
             }}
           >
-            {collapsed ? <ChevronRightIcon /> : <ChevronLeftIcon />}
+            {collapsed ? <ChevronRightIcon fontSize="medium" /> : <ChevronLeftIcon fontSize="medium" />}
           </IconButton>
+        )}
+        {isMobile && (
+          <Typography variant="body2" sx={{ fontWeight: 500 }}>
+            Menu
+          </Typography>
         )}
       </Box>
 
-      <Divider />
-
       {/* Navigation items */}
-      <List sx={{ flexGrow: 1, px: 1 }}>
+      <List 
+        disablePadding
+        sx={{ 
+          flexGrow: 1, 
+          px: 1, 
+          pt: 0, 
+          mt: isMobile ? '-1px' : 0, // Negative margin to eliminate gap on mobile
+          pb: 0,
+          '& .MuiList-root': { 
+            pt: 0, 
+            pb: 0 
+          },
+          '& .MuiList-padding': {
+            pt: 0,
+            pb: 0
+          }
+        }}
+      >
         {navigationItems.map((item) => (
-          <ListItem key={item.path} disablePadding sx={{ mb: 0.5 }}>
-            <ListItemButton
-              onClick={() => {
-                handleNavigation(item.path);
-              }}
-              selected={isCurrentPath(item.path)}
-              sx={{
-                borderRadius: 2,
-                minHeight: 48,
-                justifyContent: collapsed ? 'center' : 'flex-start',
-                px: 2.5,
-                '&.Mui-selected': {
-                  bgcolor: 'primary.main',
-                  color: 'primary.contrastText',
-                  '&:hover': {
-                    bgcolor: 'primary.dark',
-                  },
-                  '& .MuiListItemIcon-root': {
-                    color: 'primary.contrastText',
-                  },
-                },
-                '&:hover': {
-                  bgcolor: 'action.hover',
-                },
-              }}
-            >
-              <ListItemIcon
+                      <ListItem key={item.path} disablePadding sx={{ mb: 0 }}>
+            <Tooltip title={collapsed ? item.label : ""} placement="right">
+              <ListItemButton
+                onClick={() => {
+                  handleNavigation(item.path);
+                }}
+                selected={isCurrentPath(item.path)}
                 sx={{
-                  minWidth: 0,
-                  mr: collapsed ? 0 : 3,
-                  justifyContent: 'center',
+                  borderRadius: 1, // Reduced border radius
+                  minHeight: 48,
+                  justifyContent: collapsed ? 'center' : 'flex-start',
+                  px: 2.5,
+                  '&.Mui-selected': {
+                    bgcolor: 'primary.main',
+                    color: 'primary.contrastText',
+                    borderRadius: 1, // Reduced border radius for selected state
+                    '&:hover': {
+                      bgcolor: 'primary.dark',
+                    },
+                    '& .MuiListItemIcon-root': {
+                      color: 'primary.contrastText',
+                    },
+                  },
+                  '&:hover': {
+                    bgcolor: 'action.hover',
+                    borderRadius: 1, // Reduced border radius for hover state
+                  },
                 }}
               >
-                {item.icon}
-              </ListItemIcon>
-              {!collapsed && <ListItemText primary={item.label} />}
-            </ListItemButton>
+                <ListItemIcon
+                  sx={{
+                    minWidth: 0,
+                    mr: collapsed ? 0 : 3,
+                    justifyContent: 'center',
+                  }}
+                >
+                  {item.icon}
+                </ListItemIcon>
+                {!collapsed && <ListItemText primary={item.label} />}
+              </ListItemButton>
+            </Tooltip>
           </ListItem>
         ))}
       </List>
@@ -192,33 +239,56 @@ const Navigation = ({ children }) => {
           zIndex: theme.zIndex.drawer + 1,
           borderBottom: `1px solid ${theme.palette.divider}`,
           bgcolor: 'background.paper',
+          borderRadius: 0, // Remove rounded corners
         }}
       >
         <Toolbar sx={{ justifyContent: 'space-between' }}>
-          {isMobile && (
-            <IconButton
-              color="inherit"
-              edge="start"
-              onClick={() => setMobileOpen(true)}
+          {/* Left side - Mobile menu button or Brand name */}
+          <Box sx={{ display: 'flex', alignItems: 'center' }}>
+            {isMobile && (
+              <IconButton
+                color="inherit"
+                edge="start"
+                onClick={() => setMobileOpen(!mobileOpen)}
+                sx={{ mr: 2 }}
+              >
+                {mobileOpen ? <CloseIcon /> : <MenuIcon />}
+              </IconButton>
+            )}
+            
+            {/* Brand Name */}
+            <Typography 
+              variant="h6" 
+              sx={{ 
+                fontWeight: 700, 
+                color: 'primary.main',
+                cursor: 'pointer',
+                '&:hover': {
+                  color: 'primary.dark',
+                }
+              }}
+              onClick={() => navigate('/dashboard')}
             >
-              <MenuIcon />
-            </IconButton>
-          )}
-          
-          {!isMobile && <Box />} {/* Spacer for desktop */}
+              DentalAI
+            </Typography>
+          </Box>
           
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
             {/* Notifications */}
-            <IconButton color="inherit">
-              <Badge badgeContent={3} color="error">
-                <NotificationsIcon />
-              </Badge>
-            </IconButton>
+            <Tooltip title="Notifications">
+              <IconButton color="inherit">
+                <Badge badgeContent={3} color="error">
+                  <NotificationsIcon />
+                </Badge>
+              </IconButton>
+            </Tooltip>
 
             {/* Language Selector */}
-            <IconButton color="inherit" onClick={handleLanguageMenuOpen}>
-              <LanguageIcon />
-            </IconButton>
+            <Tooltip title="Language">
+              <IconButton color="inherit" onClick={handleLanguageMenuOpen}>
+                <LanguageIcon />
+              </IconButton>
+            </Tooltip>
             <Menu
               anchorEl={languageMenuAnchor}
               open={Boolean(languageMenuAnchor)}
@@ -258,20 +328,27 @@ const Navigation = ({ children }) => {
             </Menu>
 
             {/* Dark Mode Toggle */}
-            <IconButton color="inherit" onClick={toggleDarkMode}>
-              {darkMode ? <LightModeIcon /> : <DarkModeIcon />}
-            </IconButton>
+            <Tooltip title={darkMode ? "Switch to Light Mode" : "Switch to Dark Mode"}>
+              <IconButton color="inherit" onClick={toggleDarkMode}>
+                {darkMode ? <LightModeIcon /> : <DarkModeIcon />}
+              </IconButton>
+            </Tooltip>
 
             {/* Profile */}
-            <IconButton
-              ref={profileButtonRef}
-              color="primary"
-              onClick={handleUserMenuOpen}
-            >
-              <Avatar sx={{ width: 32, height: 32, bgcolor: 'primary.main' }}>
-                <AccountCircleIcon />
-              </Avatar>
-            </IconButton>
+            <Tooltip title="Profile">
+              <IconButton
+                ref={profileButtonRef}
+                color="primary"
+                onClick={handleUserMenuOpen}
+              >
+                <Avatar 
+                  sx={{ width: 32, height: 32, bgcolor: 'primary.main' }}
+                  src={user?.profileImage}
+                >
+                  {!user?.profileImage && <AccountCircleIcon />}
+                </Avatar>
+              </IconButton>
+            </Tooltip>
             <Menu
               anchorEl={userMenuAnchor}
               open={Boolean(userMenuAnchor)}
@@ -314,11 +391,20 @@ const Navigation = ({ children }) => {
             '& .MuiDrawer-paper': {
               width: collapsed ? collapsedWidth : expandedWidth,
               boxSizing: 'border-box',
-              transition: theme.transitions.create('width', {
-                easing: theme.transitions.easing.sharp,
-                duration: theme.transitions.duration.enteringScreen,
+              transition: theme.transitions.create(['width', 'transform'], {
+                easing: theme.transitions.easing.easeInOut,
+                duration: theme.transitions.duration.standard,
               }),
-              mt: 8, // Add margin top to account for AppBar
+              mt: 8, // Add margin top to account for AppBar (64px = 8 * 8px)
+              height: 'calc(100vh - 64px)', // Full height minus AppBar
+              transform: collapsed ? 'translateX(0)' : 'translateX(0)',
+              boxShadow: collapsed 
+                ? '2px 0 8px rgba(0,0,0,0.1)' 
+                : '4px 0 12px rgba(0,0,0,0.15)',
+              borderRadius: 0, // Remove rounded corners
+              '& .MuiPaper-root': {
+                borderRadius: 0, // Remove rounded corners from paper
+              }
             },
           }}
         >
@@ -337,7 +423,12 @@ const Navigation = ({ children }) => {
             '& .MuiDrawer-paper': {
               width: expandedWidth,
               boxSizing: 'border-box',
-              mt: 8, // Add margin top to account for AppBar
+              mt: 0, // Remove margin top to touch AppBar
+              height: '100vh', // Full height to touch top
+              borderRadius: 0, // Remove rounded corners
+              '& .MuiPaper-root': {
+                borderRadius: 0, // Remove rounded corners from paper
+              }
             },
           }}
         >
@@ -345,22 +436,30 @@ const Navigation = ({ children }) => {
         </Drawer>
       )}
 
-      {/* Main content area - Adaptive to sidebar */}
+      {/* Main content area - Animated positioning */}
       <Box
         sx={{
           flexGrow: 1,
           minHeight: '100vh',
           bgcolor: 'background.default',
-          ml: isMobile ? 0 : collapsed ? `${collapsedWidth}px` : `${expandedWidth}px`,
-          transition: theme.transitions.create('margin', {
-            easing: theme.transitions.easing.sharp,
-            duration: theme.transitions.duration.enteringScreen,
+          ml: 0, // Remove margin-left to make content touch sidebar
+          transition: theme.transitions.create(['margin', 'transform'], {
+            easing: theme.transitions.easing.easeInOut,
+            duration: theme.transitions.duration.standard,
           }),
-          pt: 8, // Add padding top for AppBar
+          pt: 7, // Add padding top for AppBar (reduced spacing)
         }}
       >
         {/* Main content */}
-        <Box sx={{ p: { xs: 2, md: 4 } }}>
+        <Box sx={{ 
+          pl: { 
+            xs: 1, 
+            md: 2 
+          },
+          pr: { xs: 1, md: 1 },
+          py: { xs: 1, md: 1 },
+          position: 'relative'
+        }}>
           {typeof children !== 'undefined' ? children : null}
         </Box>
       </Box>

@@ -96,6 +96,19 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const updateProfile = async (profileData) => {
+    try {
+      const response = await authService.updateProfile(profileData);
+      setUser(response.user);
+      return { success: true };
+    } catch (error) {
+      return { 
+        success: false, 
+        error: error.response?.data?.error || 'Profile update failed' 
+      };
+    }
+  };
+
   const value = {
     user,
     isAuthenticated,
@@ -105,6 +118,7 @@ export const AuthProvider = ({ children }) => {
     logout,
     forgotPassword,
     resetPassword,
+    updateProfile,
     checkAuthStatus
   };
 

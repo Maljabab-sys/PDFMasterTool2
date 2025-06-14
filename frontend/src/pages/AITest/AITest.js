@@ -16,9 +16,13 @@ import {
 import { CloudUpload, Psychology } from '@mui/icons-material';
 import { useAI } from '../../contexts/AIContext';
 import { aiService } from '../../services/aiService';
+import { useSidebar } from '../../contexts/SidebarContext';
+import { useTheme } from '@mui/material/styles';
 
 const AITest = () => {
   const { modelStatus } = useAI();
+  const { collapsed } = useSidebar();
+  const theme = useTheme();
   const [selectedFile, setSelectedFile] = useState(null);
   const [classification, setClassification] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -70,7 +74,19 @@ const AITest = () => {
   };
 
   return (
-    <Container maxWidth="lg">
+    <Box sx={{ 
+      width: '100%', 
+      m: 0,
+      transition: theme.transitions.create(['margin-left'], {
+        easing: theme.transitions.easing.easeInOut,
+        duration: theme.transitions.duration.standard,
+      }),
+      width: 'calc(100% - 64px)', // Keep consistent width - don't narrow
+      marginLeft: '32px', // Keep consistent spacing in both states
+      position: 'relative',
+    }}>
+      
+      <Container maxWidth="lg" sx={{ py: 4 }}>
       <Box sx={{ mt: 4, mb: 4 }}>
         <Typography variant="h4" component="h1" gutterBottom>
           AI Classification Test
@@ -272,6 +288,7 @@ const AITest = () => {
         </Paper>
       </Box>
     </Container>
+    </Box>
   );
 };
 

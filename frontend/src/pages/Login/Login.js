@@ -286,18 +286,23 @@ const Login = () => {
     setLoading(true);
 
     try {
-      await login(formData.email, formData.password);
-      // Remember Me logic (SECURITY NOTE: Storing passwords in localStorage is not recommended for production)
-      if (rememberMe) {
-        localStorage.setItem('rememberMe', 'true');
-        localStorage.setItem('rememberedEmail', formData.email);
-        localStorage.setItem('rememberedPassword', formData.password);
+      const result = await login(formData.email, formData.password);
+      
+      if (result.success) {
+        // Remember Me logic (SECURITY NOTE: Storing passwords in localStorage is not recommended for production)
+        if (rememberMe) {
+          localStorage.setItem('rememberMe', 'true');
+          localStorage.setItem('rememberedEmail', formData.email);
+          localStorage.setItem('rememberedPassword', formData.password);
+        } else {
+          localStorage.removeItem('rememberMe');
+          localStorage.removeItem('rememberedEmail');
+          localStorage.removeItem('rememberedPassword');
+        }
+        navigate('/dashboard');
       } else {
-        localStorage.removeItem('rememberMe');
-        localStorage.removeItem('rememberedEmail');
-        localStorage.removeItem('rememberedPassword');
+        setError(result.error || t('loginFailed'));
       }
-      navigate('/dashboard');
     } catch (err) {
       setError(err.message || t('loginFailed'));
     } finally {

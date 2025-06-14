@@ -44,6 +44,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useAI } from '../../contexts/AIContext';
 import { useCustomTheme } from '../../App';
 import { useLanguage } from '../../contexts/LanguageContext';
+import { useSidebar } from '../../contexts/SidebarContext';
 
 // Styled Components without gradients
 const StatCard = styled(Card)(({ theme }) => ({
@@ -110,7 +111,10 @@ const Dashboard = () => {
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const { user } = useAuth();
   const { t, isRTL } = useLanguage();
+  const { collapsed } = useSidebar();
   const [animationTrigger, setAnimationTrigger] = useState(false);
+  
+
   const [dashboardData, setDashboardData] = useState({
     totalPatients: 45,
     totalCases: 127,
@@ -157,7 +161,20 @@ const Dashboard = () => {
   ];
 
   return (
-    <Box sx={{ width: '100%', m: 0 }}>
+    <Box sx={{ 
+      width: '100%', 
+      m: 0,
+      transition: theme.transitions.create(['margin-left'], {
+        easing: theme.transitions.easing.easeInOut,
+        duration: theme.transitions.duration.standard,
+      }),
+      width: 'calc(100% - 64px)', // Keep consistent width - don't narrow
+      marginLeft: '32px', // Keep consistent spacing in both states
+      position: 'relative',
+      // Add padding inside the border
+      p: 3, // 24px padding on all sides
+    }}>
+      
       {/* Welcome Section with New Case Button */}
       <Box 
         sx={{ 

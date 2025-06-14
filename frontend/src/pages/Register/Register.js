@@ -16,6 +16,7 @@ import {
   Slide,
   Zoom,
   CircularProgress,
+  MenuItem,
 } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import {
@@ -244,12 +245,41 @@ const Register = () => {
     email: '',
     password: '',
     confirmPassword: '',
+    specialty: '',
+    gender: '',
   });
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [animationTrigger, setAnimationTrigger] = useState(false);
+
+  // Dental specialties list
+  const dentalSpecialties = [
+    'General Dentistry',
+    'Orthodontics',
+    'Oral and Maxillofacial Surgery',
+    'Periodontics',
+    'Endodontics',
+    'Prosthodontics',
+    'Pediatric Dentistry',
+    'Oral Pathology',
+    'Oral Radiology',
+    'Public Health Dentistry',
+    'Dental Anesthesiology',
+    'Oral Medicine',
+    'Cosmetic Dentistry',
+    'Implant Dentistry',
+    'Restorative Dentistry'
+  ];
+
+  // Gender options
+  const genderOptions = [
+    { value: 'male', label: 'Male' },
+    { value: 'female', label: 'Female' },
+    { value: 'other', label: 'Other' },
+    { value: 'prefer-not-to-say', label: 'Prefer not to say' }
+  ];
 
   useEffect(() => {
     setAnimationTrigger(true);
@@ -445,6 +475,48 @@ const Register = () => {
                     />
                   </Slide>
 
+                  <Slide direction="right" in={animationTrigger} timeout={600} style={{ transitionDelay: '750ms' }}>
+                    <StyledTextField
+                      fullWidth
+                      select
+                      label="Dental Specialty (Optional)"
+                      name="specialty"
+                      value={formData.specialty || ''}
+                      onChange={handleChange}
+                      sx={{ mb: 3 }}
+                    >
+                      <MenuItem value="">
+                        <em style={{ color: '#999' }}>Select specialty</em>
+                      </MenuItem>
+                      {dentalSpecialties.map((specialty) => (
+                        <MenuItem key={specialty} value={specialty}>
+                          {specialty}
+                        </MenuItem>
+                      ))}
+                    </StyledTextField>
+                  </Slide>
+
+                  <Slide direction="left" in={animationTrigger} timeout={600} style={{ transitionDelay: '775ms' }}>
+                    <StyledTextField
+                      fullWidth
+                      select
+                      label="Gender (Optional)"
+                      name="gender"
+                      value={formData.gender || ''}
+                      onChange={handleChange}
+                      sx={{ mb: 3 }}
+                    >
+                      <MenuItem value="">
+                        <em style={{ color: '#999' }}>Select gender</em>
+                      </MenuItem>
+                      {genderOptions.map((gender) => (
+                        <MenuItem key={gender.value} value={gender.value}>
+                          {gender.label}
+                        </MenuItem>
+                      ))}
+                    </StyledTextField>
+                  </Slide>
+
                   <Slide direction="right" in={animationTrigger} timeout={600} style={{ transitionDelay: '800ms' }}>
                     <StyledTextField
                       fullWidth
@@ -483,7 +555,7 @@ const Register = () => {
                     />
                   </Slide>
 
-                  <Slide direction="left" in={animationTrigger} timeout={600} style={{ transitionDelay: '900ms' }}>
+                  <Slide direction="left" in={animationTrigger} timeout={600} style={{ transitionDelay: '825ms' }}>
                     <StyledTextField
                       fullWidth
                       label="Confirm Password"
@@ -522,7 +594,7 @@ const Register = () => {
                 </Box>
 
                 {/* Submit Button */}
-                <Zoom in={animationTrigger} timeout={600} style={{ transitionDelay: '1000ms' }}>
+                <Zoom in={animationTrigger} timeout={600} style={{ transitionDelay: '850ms' }}>
                   <GradientButton
                     type="submit"
                     fullWidth
@@ -542,7 +614,7 @@ const Register = () => {
                 </Zoom>
 
                 {/* Login Link */}
-                <Fade in={animationTrigger} timeout={800} style={{ transitionDelay: '1200ms' }}>
+                <Fade in={animationTrigger} timeout={800} style={{ transitionDelay: '900ms' }}>
                   <Box sx={{ textAlign: 'center' }}>
                     <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
                       Already have an account?

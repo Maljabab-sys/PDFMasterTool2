@@ -29,9 +29,13 @@ import {
 } from '@mui/icons-material';
 import { useAuth } from '../../contexts/AuthContext';
 import api from '../../services/api';
+import { useSidebar } from '../../contexts/SidebarContext';
+import { useTheme } from '@mui/material/styles';
 
 const PatientList = () => {
   const { user } = useAuth();
+  const { collapsed } = useSidebar();
+  const theme = useTheme();
   const [patients, setPatients] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -94,7 +98,19 @@ const PatientList = () => {
   }
 
   return (
-    <Container maxWidth="xl">
+    <Box sx={{ 
+      width: '100%', 
+      m: 0,
+      transition: theme.transitions.create(['margin-left'], {
+        easing: theme.transitions.easing.easeInOut,
+        duration: theme.transitions.duration.standard,
+      }),
+      width: 'calc(100% - 64px)', // Keep consistent width - don't narrow
+      marginLeft: '32px', // Keep consistent spacing in both states
+      position: 'relative',
+    }}>
+      
+      <Container maxWidth="lg" sx={{ py: 4 }}>
       <Box sx={{ mt: 4, mb: 4 }}>
         <Typography variant="h4" component="h1" gutterBottom>
           Patient Management
@@ -242,6 +258,7 @@ const PatientList = () => {
         </Dialog>
       </Box>
     </Container>
+    </Box>
   );
 };
 

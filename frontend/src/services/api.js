@@ -2,7 +2,7 @@ import axios from 'axios';
 
 // Create axios instance
 const api = axios.create({
-  baseURL: process.env.REACT_APP_API_URL || 'http://localhost:5000',
+  baseURL: process.env.REACT_APP_API_URL || 'http://localhost:5001',
   timeout: 30000,
   headers: {
     'Content-Type': 'application/json',
@@ -40,7 +40,7 @@ api.interceptors.response.use(
 
 // Create multipart form data axios instance for file uploads
 export const apiMultipart = axios.create({
-  baseURL: process.env.REACT_APP_API_URL || 'http://localhost:5000',
+  baseURL: process.env.REACT_APP_API_URL || 'http://localhost:5001',
   timeout: 60000,
   headers: {
     'Content-Type': 'multipart/form-data',
