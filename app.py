@@ -24,7 +24,13 @@ import json
 # Configure logging
 logging.basicConfig(level=logging.DEBUG)
 
-app = Flask(__name__)
+import os
+from flask import send_from_directory
+
+# serve everything out of `./build`
+app = Flask(__name__,
+            static_folder='build',       # where you moved your React build
+            static_url_path='')          # serve it at the root URL
 app.secret_key = os.environ.get("SESSION_SECRET", "dev-secret-key-change-in-production")
 app.config['SESSION_COOKIE_SECURE'] = False  # Set to True in production with HTTPS
 app.config['SESSION_COOKIE_HTTPONLY'] = True  # Secure cookie - prevent XSS
