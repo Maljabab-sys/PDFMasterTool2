@@ -44,8 +44,8 @@
 :root {
   --primary-color: #667eea;
   --primary-dark: #5a6fd8;
-  --secondary-color: #764ba2;
-  --secondary-dark: #6a4190;
+  --secondary-color: #00acc1;
+  --secondary-dark: #00838f;
   --success-color: #4facfe;
   --warning-color: #fa709a;
   --error-color: #ff6b6b;
@@ -90,6 +90,115 @@ body {
   -moz-osx-font-smoothing: grayscale;
   line-height: 1.6;
   overflow-x: hidden;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* Theme transition styles */
+.dark-theme {
+  background-color: #121212 !important;
+  color: #ffffff !important;
+}
+
+.light-theme {
+  background-color: #ffffff !important;
+  color: #000000 !important;
+}
+
+/* Dark theme overrides for Material-UI components */
+.dark-theme .MuiPaper-root {
+  background-color: #1e1e1e !important;
+  color: #ffffff !important;
+  border-color: #333333 !important;
+}
+
+.dark-theme .MuiInputBase-root,
+.dark-theme .MuiOutlinedInput-root,
+.dark-theme .MuiFilledInput-root {
+  background-color: #2a2a2a !important;
+  color: #ffffff !important;
+}
+
+.dark-theme .MuiTypography-root {
+  color: #ffffff !important;
+}
+
+.dark-theme .MuiFormLabel-root,
+.dark-theme .MuiInputLabel-root {
+  color: #b3b3b3 !important;
+}
+
+.dark-theme .MuiButton-outlined {
+  color: #90caf9 !important;
+  border-color: #90caf9 !important;
+}
+
+.dark-theme .MuiDivider-root {
+  border-color: #333333 !important;
+}
+
+.dark-theme .MuiOutlinedInput-notchedOutline {
+  border-color: #555555 !important;
+}
+
+.dark-theme .MuiSelect-select {
+  color: #ffffff !important;
+}
+
+.dark-theme .MuiMenuItem-root {
+  color: #ffffff !important;
+}
+
+.dark-theme .MuiMenu-paper {
+  background-color: #2a2a2a !important;
+}
+
+/* Light theme (default) - ensure proper reset */
+.light-theme .MuiPaper-root {
+  background-color: #ffffff !important;
+  color: #000000 !important;
+}
+
+.light-theme .MuiInputBase-root,
+.light-theme .MuiOutlinedInput-root,
+.light-theme .MuiFilledInput-root {
+  background-color: #ffffff !important;
+  color: #000000 !important;
+}
+
+.light-theme .MuiTypography-root {
+  color: #000000 !important;
+}
+
+/* Material-UI component theme transitions */
+.MuiPaper-root {
+  transition: background-color 0.3s ease, color 0.3s ease !important;
+}
+
+.MuiInputBase-root {
+  transition: background-color 0.3s ease, color 0.3s ease !important;
+}
+
+.MuiTypography-root {
+  transition: color 0.3s ease !important;
+}
+
+.MuiButton-root {
+  transition: background-color 0.3s ease, color 0.3s ease !important;
+}
+
+.MuiSwitch-root {
+  transition: all 0.3s ease !important;
+}
+
+/* Force theme application on root container */
+#root.dark-theme {
+  background-color: #121212 !important;
+  color: #ffffff !important;
+}
+
+#root.light-theme {
+  background-color: #ffffff !important;
+  color: #000000 !important;
 }
 
 /* RTL Support */
@@ -747,12 +856,12 @@ select:focus {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #667eea 0%, #00acc1 100%);
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%);
+  background: linear-gradient(135deg, #5a6fd8 0%, #00838f 100%);
 }
 
 /* Selection styles */

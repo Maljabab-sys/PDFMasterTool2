@@ -48,43 +48,43 @@ const CustomThemeProvider = ({ children }) => {
     palette: {
       mode: darkMode ? 'dark' : 'light',
       primary: {
-        main: darkMode ? '#90caf9' : '#1976d2',
-        light: darkMode ? '#bbdefb' : '#42a5f5',
-        dark: darkMode ? '#64b5f6' : '#1565c0',
+        main: darkMode ? '#5c9bd5' : '#1976d2',
+        light: darkMode ? '#7bb3e0' : '#42a5f5',
+        dark: darkMode ? '#4682b4' : '#1565c0',
       },
       secondary: {
-        main: darkMode ? '#f48fb1' : '#dc004e',
-        light: darkMode ? '#f8bbd9' : '#e91e63',
-        dark: darkMode ? '#f06292' : '#c51162',
+        main: darkMode ? '#26d0ce' : '#00acc1',
+        light: darkMode ? '#4dd0ce' : '#26c6da',
+        dark: darkMode ? '#00acc1' : '#00838f',
       },
       background: {
-        default: darkMode ? '#0a0a0a' : '#fafafa',
-        paper: darkMode ? '#1e1e1e' : '#ffffff',
+        default: darkMode ? '#0a0a0a' : '#f5f7fa',
+        paper: darkMode ? '#1e1e1e' : '#fafbfc',
       },
       surface: {
-        main: darkMode ? '#2d2d2d' : '#f5f5f5',
-        light: darkMode ? '#3d3d3d' : '#ffffff',
+        main: darkMode ? '#2d2d2d' : '#f0f2f5',
+        light: darkMode ? '#3d3d3d' : '#f8f9fb',
       },
       text: {
-        primary: darkMode ? '#ffffff' : '#2c3e50',
-        secondary: darkMode ? '#b0b0b0' : '#6c757d',
+        primary: darkMode ? '#ffffff' : '#1a1a1a',
+        secondary: darkMode ? '#b0b0b0' : '#5f6368',
       },
-      divider: darkMode ? '#333333' : '#e0e0e0',
+      divider: darkMode ? '#333333' : '#e8eaed',
       success: {
-        main: darkMode ? '#4caf50' : '#2e7d32',
+        main: darkMode ? '#4caf50' : '#1b5e20',
       },
       warning: {
-        main: darkMode ? '#ff9800' : '#ed6c02',
+        main: darkMode ? '#ff9800' : '#f57c00',
       },
       error: {
-        main: darkMode ? '#f44336' : '#d32f2f',
+        main: darkMode ? '#f44336' : '#c62828',
       },
       info: {
-        main: darkMode ? '#2196f3' : '#0288d1',
+        main: darkMode ? '#1976d2' : '#0277bd',
       },
     },
     typography: {
-      fontFamily: '"Inter", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+      fontFamily: '"Poppins", "Inter", "SF Pro Display", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
       h1: {
         fontWeight: 700,
         fontSize: '2.5rem',
@@ -139,7 +139,25 @@ const CustomThemeProvider = ({ children }) => {
       '0px 8px 16px rgba(0,0,0,0.3)',
       '0px 12px 24px rgba(0,0,0,0.3)',
       '0px 16px 32px rgba(0,0,0,0.3)',
-      // ... more shadows
+      '0px 20px 40px rgba(0,0,0,0.3)',
+      '0px 24px 48px rgba(0,0,0,0.3)',
+      '0px 28px 56px rgba(0,0,0,0.3)',
+      '0px 32px 64px rgba(0,0,0,0.3)',
+      '0px 36px 72px rgba(0,0,0,0.3)',
+      '0px 40px 80px rgba(0,0,0,0.3)',
+      '0px 44px 88px rgba(0,0,0,0.3)',
+      '0px 48px 96px rgba(0,0,0,0.3)',
+      '0px 52px 104px rgba(0,0,0,0.3)',
+      '0px 56px 112px rgba(0,0,0,0.3)',
+      '0px 60px 120px rgba(0,0,0,0.3)',
+      '0px 64px 128px rgba(0,0,0,0.3)',
+      '0px 68px 136px rgba(0,0,0,0.3)',
+      '0px 72px 144px rgba(0,0,0,0.3)',
+      '0px 76px 152px rgba(0,0,0,0.3)',
+      '0px 80px 160px rgba(0,0,0,0.3)',
+      '0px 84px 168px rgba(0,0,0,0.3)',
+      '0px 88px 176px rgba(0,0,0,0.3)',
+      '0px 92px 184px rgba(0,0,0,0.3)',
     ] : [
       'none',
       '0px 2px 4px rgba(0,0,0,0.05)',
@@ -147,7 +165,25 @@ const CustomThemeProvider = ({ children }) => {
       '0px 8px 16px rgba(0,0,0,0.1)',
       '0px 12px 24px rgba(0,0,0,0.1)',
       '0px 16px 32px rgba(0,0,0,0.1)',
-      // ... more shadows
+      '0px 20px 40px rgba(0,0,0,0.1)',
+      '0px 24px 48px rgba(0,0,0,0.1)',
+      '0px 28px 56px rgba(0,0,0,0.1)',
+      '0px 32px 64px rgba(0,0,0,0.1)',
+      '0px 36px 72px rgba(0,0,0,0.1)',
+      '0px 40px 80px rgba(0,0,0,0.1)',
+      '0px 44px 88px rgba(0,0,0,0.1)',
+      '0px 48px 96px rgba(0,0,0,0.1)',
+      '0px 52px 104px rgba(0,0,0,0.1)',
+      '0px 56px 112px rgba(0,0,0,0.1)',
+      '0px 60px 120px rgba(0,0,0,0.1)',
+      '0px 64px 128px rgba(0,0,0,0.1)',
+      '0px 68px 136px rgba(0,0,0,0.1)',
+      '0px 72px 144px rgba(0,0,0,0.1)',
+      '0px 76px 152px rgba(0,0,0,0.1)',
+      '0px 80px 160px rgba(0,0,0,0.1)',
+      '0px 84px 168px rgba(0,0,0,0.1)',
+      '0px 88px 176px rgba(0,0,0,0.1)',
+      '0px 92px 184px rgba(0,0,0,0.1)',
     ],
     transitions: {
       duration: {
@@ -211,12 +247,12 @@ const CustomThemeProvider = ({ children }) => {
           },
           contained: {
             background: darkMode 
-              ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
-              : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+              ? 'linear-gradient(135deg, #667eea 0%, #26d0ce 100%)'
+              : 'linear-gradient(135deg, #667eea 0%, #00acc1 100%)',
             '&:hover': {
               background: darkMode
-                ? 'linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%)'
-                : 'linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%)',
+                ? 'linear-gradient(135deg, #5a6fd8 0%, #00acc1 100%)'
+                : 'linear-gradient(135deg, #5a6fd8 0%, #00838f 100%)',
             },
           },
         },
@@ -225,7 +261,7 @@ const CustomThemeProvider = ({ children }) => {
         styleOverrides: {
           root: {
             borderRadius: 16,
-            border: darkMode ? '1px solid #333333' : '1px solid #e0e0e0',
+            border: darkMode ? '1px solid #333333' : '1px solid #e8eaed',
             boxShadow: darkMode 
               ? '0px 4px 20px rgba(0,0,0,0.3)'
               : '0px 4px 20px rgba(0,0,0,0.08)',
@@ -243,7 +279,7 @@ const CustomThemeProvider = ({ children }) => {
         styleOverrides: {
           root: {
             borderRadius: 16,
-            border: darkMode ? '1px solid #333333' : '1px solid #e0e0e0',
+            border: darkMode ? '1px solid #333333' : '1px solid #e8eaed',
             transition: 'all 0.3s cubic-bezier(0.4, 0.0, 0.2, 1)',
           },
         },
@@ -253,13 +289,13 @@ const CustomThemeProvider = ({ children }) => {
           root: {
             '& .MuiOutlinedInput-root': {
               borderRadius: 8,
-              backgroundColor: darkMode ? '#2d2d2d' : '#fafafa',
+              backgroundColor: darkMode ? '#2d2d2d' : '#f8f9fb',
               transition: 'all 0.3s cubic-bezier(0.4, 0.0, 0.2, 1)',
               '&:hover': {
-                backgroundColor: darkMode ? '#3d3d3d' : '#f0f0f0',
+                backgroundColor: darkMode ? '#3d3d3d' : '#f0f2f5',
               },
               '&.Mui-focused': {
-                backgroundColor: darkMode ? '#3d3d3d' : '#ffffff',
+                backgroundColor: darkMode ? '#3d3d3d' : '#fafbfc',
                 transform: 'scale(1.02)',
               },
             },

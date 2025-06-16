@@ -153,8 +153,8 @@ const StyledTextField = styled(TextField)(({ theme }) => ({
 
 const GradientButton = styled(Button)(({ theme, variant = 'primary' }) => {
   const gradients = {
-    primary: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-    secondary: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
+    primary: 'linear-gradient(135deg, #667eea 0%, #00acc1 100%)',
+    secondary: 'linear-gradient(135deg, #26d0ce 0%, #4dd0ce 100%)',
   };
   
   return {
@@ -168,7 +168,7 @@ const GradientButton = styled(Button)(({ theme, variant = 'primary' }) => {
     background: gradients[variant],
     color: 'white',
     border: 'none',
-    boxShadow: `0 4px 15px ${variant === 'primary' ? 'rgba(102, 126, 234, 0.4)' : 'rgba(240, 147, 251, 0.4)'}`,
+    boxShadow: `0 4px 15px ${variant === 'primary' ? 'rgba(102, 126, 234, 0.4)' : 'rgba(38, 208, 206, 0.4)'}`,
     transition: 'all 0.3s cubic-bezier(0.4, 0.0, 0.2, 1)',
     '&::before': {
       content: '""',
@@ -182,7 +182,7 @@ const GradientButton = styled(Button)(({ theme, variant = 'primary' }) => {
     },
     '&:hover': {
       transform: 'translateY(-2px) scale(1.02)',
-      boxShadow: `0 8px 25px ${variant === 'primary' ? 'rgba(102, 126, 234, 0.6)' : 'rgba(240, 147, 251, 0.6)'}`,
+      boxShadow: `0 8px 25px ${variant === 'primary' ? 'rgba(102, 126, 234, 0.6)' : 'rgba(38, 208, 206, 0.6)'}`,
       '&::before': {
         left: '100%',
       },

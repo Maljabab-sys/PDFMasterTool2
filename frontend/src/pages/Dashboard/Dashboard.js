@@ -130,14 +130,40 @@ const Dashboard = () => {
 
   const fetchDashboardData = async () => {
     try {
-      // Fetch dashboard data from API
-      const response = await fetch('/api/dashboard-stats');
+      // Fetch dashboard data from API with credentials
+      const response = await fetch('http://localhost:5001/api/dashboard-stats', {
+        method: 'GET',
+        credentials: 'include',  // Include cookies/session
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      });
       if (response.ok) {
         const data = await response.json();
         setDashboardData(data);
+      } else {
+        console.error('Dashboard API error:', response.status, response.statusText);
+        // If unauthorized, try to get basic stats without authentication
+        if (response.status === 401) {
+          setDashboardData({
+            totalPatients: 0,
+            totalCases: 0,
+            thisMonth: 0,
+            activePatients: 0,
+            recentCases: []
+          });
+        }
       }
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
+      // Set default data on error
+      setDashboardData({
+        totalPatients: 0,
+        totalCases: 0,
+        thisMonth: 0,
+        activePatients: 0,
+        recentCases: []
+      });
     }
   };
 
@@ -168,62 +194,77 @@ const Dashboard = () => {
         easing: theme.transitions.easing.easeInOut,
         duration: theme.transitions.duration.standard,
       }),
-      width: 'calc(100% - 64px)', // Keep consistent width - don't narrow
-      marginLeft: '32px', // Keep consistent spacing in both states
+      width: { xs: '100%', md: 'calc(100% - 64px)' },
+      marginLeft: { xs: 0, md: '32px' },
       position: 'relative',
-      // Add padding inside the border
-      p: 3, // 24px padding on all sides
+      minHeight: '100vh',
     }}>
+      <Container 
+        maxWidth="lg" 
+        sx={{ 
+          py: { xs: 2, md: 4 },
+          px: { xs: 2, md: 3 }
+        }}
+      >
       
       {/* Welcome Section with New Case Button */}
       <Box 
         sx={{ 
           display: 'flex', 
           justifyContent: 'space-between', 
-          alignItems: 'center',
-          mb: 4,
-          flexWrap: 'wrap',
-          gap: 2
+          alignItems: isMobile ? 'flex-start' : 'center',
+          mb: isMobile ? 2 : 4,
+          flexDirection: isMobile ? 'column' : 'row',
+          gap: isMobile ? 2 : 2,
+          textAlign: isMobile ? 'center' : 'left'
         }}
       >
-        <Box sx={{ textAlign: { xs: 'center', md: 'left' }, flex: 1 }}>
+        <Box sx={{ textAlign: isMobile ? 'center' : 'left', flex: 1 }}>
           <Fade in={animationTrigger} timeout={800}>
             <Typography 
-              variant="h3" 
+              variant={isMobile ? "h4" : "h3"}
               component="h1" 
               gutterBottom
               sx={{ 
                 fontWeight: 700,
                 color: theme.palette.text.primary,
-                mb: 1
+                mb: 1,
+                fontSize: isMobile ? '1.75rem' : '3rem'
               }}
             >
-              Welcome back, mhanna!
+              Welcome back, {user?.full_name || user?.first_name || user?.email?.split('@')[0] || 'User'}!
             </Typography>
           </Fade>
           <Fade in={animationTrigger} timeout={1000}>
             <Typography 
-              variant="h6" 
+              variant={isMobile ? "body1" : "h6"}
               color="text.secondary"
+              sx={{ fontSize: isMobile ? '0.875rem' : '1.25rem' }}
             >
               {t('practiceToday')}
             </Typography>
           </Fade>
         </Box>
         
-        <Box sx={{ display: 'flex', justifyContent: { xs: 'center', md: 'flex-end' } }}>
+        <Box sx={{ 
+          display: 'flex', 
+          justifyContent: isMobile ? 'center' : 'flex-end',
+          width: isMobile ? '100%' : 'auto'
+        }}>
           <Fade in={animationTrigger} timeout={1200}>
             <Button
               variant="contained"
               startIcon={<AddIcon />}
               onClick={() => navigate('/new-case')}
+              size={isMobile ? "medium" : "large"}
               sx={{
                 borderRadius: 3,
                 textTransform: 'none',
                 fontWeight: 600,
-                px: 3,
-                py: 1.5,
-                fontSize: '1rem',
+                px: isMobile ? 2 : 3,
+                py: isMobile ? 1 : 1.5,
+                fontSize: isMobile ? '0.875rem' : '1rem',
+                minWidth: isMobile ? '140px' : 'auto',
                 boxShadow: theme.palette.mode === 'dark' 
                   ? '0px 4px 20px rgba(102, 126, 234, 0.3)'
                   : '0px 4px 20px rgba(102, 126, 234, 0.2)',
@@ -241,20 +282,41 @@ const Dashboard = () => {
         </Box>
       </Box>
 
-      <Grid container spacing={3}>
-        {/* Statistics Row - 4 Equal Columns */}
+      <Grid container spacing={isMobile ? 2 : 3}>
+        {/* Statistics Row - 2 Cards per Row */}
         {/* Total Cases */}
-        <Grid item xs={12} sm={6} md={3}>
+        <Grid size={{ xs: 6, sm: 6, md: 6 }}>
               <Slide in={animationTrigger} direction="up" timeout={600}>
                 <StatCard>
-                  <CardContent sx={{ textAlign: 'center', py: 3 }}>
-                    <StatIcon bgcolor="#667eea" sx={{ mx: 'auto', mb: 2 }}>
-                      <AssignmentIcon />
+                  <CardContent sx={{ 
+                    textAlign: 'center', 
+                    py: isMobile ? 1.5 : 2,
+                    px: isMobile ? 1 : 2
+                  }}>
+                    <StatIcon 
+                      bgcolor="#667eea" 
+                      sx={{ 
+                        mx: 'auto', 
+                        mb: isMobile ? 1 : 1.5,
+                        width: isMobile ? 40 : 48,
+                        height: isMobile ? 40 : 48
+                      }}
+                    >
+                      <AssignmentIcon fontSize={isMobile ? "small" : "medium"} />
                     </StatIcon>
-                    <Typography variant="h4" component="div" gutterBottom fontWeight="bold">
+                    <Typography 
+                      variant={isMobile ? "h6" : "h5"} 
+                      component="div" 
+                      gutterBottom 
+                      fontWeight="bold"
+                    >
                       {dashboardData.totalCases}
                     </Typography>
-                    <Typography color="text.secondary" variant="body2">
+                    <Typography 
+                      color="text.secondary" 
+                      variant={isMobile ? "caption" : "caption"}
+                      sx={{ fontSize: isMobile ? '0.7rem' : '0.75rem' }}
+                    >
                       {t('totalCases')}
                     </Typography>
                   </CardContent>
@@ -263,17 +325,38 @@ const Dashboard = () => {
             </Grid>
 
             {/* Total Patients */}
-            <Grid item xs={12} sm={6} md={3}>
+            <Grid size={{ xs: 6, sm: 6, md: 6 }}>
               <Slide in={animationTrigger} direction="up" timeout={800}>
                 <StatCard>
-                  <CardContent sx={{ textAlign: 'center', py: 3 }}>
-                    <StatIcon bgcolor="#764ba2" sx={{ mx: 'auto', mb: 2 }}>
-                      <PeopleIcon />
+                  <CardContent sx={{ 
+                    textAlign: 'center', 
+                    py: isMobile ? 1.5 : 2,
+                    px: isMobile ? 1 : 2
+                  }}>
+                    <StatIcon 
+                      bgcolor="#764ba2" 
+                      sx={{ 
+                        mx: 'auto', 
+                        mb: isMobile ? 1 : 1.5,
+                        width: isMobile ? 40 : 48,
+                        height: isMobile ? 40 : 48
+                      }}
+                    >
+                      <PeopleIcon fontSize={isMobile ? "small" : "medium"} />
                     </StatIcon>
-                    <Typography variant="h4" component="div" gutterBottom fontWeight="bold">
+                    <Typography 
+                      variant={isMobile ? "h6" : "h5"} 
+                      component="div" 
+                      gutterBottom 
+                      fontWeight="bold"
+                    >
                       {dashboardData.totalPatients}
                     </Typography>
-                    <Typography color="text.secondary" variant="body2">
+                    <Typography 
+                      color="text.secondary" 
+                      variant={isMobile ? "caption" : "caption"}
+                      sx={{ fontSize: isMobile ? '0.7rem' : '0.75rem' }}
+                    >
                       {t('totalPatients')}
                     </Typography>
                   </CardContent>
@@ -282,17 +365,38 @@ const Dashboard = () => {
             </Grid>
 
             {/* This Month */}
-            <Grid item xs={12} sm={6} md={3}>
+            <Grid size={{ xs: 6, sm: 6, md: 6 }}>
               <Slide in={animationTrigger} direction="up" timeout={1000}>
                 <StatCard>
-                  <CardContent sx={{ textAlign: 'center', py: 3 }}>
-                    <StatIcon bgcolor="#4facfe" sx={{ mx: 'auto', mb: 2 }}>
-                      <CalendarIcon />
+                  <CardContent sx={{ 
+                    textAlign: 'center', 
+                    py: isMobile ? 1.5 : 2,
+                    px: isMobile ? 1 : 2
+                  }}>
+                    <StatIcon 
+                      bgcolor="#4facfe" 
+                      sx={{ 
+                        mx: 'auto', 
+                        mb: isMobile ? 1 : 1.5,
+                        width: isMobile ? 40 : 48,
+                        height: isMobile ? 40 : 48
+                      }}
+                    >
+                      <CalendarIcon fontSize={isMobile ? "small" : "medium"} />
                     </StatIcon>
-                    <Typography variant="h4" component="div" gutterBottom fontWeight="bold">
+                    <Typography 
+                      variant={isMobile ? "h6" : "h5"} 
+                      component="div" 
+                      gutterBottom 
+                      fontWeight="bold"
+                    >
                       {dashboardData.thisMonth}
                     </Typography>
-                    <Typography color="text.secondary" variant="body2">
+                    <Typography 
+                      color="text.secondary" 
+                      variant={isMobile ? "caption" : "caption"}
+                      sx={{ fontSize: isMobile ? '0.7rem' : '0.75rem' }}
+                    >
                       {t('thisMonth')}
                     </Typography>
                   </CardContent>
@@ -301,17 +405,38 @@ const Dashboard = () => {
             </Grid>
 
             {/* Active Patients */}
-            <Grid item xs={12} sm={6} md={3}>
+            <Grid size={{ xs: 6, sm: 6, md: 6 }}>
               <Slide in={animationTrigger} direction="up" timeout={1200}>
                 <StatCard>
-                  <CardContent sx={{ textAlign: 'center', py: 3 }}>
-                    <StatIcon bgcolor="#fa709a" sx={{ mx: 'auto', mb: 2 }}>
-                      <TrendingUpIcon />
+                  <CardContent sx={{ 
+                    textAlign: 'center', 
+                    py: isMobile ? 1.5 : 2,
+                    px: isMobile ? 1 : 2
+                  }}>
+                    <StatIcon 
+                      bgcolor="#fa709a" 
+                      sx={{ 
+                        mx: 'auto', 
+                        mb: isMobile ? 1 : 1.5,
+                        width: isMobile ? 40 : 48,
+                        height: isMobile ? 40 : 48
+                      }}
+                    >
+                      <TrendingUpIcon fontSize={isMobile ? "small" : "medium"} />
                     </StatIcon>
-                    <Typography variant="h4" component="div" gutterBottom fontWeight="bold">
+                    <Typography 
+                      variant={isMobile ? "h6" : "h5"} 
+                      component="div" 
+                      gutterBottom 
+                      fontWeight="bold"
+                    >
                       {dashboardData.activePatients}
                     </Typography>
-                    <Typography color="text.secondary" variant="body2">
+                    <Typography 
+                      color="text.secondary" 
+                      variant={isMobile ? "caption" : "caption"}
+                      sx={{ fontSize: isMobile ? '0.7rem' : '0.75rem' }}
+                    >
                       {t('activePatients')}
                     </Typography>
                   </CardContent>
@@ -321,25 +446,42 @@ const Dashboard = () => {
 
                 {/* Second Row - Charts */}
         {/* Cases by Visit Type */}
-        <Grid item xs={12} md={6}>
+        <Grid size={{ xs: 12, md: 6 }}>
           <Fade in={animationTrigger} timeout={1400}>
             <SectionCard>
-              <CardContent>
-                <Typography variant="h6" gutterBottom fontWeight="600" textAlign="center">
+              <CardContent sx={{ p: isMobile ? 2 : 3 }}>
+                <Typography 
+                  variant={isMobile ? "subtitle1" : "h6"} 
+                  gutterBottom 
+                  fontWeight="600" 
+                  textAlign="center"
+                  sx={{ mb: isMobile ? 2 : 3 }}
+                >
                   {t('casesByVisitType')}
                 </Typography>
-                <Box sx={{ mt: 3 }}>
+                <Box sx={{ mt: isMobile ? 2 : 3 }}>
                   {visitTypeData.map((item, index) => (
-                    <Box key={index} sx={{ mb: 2 }}>
+                    <Box key={index} sx={{ mb: isMobile ? 1.5 : 2 }}>
                       <Box display="flex" justifyContent="space-between" alignItems="center" mb={1}>
-                        <Typography variant="body2">{item.type}</Typography>
-                        <Typography variant="body2" fontWeight="bold">{item.count}</Typography>
+                        <Typography 
+                          variant={isMobile ? "caption" : "body2"}
+                          sx={{ fontSize: isMobile ? '0.75rem' : '0.875rem' }}
+                        >
+                          {item.type}
+                        </Typography>
+                        <Typography 
+                          variant={isMobile ? "caption" : "body2"} 
+                          fontWeight="bold"
+                          sx={{ fontSize: isMobile ? '0.75rem' : '0.875rem' }}
+                        >
+                          {item.count}
+                        </Typography>
                       </Box>
                       <LinearProgress
                         variant="determinate"
                         value={(item.count / 127) * 100}
                         sx={{
-                          height: 8,
+                          height: isMobile ? 6 : 8,
                           borderRadius: 4,
                           backgroundColor: theme.palette.grey[200],
                           '& .MuiLinearProgress-bar': {
@@ -357,25 +499,42 @@ const Dashboard = () => {
         </Grid>
 
         {/* Clinic Distribution */}
-        <Grid item xs={12} md={6}>
+        <Grid size={{ xs: 12, md: 6 }}>
           <Fade in={animationTrigger} timeout={1600}>
             <SectionCard>
-              <CardContent>
-                <Typography variant="h6" gutterBottom fontWeight="600" textAlign="center">
+              <CardContent sx={{ p: isMobile ? 2 : 3 }}>
+                <Typography 
+                  variant={isMobile ? "subtitle1" : "h6"} 
+                  gutterBottom 
+                  fontWeight="600" 
+                  textAlign="center"
+                  sx={{ mb: isMobile ? 2 : 3 }}
+                >
                   {t('clinicDistribution')}
                 </Typography>
-                <Box sx={{ mt: 3 }}>
+                <Box sx={{ mt: isMobile ? 2 : 3 }}>
                   {clinicData.map((item, index) => (
-                    <Box key={index} sx={{ mb: 2 }}>
+                    <Box key={index} sx={{ mb: isMobile ? 1.5 : 2 }}>
                       <Box display="flex" justifyContent="space-between" alignItems="center" mb={1}>
-                        <Typography variant="body2">{item.clinic}</Typography>
-                        <Typography variant="body2" fontWeight="bold">{item.count}</Typography>
+                        <Typography 
+                          variant={isMobile ? "caption" : "body2"}
+                          sx={{ fontSize: isMobile ? '0.75rem' : '0.875rem' }}
+                        >
+                          {item.clinic}
+                        </Typography>
+                        <Typography 
+                          variant={isMobile ? "caption" : "body2"} 
+                          fontWeight="bold"
+                          sx={{ fontSize: isMobile ? '0.75rem' : '0.875rem' }}
+                        >
+                          {item.count}
+                        </Typography>
                       </Box>
                       <LinearProgress
                         variant="determinate"
                         value={(item.count / 127) * 100}
                         sx={{
-                          height: 8,
+                          height: isMobile ? 6 : 8,
                           borderRadius: 4,
                           backgroundColor: theme.palette.grey[200],
                           '& .MuiLinearProgress-bar': {
@@ -393,53 +552,106 @@ const Dashboard = () => {
         </Grid>
 
         {/* Recent Cases */}
-        <Grid item xs={12}>
+        <Grid size={{ xs: 12 }}>
           <Fade in={animationTrigger} timeout={2000}>
             <SectionCard>
-              <CardContent>
-                <Typography variant="h6" gutterBottom fontWeight="600" textAlign="center" sx={{ mb: 3 }}>
+              <CardContent sx={{ p: isMobile ? 2 : 3 }}>
+                <Typography 
+                  variant={isMobile ? "subtitle1" : "h6"} 
+                  gutterBottom 
+                  fontWeight="600" 
+                  textAlign="center" 
+                  sx={{ mb: isMobile ? 2 : 3 }}
+                >
                   {t('recentCases')}
                 </Typography>
-                <TableContainer>
-                  <Table>
-                    <TableHead>
-                      <TableRow>
-                        <TableCell sx={{ fontWeight: 600 }}>{t('patient')}</TableCell>
-                        <TableCell sx={{ fontWeight: 600 }}>{t('action')}</TableCell>
-                        <TableCell sx={{ fontWeight: 600 }}>{t('date')}</TableCell>
-                        <TableCell sx={{ fontWeight: 600 }}>{t('status')}</TableCell>
-                        <TableCell sx={{ fontWeight: 600 }}>{t('actions')}</TableCell>
-                      </TableRow>
-                    </TableHead>
-                    <TableBody>
-                      {recentCases.map((case_item, index) => (
-                        <TableRow key={case_item.id} hover>
-                          <TableCell>{case_item.patient}</TableCell>
-                          <TableCell>{case_item.action}</TableCell>
-                          <TableCell>{case_item.date}</TableCell>
-                          <TableCell>
-                            <Chip
-                              label={case_item.status}
-                              color="success"
-                              size="small"
-                              sx={{ borderRadius: 2 }}
-                            />
-                          </TableCell>
-                          <TableCell>
-                            <IconButton size="small" color="primary">
-                              <VisibilityIcon />
-                            </IconButton>
-                          </TableCell>
+                
+                {isMobile ? (
+                  // Mobile: Card-based layout
+                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                    {recentCases.map((case_item, index) => (
+                      <Card 
+                        key={case_item.id} 
+                        variant="outlined" 
+                        sx={{ 
+                          p: 2, 
+                          borderRadius: 2,
+                          '&:hover': {
+                            boxShadow: theme.palette.mode === 'dark' 
+                              ? '0px 2px 8px rgba(0,0,0,0.3)'
+                              : '0px 2px 8px rgba(0,0,0,0.1)',
+                          }
+                        }}
+                      >
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1 }}>
+                          <Typography variant="subtitle2" fontWeight="600">
+                            {case_item.patient}
+                          </Typography>
+                          <Chip
+                            label={case_item.status}
+                            color="success"
+                            size="small"
+                            sx={{ borderRadius: 2, fontSize: '0.7rem' }}
+                          />
+                        </Box>
+                        <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1 }}>
+                          {case_item.action}
+                        </Typography>
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <Typography variant="caption" color="text.secondary">
+                            {case_item.date}
+                          </Typography>
+                          <IconButton size="small" color="primary">
+                            <VisibilityIcon fontSize="small" />
+                          </IconButton>
+                        </Box>
+                      </Card>
+                    ))}
+                  </Box>
+                ) : (
+                  // Desktop: Table layout
+                  <TableContainer>
+                    <Table>
+                      <TableHead>
+                        <TableRow>
+                          <TableCell sx={{ fontWeight: 600 }}>{t('patient')}</TableCell>
+                          <TableCell sx={{ fontWeight: 600 }}>{t('action')}</TableCell>
+                          <TableCell sx={{ fontWeight: 600 }}>{t('date')}</TableCell>
+                          <TableCell sx={{ fontWeight: 600 }}>{t('status')}</TableCell>
+                          <TableCell sx={{ fontWeight: 600 }}>{t('actions')}</TableCell>
                         </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </TableContainer>
+                      </TableHead>
+                      <TableBody>
+                        {recentCases.map((case_item, index) => (
+                          <TableRow key={case_item.id} hover>
+                            <TableCell>{case_item.patient}</TableCell>
+                            <TableCell>{case_item.action}</TableCell>
+                            <TableCell>{case_item.date}</TableCell>
+                            <TableCell>
+                              <Chip
+                                label={case_item.status}
+                                color="success"
+                                size="small"
+                                sx={{ borderRadius: 2 }}
+                              />
+                            </TableCell>
+                            <TableCell>
+                              <IconButton size="small" color="primary">
+                                <VisibilityIcon />
+                              </IconButton>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </TableContainer>
+                )}
               </CardContent>
             </SectionCard>
           </Fade>
         </Grid>
       </Grid>
+      </Container>
     </Box>
   );
 };

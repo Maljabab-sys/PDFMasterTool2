@@ -18,27 +18,19 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
-  List,
-  ListItem,
-  ListItemText,
-  ListItemSecondaryAction,
   MenuItem,
   Select,
   FormControl,
   InputLabel,
-  Card,
-  CardContent,
-  Stack,
   useMediaQuery
 } from '@mui/material';
 import { 
   Edit, 
   Save, 
   Cancel, 
-  Add, 
-  Delete, 
+  Add,
   PhotoCamera, 
-  Business, 
+  Business,
   Person,
   Email,
   Work,
@@ -48,19 +40,22 @@ import {
   DeleteOutline,
   Language,
   Palette,
-  Notifications
+  Tune
 } from '@mui/icons-material';
 import { useAuth } from '../../contexts/AuthContext';
 import { authService } from '../../services/authService';
 import { useSidebar } from '../../contexts/SidebarContext';
 import { useTheme } from '@mui/material/styles';
+import { useCustomTheme } from '../../App';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 const Settings = () => {
-  const { user, updateProfile } = useAuth();
+  const { user, updateProfile, checkAuthStatus } = useAuth();
   const { collapsed } = useSidebar();
   const theme = useTheme();
+  const { darkMode, toggleDarkMode } = useCustomTheme();
+  const { language, changeLanguage } = useLanguage();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
-  const isTablet = useMediaQuery(theme.breakpoints.down('lg'));
   
   const [editing, setEditing] = useState(false);
   const [formData, setFormData] = useState({
@@ -70,16 +65,20 @@ const Settings = () => {
     gender: user?.gender || '',
     notifications: user?.notifications || true,
     autoSave: user?.autoSave || true,
-    darkMode: user?.darkMode || false,
-    language: user?.language || 'en',
+    darkMode: darkMode,
+    language: language,
     profileImage: user?.profileImage || null
   });
+  
+  // Restore clinic management state
   const [clinics, setClinics] = useState(user?.clinics || []);
   const [newClinic, setNewClinic] = useState('');
   const [clinicDialogOpen, setClinicDialogOpen] = useState(false);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [clinicToDelete, setClinicToDelete] = useState('');
+
   const [imagePreview, setImagePreview] = useState(user?.profileImage || null);
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [passwordData, setPasswordData] = useState({
     currentPassword: '',
     newPassword: '',
@@ -93,6 +92,25 @@ const Settings = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+
+  // Auto-dismiss notifications after 5 seconds
+  useEffect(() => {
+    if (success) {
+      const timer = setTimeout(() => {
+        setSuccess('');
+      }, 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [success]);
+
+  useEffect(() => {
+    if (error) {
+      const timer = setTimeout(() => {
+        setError('');
+      }, 8000); // Keep errors visible longer
+      return () => clearTimeout(timer);
+    }
+  }, [error]);
 
   // Dental specialties list
   const dentalSpecialties = [
@@ -119,12 +137,7 @@ const Settings = () => {
     { value: 'ar', label: 'العربية (Arabic)' },
     { value: 'fr', label: 'Français (French)' },
     { value: 'es', label: 'Español (Spanish)' },
-    { value: 'de', label: 'Deutsch (German)' },
-    { value: 'it', label: 'Italiano (Italian)' },
-    { value: 'pt', label: 'Português (Portuguese)' },
-    { value: 'ru', label: 'Русский (Russian)' },
-    { value: 'zh', label: '中文 (Chinese)' },
-    { value: 'ja', label: '日本語 (Japanese)' }
+    { value: 'de', label: 'Deutsch (German)' }
   ];
 
   // Gender options
@@ -135,18 +148,31 @@ const Settings = () => {
     { value: 'prefer-not-to-say', label: 'Prefer not to say' }
   ];
 
-  // Apply theme and language preferences on component mount
+  // Sync form data with user context when user data changes
   useEffect(() => {
-    if (formData.darkMode) {
-      document.documentElement.setAttribute('data-theme', 'dark');
-    } else {
-      document.documentElement.setAttribute('data-theme', 'light');
+    if (user && !loading) {
+      setFormData(prev => ({
+        ...prev,
+        email: user.email || prev.email,
+        fullName: user.fullName || user.full_name || prev.fullName,
+        specialty: user.specialty || prev.specialty,
+        gender: user.gender || prev.gender,
+        notifications: user.notifications !== undefined ? user.notifications : prev.notifications,
+        autoSave: user.autoSave !== undefined ? user.autoSave : prev.autoSave,
+        darkMode: darkMode,
+        language: language,
+        profileImage: user.profileImage || prev.profileImage
+      }));
+      
+      // Sync clinics from user context
+      setClinics(user.clinics || []);
+      
+      // Update image preview when user profile image changes, but not during editing or uploading
+      if (!isUploadingImage && !editing) {
+        setImagePreview(user.profileImage || null);
+      }
     }
-    
-    if (formData.language) {
-      document.documentElement.setAttribute('lang', formData.language);
-    }
-  }, [formData.darkMode, formData.language]);
+  }, [user, loading, isUploadingImage, editing, darkMode, language]);
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -159,12 +185,67 @@ const Settings = () => {
 
     // Apply theme changes immediately
     if (name === 'darkMode') {
-      document.documentElement.setAttribute('data-theme', newValue ? 'dark' : 'light');
+      if (newValue !== darkMode) {
+        toggleDarkMode();
+        setSuccess(`${newValue ? 'Dark' : 'Light'} mode activated`);
+        setTimeout(() => setSuccess(''), 3000);
+      }
+      savePreference(name, newValue);
     }
     
     // Apply language changes immediately
     if (name === 'language') {
-      document.documentElement.setAttribute('lang', newValue);
+      if (newValue !== language) {
+        changeLanguage(newValue);
+        const languageNames = {
+          'en': 'English',
+          'ar': 'العربية (Arabic)',
+          'fr': 'Français (French)',
+          'es': 'Español (Spanish)',
+          'de': 'Deutsch (German)'
+        };
+        setSuccess(`Language changed to ${languageNames[newValue] || newValue}`);
+        setTimeout(() => setSuccess(''), 3000);
+      }
+      savePreference(name, newValue);
+    }
+    
+    // Auto-save other preferences
+    if (name === 'notifications' || name === 'autoSave') {
+      savePreference(name, newValue);
+    }
+  };
+
+  // Function to auto-save individual preferences
+  const savePreference = async (preferenceKey, preferenceValue) => {
+    try {
+      const profileData = {
+        ...formData,
+        [preferenceKey]: preferenceValue,
+        clinics: clinics
+      };
+      
+      await updateProfile(profileData);
+      
+      const preferenceMessages = {
+        'darkMode': preferenceValue ? 'Dark mode activated and saved' : 'Light mode activated and saved',
+        'language': `Language changed and saved`,
+        'notifications': preferenceValue ? 'Email notifications enabled' : 'Email notifications disabled',
+        'autoSave': preferenceValue ? 'Auto-save enabled' : 'Auto-save disabled'
+      };
+      
+      const message = preferenceMessages[preferenceKey] || `${preferenceKey} preference saved`;
+      setSuccess(message);
+      
+      setTimeout(() => {
+        setSuccess('');
+      }, 3000);
+    } catch (error) {
+      console.error(`Failed to save ${preferenceKey} preference:`, error);
+      setError(`Failed to save ${preferenceKey} preference`);
+      setTimeout(() => {
+        setError('');
+      }, 3000);
     }
   };
 
@@ -182,8 +263,86 @@ const Settings = () => {
     }));
   };
 
+  // Validation functions for required fields
+  const validateProfileForm = () => {
+    const errors = [];
+    
+    if (!formData.fullName.trim()) {
+      errors.push('Full Name is required');
+    }
+    
+    if (!formData.email.trim()) {
+      errors.push('Email is required');
+    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
+      errors.push('Please enter a valid email address');
+    }
+    
+    if (!formData.specialty) {
+      errors.push('Specialty is required');
+    }
+    
+    if (errors.length > 0) {
+      setError(errors.join(', '));
+      return false;
+    }
+    
+    setError(''); // Clear any previous errors
+    return true;
+  };
+
+  const validatePasswordForm = () => {
+    const errors = [];
+    
+    if (!passwordData.currentPassword) {
+      errors.push('Current password is required');
+    }
+    
+    if (!passwordData.newPassword) {
+      errors.push('New password is required');
+    } else if (passwordData.newPassword.length < 8) {
+      errors.push('New password must be at least 8 characters long');
+    }
+    
+    if (!passwordData.confirmPassword) {
+      errors.push('Password confirmation is required');
+    } else if (passwordData.newPassword !== passwordData.confirmPassword) {
+      errors.push('New passwords do not match');
+    }
+    
+    if (errors.length > 0) {
+      setError(errors.join(', '));
+      return false;
+    }
+    
+    setError(''); // Clear any previous errors
+    return true;
+  };
+
+  const validateClinicForm = () => {
+    const clinicName = newClinic.trim();
+    
+    if (!clinicName) {
+      setError('Please enter a clinic name');
+      return false;
+    }
+    
+    if (clinics.includes(clinicName)) {
+      setError(`Clinic "${clinicName}" already exists`);
+      return false;
+    }
+    
+    setError(''); // Clear any previous errors
+    return true;
+  };
+
   const handleSaveProfile = async () => {
+    // Validate form before saving
+    if (!validateProfileForm()) {
+      return;
+    }
+
     setLoading(true);
+    setIsUploadingImage(true);
     setError('');
     setSuccess('');
 
@@ -192,29 +351,53 @@ const Settings = () => {
         ...formData,
         clinics: clinics
       };
-      
+      console.log('Settings: Calling updateProfile with:', profileData);
       const result = await updateProfile(profileData);
+      console.log('Settings: updateProfile result:', result);
+      
       if (result.success) {
         setSuccess('Profile updated successfully');
         setEditing(false);
+        
+        // Update preview with the backend response
+        if (result.user?.profileImage) {
+          console.log('Settings: Updating image preview with:', result.user.profileImage);
+          setImagePreview(result.user.profileImage);
+          setFormData(prev => ({
+            ...prev,
+            profileImage: result.user.profileImage
+          }));
+        } else {
+          // If no profile image in response, keep current preview
+          console.log('Settings: No profile image in response, keeping current preview');
+        }
+        
+        // Force refresh of auth context to ensure navigation updates
+        console.log('Settings: Forcing auth context refresh');
+        await checkAuthStatus();
+        
       } else {
         setError(result.error || 'Failed to update profile');
+        // On error, revert to the original user profile image
+        setImagePreview(user?.profileImage || null);
+        setFormData(prev => ({
+          ...prev,
+          profileImage: user?.profileImage || null
+        }));
       }
     } catch (error) {
+      console.error('Settings: Profile update error:', error);
       setError(error.response?.data?.message || 'Failed to update profile');
+      setImagePreview(user?.profileImage || null);
     } finally {
       setLoading(false);
+      setIsUploadingImage(false);
     }
   };
 
   const handleChangePassword = async () => {
-    if (passwordData.newPassword !== passwordData.confirmPassword) {
-      setError('New passwords do not match');
-      return;
-    }
-
-    if (passwordData.newPassword.length < 8) {
-      setError('New password must be at least 8 characters long');
+    // Validate password form before saving
+    if (!validatePasswordForm()) {
       return;
     }
 
@@ -245,50 +428,61 @@ const Settings = () => {
     }
   };
 
-  const handleImageUpload = async (e) => {
+  // Change: Only update preview and state on image select, do not upload
+  const handleImageUpload = (e) => {
     const file = e.target.files[0];
     if (file) {
       const reader = new FileReader();
-      reader.onload = async (e) => {
+      reader.onload = (e) => {
         const imageData = e.target.result;
-        setImagePreview(imageData);
+        setImagePreview(imageData); // Show preview
         setFormData(prev => ({
           ...prev,
-          profileImage: imageData
+          profileImage: imageData // Store base64 in formData, but do not upload yet
         }));
-
-        setLoading(true);
-        setError('');
-        setSuccess('');
-
-        try {
-          const profileData = {
-            ...formData,
-            profileImage: imageData,
-            clinics: clinics
-          };
-          
-          const result = await updateProfile(profileData);
-          if (result.success) {
-            setSuccess('Profile image updated successfully!');
-          } else {
-            setError(result.error || 'Failed to update profile image');
-          }
-        } catch (error) {
-          setError('Failed to update profile image');
-        } finally {
-          setLoading(false);
-        }
       };
       reader.readAsDataURL(file);
     }
   };
 
-  const handleAddClinic = () => {
-    if (newClinic.trim() && !clinics.includes(newClinic.trim())) {
-      setClinics(prev => [...prev, newClinic.trim()]);
+  // Restore clinic management functions
+  const handleAddClinic = async () => {
+    // Validate clinic form before adding
+    if (!validateClinicForm()) {
+      return;
+    }
+
+    const clinicName = newClinic.trim();
+    if (clinicName && !clinics.includes(clinicName)) {
+      setClinics(prev => [...prev, clinicName]);
       setNewClinic('');
       setClinicDialogOpen(false);
+      
+      // Show success notification
+      setSuccess(`Clinic "${clinicName}" added successfully`);
+      
+      // Auto-save the updated clinics list using updateProfile for sync
+      try {
+        const profileData = {
+          ...formData,
+          clinics: [...clinics, clinicName]
+        };
+        
+        const result = await updateProfile(profileData);
+        if (!result.success) {
+          setError(result.error || 'Failed to save clinic changes');
+          // Revert the clinic addition on error
+          setClinics(prev => prev.filter(clinic => clinic !== clinicName));
+        }
+      } catch (error) {
+        setError('Failed to save clinic changes');
+        // Revert the clinic addition on error
+        setClinics(prev => prev.filter(clinic => clinic !== clinicName));
+      }
+    } else if (clinics.includes(clinicName)) {
+      setError(`Clinic "${clinicName}" already exists`);
+    } else if (!clinicName) {
+      setError('Please enter a clinic name');
     }
   };
 
@@ -321,10 +515,33 @@ const Settings = () => {
     setDeleteConfirmOpen(true);
   };
 
-  const confirmDeleteClinic = () => {
+  const confirmDeleteClinic = async () => {
+    const clinicName = clinicToDelete;
     setClinics(prev => prev.filter(clinic => clinic !== clinicToDelete));
     setDeleteConfirmOpen(false);
     setClinicToDelete('');
+    
+    // Show success notification
+    setSuccess(`Clinic "${clinicName}" removed successfully`);
+    
+    // Auto-save the updated clinics list using updateProfile for sync
+    try {
+      const profileData = {
+        ...formData,
+        clinics: clinics.filter(clinic => clinic !== clinicName)
+      };
+      
+      const result = await updateProfile(profileData);
+      if (!result.success) {
+        setError(result.error || 'Failed to save clinic changes');
+        // Revert the clinic removal on error
+        setClinics(prev => [...prev, clinicName]);
+      }
+    } catch (error) {
+      setError('Failed to save clinic changes');
+      // Revert the clinic removal on error
+      setClinics(prev => [...prev, clinicName]);
+    }
   };
 
   const cancelDeleteClinic = () => {
@@ -335,19 +552,20 @@ const Settings = () => {
   const handleCancel = () => {
     setFormData({
       email: user?.email || '',
-      fullName: user?.fullName || '',
+      fullName: user?.fullName || user?.full_name || '',
       specialty: user?.specialty || '',
       gender: user?.gender || '',
-      notifications: user?.notifications || true,
-      autoSave: user?.autoSave || true,
-      darkMode: user?.darkMode || false,
-      language: user?.language || 'en',
+      notifications: user?.notifications !== undefined ? user.notifications : true,
+      autoSave: user?.autoSave !== undefined ? user.autoSave : true,
+      darkMode: darkMode,
+      language: language,
       profileImage: user?.profileImage || null
     });
     setImagePreview(user?.profileImage || null);
     setClinics(user?.clinics || []);
     setEditing(false);
     setError('');
+    setSuccess('');
   };
 
   return (
@@ -381,18 +599,42 @@ const Settings = () => {
           </Typography>
 
           {error && (
-            <Alert severity="error" sx={{ mb: 3 }}>
+            <Alert 
+              severity="error" 
+              sx={{ 
+                mb: 3,
+                position: 'sticky',
+                top: isMobile ? 70 : 80,
+                zIndex: 1000,
+                boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+                border: '1px solid',
+                borderColor: 'error.main'
+              }}
+              onClose={() => setError('')}
+            >
               {error}
             </Alert>
           )}
 
           {success && (
-            <Alert severity="success" sx={{ mb: 3 }}>
+            <Alert 
+              severity="success" 
+              sx={{ 
+                mb: 3,
+                position: 'sticky',
+                top: isMobile ? 70 : 80,
+                zIndex: 1000,
+                boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+                border: '1px solid',
+                borderColor: 'success.main'
+              }}
+              onClose={() => setSuccess('')}
+            >
               {success}
             </Alert>
           )}
 
-          {/* Profile Information - Reorganized */}
+          {/* Profile Information */}
           <Paper sx={{ 
             p: isMobile ? 2 : 4, 
             mb: isMobile ? 2 : 4,
@@ -403,594 +645,241 @@ const Settings = () => {
           }}>
             <Box sx={{ 
               display: 'flex', 
-              alignItems: 'center', 
-              mb: isMobile ? 2 : 4,
               flexDirection: isMobile ? 'column' : 'row',
-              gap: isMobile ? 1 : 0,
-              width: '100%',
-              justifyContent: isMobile ? 'center' : 'space-between'
+              alignItems: isMobile ? 'center' : 'flex-start',
+              mb: 3
             }}>
               <Box sx={{ 
-                display: 'flex', 
-                alignItems: 'center', 
-                flexGrow: 1,
-                mb: isMobile ? 1 : 0,
-                justifyContent: isMobile ? 'center' : 'flex-start'
-              }}>
-                <Person sx={{ mr: 1, color: 'primary.main' }} />
-                <Typography variant={isMobile ? "h6" : "h5"}>
-                  Personal Information
-                </Typography>
-              </Box>
-              <Button
-                variant={editing ? "outlined" : "contained"}
-                onClick={() => setEditing(!editing)}
-                startIcon={editing ? <Cancel /> : <Edit />}
-                color={editing ? "secondary" : "primary"}
-                size={isMobile ? "small" : "medium"}
-                fullWidth={isMobile}
-                sx={{
-                  maxWidth: isMobile ? '200px' : 'auto'
-                }}
-              >
-                {editing ? 'Cancel' : 'Edit Profile'}
-              </Button>
-            </Box>
-
-            <Grid container spacing={isMobile ? 2 : 4} sx={{
-              width: '100%',
-              justifyContent: isMobile ? 'center' : 'flex-start',
-              alignItems: isMobile ? 'center' : 'stretch'
-            }}>
-              {/* Profile Image Section */}
-              <Grid item xs={12} sx={{
+                position: 'relative', 
+                mb: isMobile ? 2 : 0,
                 display: 'flex',
-                justifyContent: isMobile ? 'center' : 'flex-start'
+                flexDirection: 'column',
+                alignItems: 'center'
               }}>
-                <Box sx={{ 
-                  display: 'flex', 
-                  alignItems: 'center', 
-                  mb: 3,
-                  flexDirection: isMobile ? 'column' : 'row',
-                  textAlign: isMobile ? 'center' : 'left',
-                  justifyContent: isMobile ? 'center' : 'flex-start',
-                  width: isMobile ? 'auto' : '100%'
-                }}>
-                  <Box sx={{ 
-                    position: 'relative', 
-                    mr: isMobile ? 0 : 3,
-                    mb: isMobile ? 2 : 0,
-                    display: 'flex',
-                    justifyContent: 'center'
-                  }}>
-                    <Avatar 
-                      sx={{ 
-                        width: isMobile ? 100 : 80, 
-                        height: isMobile ? 100 : 80,
-                        mx: isMobile ? 'auto' : 0
-                      }}
-                      src={imagePreview}
-                    >
-                      {!imagePreview && (formData.fullName?.charAt(0) || formData.email?.charAt(0) || 'U')}
-                    </Avatar>
-                    <IconButton
-                      component="label"
-                      sx={{
-                        position: 'absolute',
-                        bottom: -4,
-                        right: -4,
-                        bgcolor: 'primary.main',
-                        color: 'white',
-                        width: isMobile ? 36 : 32,
-                        height: isMobile ? 36 : 32,
-                        '&:hover': { bgcolor: 'primary.dark' }
-                      }}
-                    >
-                      <PhotoCamera sx={{ fontSize: isMobile ? 20 : 16 }} />
+                <Box sx={{ position: 'relative' }}>
+                  <Avatar
+                    src={imagePreview || undefined}
+                    sx={{
+                      width: isMobile ? 80 : 100,
+                      height: isMobile ? 80 : 100,
+                      bgcolor: 'primary.main',
+                      fontSize: isMobile ? '2rem' : '2.5rem',
+                      border: '4px solid',
+                      borderColor: 'background.paper',
+                      boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+                    }}
+                  >
+                    {!imagePreview && (formData.fullName?.charAt(0) || formData.email?.charAt(0) || 'U')}
+                  </Avatar>
+                  
+                  {editing && (
+                    <>
                       <input
-                        type="file"
                         accept="image/*"
-                        hidden
+                        style={{ display: 'none' }}
+                        id="profile-image-upload"
+                        type="file"
                         onChange={handleImageUpload}
+                        disabled={!editing}
                       />
-                    </IconButton>
-                  </Box>
-                  <Box sx={{
-                    textAlign: isMobile ? 'center' : 'left',
-                    width: isMobile ? '100%' : 'auto'
-                  }}>
-                    <Typography variant={isMobile ? "h6" : "h6"} sx={{
-                      textAlign: isMobile ? 'center' : 'left'
-                    }}>
-                      {formData.fullName || 'No name set'}
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary" sx={{
-                      textAlign: isMobile ? 'center' : 'left'
-                    }}>
-                      {formData.email}
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary" sx={{
-                      textAlign: isMobile ? 'center' : 'left'
-                    }}>
-                      {formData.specialty || 'No specialty selected'}
-                    </Typography>
-                    {formData.gender && (
-                      <Typography variant="body2" color="text.secondary" sx={{
-                        textAlign: isMobile ? 'center' : 'left'
-                      }}>
-                        {genderOptions.find(g => g.value === formData.gender)?.label}
-                      </Typography>
-                    )}
-                  </Box>
+                      <label htmlFor="profile-image-upload">
+                        <IconButton 
+                          color="primary" 
+                          aria-label="upload picture" 
+                          component="span"
+                          disabled={!editing}
+                          sx={{
+                            position: 'absolute',
+                            top: '50%',
+                            left: '50%',
+                            transform: 'translate(-50%, -50%)',
+                            backgroundColor: 'rgba(0, 0, 0, 0.6)',
+                            color: 'white',
+                            '&:hover': {
+                              backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                            },
+                            width: 48,
+                            height: 48,
+                            zIndex: 1
+                          }}
+                        >
+                          <PhotoCamera fontSize="medium" />
+                        </IconButton>
+                      </label>
+                    </>
+                  )}
                 </Box>
-              </Grid>
+                
+                <Box sx={{ ml: isMobile ? 0 : 3, mt: isMobile ? 0 : 0 }}>
+                  <Typography variant="h6" component="h2" sx={{ textAlign: isMobile ? 'center' : 'left' }}>
+                    {formData.fullName || 'User Profile'}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary" sx={{ textAlign: isMobile ? 'center' : 'left' }}>
+                    {formData.email}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary" sx={{ textAlign: isMobile ? 'center' : 'left' }}>
+                    {formData.specialty || 'Dental Professional'}
+                  </Typography>
+                </Box>
+              </Box>
+              
+              <Box sx={{ 
+                display: 'flex', 
+                gap: 1,
+                flexDirection: isMobile ? 'column' : 'row',
+                alignItems: 'center'
+              }}>
+                {!editing ? (
+                  <Button
+                    variant="contained"
+                    startIcon={<Edit />}
+                    onClick={() => setEditing(true)}
+                    size={isMobile ? "small" : "medium"}
+                  >
+                    Edit Profile
+                  </Button>
+                ) : (
+                  <>
+                    <Button
+                      variant="contained"
+                      startIcon={<Save />}
+                      onClick={handleSaveProfile}
+                      disabled={loading || !formData.fullName.trim() || !formData.email.trim() || !formData.specialty}
+                      size={isMobile ? "small" : "medium"}
+                    >
+                      Save Changes
+                    </Button>
+                    <Button
+                      variant="outlined"
+                      startIcon={<Cancel />}
+                      onClick={handleCancel}
+                      disabled={loading}
+                      size={isMobile ? "small" : "medium"}
+                    >
+                      Cancel
+                    </Button>
+                  </>
+                )}
+              </Box>
+            </Box>
+            
+            <Divider sx={{ mb: 3 }} />
 
-              {/* Basic Information */}
-              <Grid item xs={12}>
+            <Grid container spacing={3}>
+              <Grid item xs={12} md={6}>
                 <TextField
+                  required
                   fullWidth
-                  label="Full Name"
+                  label="Full Name *"
                   name="fullName"
                   value={formData.fullName}
                   onChange={handleChange}
                   disabled={!editing}
-                  required
-                  sx={{ mb: 2 }}
-                  size={isMobile ? "small" : "medium"}
+                  InputProps={{
+                    startAdornment: <Person sx={{ mr: 1, color: 'text.secondary' }} />
+                  }}
                 />
               </Grid>
-
-              <Grid item xs={12}>
+              <Grid item xs={12} md={6}>
                 <TextField
+                  required
                   fullWidth
-                  label="Email Address"
+                  label="Email *"
                   name="email"
                   type="email"
                   value={formData.email}
                   onChange={handleChange}
                   disabled={!editing}
-                  required
-                  sx={{ mb: 2 }}
-                  size={isMobile ? "small" : "medium"}
-                  helperText="This serves as both your email and username"
-                />
-              </Grid>
-
-              {/* Professional Information */}
-              <Grid item xs={12} md={6}>
-                <TextField
-                  fullWidth
-                  select
-                  label="Dental Specialty"
-                  name="specialty"
-                  value={formData.specialty || ''}
-                  onChange={handleChange}
-                  disabled={!editing}
-                  sx={{ 
-                    mb: 2,
-                    minWidth: isMobile ? '100%' : '280px',
-                    width: isMobile ? '100%' : '280px', // Fixed width to prevent changes
-                    '& .MuiInputLabel-root': {
-                      fontSize: isMobile ? '0.9rem' : '1rem',
-                      fontWeight: 500,
-                      whiteSpace: 'nowrap',
-                      overflow: 'visible'
-                    },
-                    '& .MuiOutlinedInput-root': {
-                      width: '100%', // Ensure input takes full container width
-                      '& .MuiSelect-select': {
-                        paddingRight: '32px !important'
-                      }
-                    }
-                  }}
-                  size={isMobile ? "small" : "medium"}
-                  helperText={!editing ? "Click Edit to modify" : ""}
-                >
-                  <MenuItem value="">
-                    <em style={{ color: '#999' }}>Select specialty</em>
-                  </MenuItem>
-                  {dentalSpecialties.map((specialty) => (
-                    <MenuItem key={specialty} value={specialty}>
-                      {specialty}
-                    </MenuItem>
-                  ))}
-                </TextField>
-              </Grid>
-
-              <Grid item xs={12} md={6}>
-                <TextField
-                  fullWidth
-                  select
-                  label="Gender"
-                  name="gender"
-                  value={formData.gender || ''}
-                  onChange={handleChange}
-                  disabled={!editing}
-                  sx={{ 
-                    mb: isMobile && editing ? 3 : 2,
-                    minWidth: isMobile ? '100%' : '200px',
-                    width: isMobile ? '100%' : '200px', // Fixed width to prevent changes
-                    '& .MuiInputLabel-root': {
-                      fontSize: isMobile ? '0.9rem' : '1rem',
-                      fontWeight: 500,
-                      whiteSpace: 'nowrap',
-                      overflow: 'visible'
-                    },
-                    '& .MuiOutlinedInput-root': {
-                      width: '100%', // Ensure input takes full container width
-                      '& .MuiSelect-select': {
-                        paddingRight: '32px !important'
-                      }
-                    }
-                  }}
-                  size={isMobile ? "small" : "medium"}
-                  helperText={!editing ? "Click Edit to modify" : ""}
-                >
-                  <MenuItem value="">
-                    <em style={{ color: '#999' }}>Select gender</em>
-                  </MenuItem>
-                  {genderOptions.map((gender) => (
-                    <MenuItem key={gender.value} value={gender.value}>
-                      {gender.label}
-                    </MenuItem>
-                  ))}
-                </TextField>
-              </Grid>
-
-            </Grid>
-
-            {/* Save Changes Button - Positioned below all form fields */}
-            {editing && (
-              <Box sx={{ 
-                display: 'flex', 
-                justifyContent: 'center',
-                pt: isMobile ? 3 : 2,
-                pb: isMobile ? 1 : 0
-              }}>
-                <Button
-                  variant="contained"
-                  onClick={handleSaveProfile}
-                  disabled={loading}
-                  startIcon={<Save />}
-                  size={isMobile ? "medium" : "large"}
-                  sx={{
-                    minWidth: isMobile ? 200 : 'auto',
-                    maxWidth: isMobile ? 250 : 'none',
-                    py: isMobile ? 1.2 : 1,
-                    px: isMobile ? 3 : 4,
-                    fontSize: isMobile ? '0.9rem' : '0.875rem',
-                    fontWeight: 500
-                  }}
-                >
-                  Save Changes
-                </Button>
-                {!isMobile && (
-                  <Button
-                    variant="outlined"
-                    onClick={handleCancel}
-                    disabled={loading}
-                    size="large"
-                    sx={{ ml: 2 }}
-                  >
-                    Cancel
-                  </Button>
-                )}
-              </Box>
-            )}
-          </Paper>
-
-          {/* Clinics Management - Improved */}
-          <Paper sx={{ 
-            p: isMobile ? 2 : 4, 
-            mb: isMobile ? 2 : 4 
-          }}>
-            <Box sx={{ 
-              display: 'flex', 
-              alignItems: 'center', 
-              mb: 3,
-              flexDirection: isMobile ? 'column' : 'row',
-              gap: isMobile ? 1 : 0
-            }}>
-              <Box sx={{ 
-                display: 'flex', 
-                alignItems: 'center', 
-                flexGrow: 1,
-                mb: isMobile ? 1 : 0
-              }}>
-                <Business sx={{ mr: 1, color: 'primary.main' }} />
-                <Typography variant={isMobile ? "h6" : "h5"}>
-                  Clinic Management
-                </Typography>
-              </Box>
-              <Box sx={{ 
-                display: 'flex', 
-                gap: 1,
-                flexDirection: isMobile ? 'column' : 'row',
-                width: isMobile ? '100%' : 'auto'
-              }}>
-                <Button
-                  variant="contained"
-                  startIcon={<Add />}
-                  onClick={() => setClinicDialogOpen(true)}
-                  color="primary"
-                  size={isMobile ? "small" : "medium"}
-                  fullWidth={isMobile}
-                >
-                  Add Clinic
-                </Button>
-                {clinics.length > 0 && (
-                  <Button
-                    variant="outlined"
-                    startIcon={<Save />}
-                    onClick={handleSaveClinics}
-                    color="primary"
-                    size={isMobile ? "small" : "medium"}
-                    fullWidth={isMobile}
-                    disabled={loading}
-                  >
-                    {loading ? 'Saving...' : 'Save Clinics'}
-                  </Button>
-                )}
-              </Box>
-            </Box>
-
-            {clinics.length > 0 ? (
-              <Stack spacing={isMobile ? 1 : 2}>
-                {clinics.map((clinic, index) => (
-                  <Card key={index} variant="outlined" sx={{ 
-                    '&:hover': { 
-                      boxShadow: 2,
-                      borderColor: 'primary.main'
-                    }
-                  }}>
-                    <CardContent sx={{ 
-                      display: 'flex', 
-                      alignItems: 'center', 
-                      justifyContent: 'space-between',
-                      py: isMobile ? 1.5 : 2,
-                      px: isMobile ? 2 : 3,
-                      '&:last-child': { pb: isMobile ? 1.5 : 2 }
-                    }}>
-                      <Box sx={{ 
-                        display: 'flex', 
-                        alignItems: 'center',
-                        flex: 1,
-                        minWidth: 0 // Allow text to truncate if needed
-                      }}>
-                        <Business sx={{ mr: 2, color: 'text.secondary', flexShrink: 0 }} />
-                        <Typography 
-                          variant="body1" 
-                          sx={{ 
-                            fontWeight: 500,
-                            fontSize: isMobile ? '0.9rem' : '1rem',
-                            overflow: 'hidden',
-                            textOverflow: 'ellipsis',
-                            whiteSpace: 'nowrap'
-                          }}
-                        >
-                          {clinic}
-                        </Typography>
-                      </Box>
-                      <IconButton
-                        onClick={() => handleRemoveClinic(clinic)}
-                        sx={{ 
-                          color: 'error.main',
-                          flexShrink: 0,
-                          ml: 1,
-                          '&:hover': { 
-                            bgcolor: 'error.light',
-                            color: 'error.dark'
-                          }
-                        }}
-                        size={isMobile ? "small" : "medium"}
-                      >
-                        <DeleteOutline />
-                      </IconButton>
-                    </CardContent>
-                  </Card>
-                ))}
-              </Stack>
-            ) : (
-              <Box sx={{ 
-                textAlign: 'center', 
-                py: isMobile ? 3 : 4, 
-                bgcolor: theme.palette.mode === 'dark' ? 'grey.900' : 'grey.50', 
-                borderRadius: 2,
-                border: '2px dashed',
-                borderColor: theme.palette.mode === 'dark' ? 'grey.700' : 'grey.300'
-              }}>
-                <Business sx={{ 
-                  fontSize: isMobile ? 36 : 48, 
-                  color: theme.palette.mode === 'dark' ? 'grey.600' : 'grey.400', 
-                  mb: 2 
-                }} />
-                <Typography 
-                  variant={isMobile ? "body1" : "h6"} 
-                  color="text.secondary" 
-                  gutterBottom
-                >
-                  No clinics added yet
-                </Typography>
-                <Typography 
-                  variant="body2" 
-                  color="text.secondary"
-                  sx={{ fontSize: isMobile ? '0.8rem' : '0.875rem' }}
-                >
-                  Click "Add Clinic" to get started with your clinic management.
-                </Typography>
-              </Box>
-            )}
-          </Paper>
-
-          {/* Password Change - Improved */}
-          <Paper sx={{ 
-            p: isMobile ? 2 : 4, 
-            mb: isMobile ? 2 : 4 
-          }}>
-            <Box sx={{ 
-              display: 'flex', 
-              alignItems: 'center', 
-              mb: 3,
-              flexDirection: isMobile ? 'column' : 'row'
-            }}>
-              <Box sx={{ 
-                display: 'flex', 
-                alignItems: 'center',
-                mb: isMobile ? 1 : 0
-              }}>
-                <Lock sx={{ mr: 1, color: 'primary.main' }} />
-                <Typography variant={isMobile ? "h6" : "h5"}>
-                  Security Settings
-                </Typography>
-              </Box>
-            </Box>
-            <Divider sx={{ mb: isMobile ? 3 : 4 }} />
-
-            <Typography 
-              variant={isMobile ? "body1" : "h6"} 
-              gutterBottom 
-              sx={{ mb: 3, fontWeight: 500 }}
-            >
-              Change Password
-            </Typography>
-
-            <Grid container spacing={isMobile ? 2 : 3}>
-              <Grid item xs={12}>
-                <TextField
-                  fullWidth
-                  label="Current Password"
-                  name="currentPassword"
-                  type={showPasswords.current ? "text" : "password"}
-                  value={passwordData.currentPassword}
-                  onChange={handlePasswordChange}
-                  size={isMobile ? "small" : "medium"}
                   InputProps={{
-                    endAdornment: (
-                      <IconButton
-                        onClick={() => togglePasswordVisibility('current')}
-                        edge="end"
-                        size={isMobile ? "small" : "medium"}
-                      >
-                        {showPasswords.current ? <VisibilityOff /> : <Visibility />}
-                      </IconButton>
-                    )
+                    startAdornment: <Email sx={{ mr: 1, color: 'text.secondary' }} />
                   }}
-                  helperText="Enter your current password to verify your identity"
                 />
               </Grid>
-              
               <Grid item xs={12} md={6}>
-                <TextField
-                  fullWidth
-                  label="New Password"
-                  name="newPassword"
-                  type={showPasswords.new ? "text" : "password"}
-                  value={passwordData.newPassword}
-                  onChange={handlePasswordChange}
-                  size={isMobile ? "small" : "medium"}
-                  InputProps={{
-                    endAdornment: (
-                      <IconButton
-                        onClick={() => togglePasswordVisibility('new')}
-                        edge="end"
-                        size={isMobile ? "small" : "medium"}
-                      >
-                        {showPasswords.new ? <VisibilityOff /> : <Visibility />}
-                      </IconButton>
-                    )
-                  }}
-                  helperText="Minimum 8 characters"
-                />
-              </Grid>
-              
-              <Grid item xs={12} md={6}>
-                <TextField
-                  fullWidth
-                  label="Confirm New Password"
-                  name="confirmPassword"
-                  type={showPasswords.confirm ? "text" : "password"}
-                  value={passwordData.confirmPassword}
-                  onChange={handlePasswordChange}
-                  size={isMobile ? "small" : "medium"}
-                  InputProps={{
-                    endAdornment: (
-                      <IconButton
-                        onClick={() => togglePasswordVisibility('confirm')}
-                        edge="end"
-                        size={isMobile ? "small" : "medium"}
-                      >
-                        {showPasswords.confirm ? <VisibilityOff /> : <Visibility />}
-                      </IconButton>
-                    )
-                  }}
-                  helperText="Re-enter your new password"
-                  error={passwordData.confirmPassword && passwordData.newPassword !== passwordData.confirmPassword}
-                />
-              </Grid>
-              
-              <Grid item xs={12}>
-                <Box sx={{ pt: 2 }}>
-                  <Button
-                    variant="contained"
-                    onClick={handleChangePassword}
-                    disabled={loading || !passwordData.currentPassword || !passwordData.newPassword || passwordData.newPassword !== passwordData.confirmPassword}
-                    startIcon={<Lock />}
-                    size={isMobile ? "medium" : "large"}
-                    color="secondary"
-                    fullWidth={isMobile}
+                <FormControl fullWidth disabled={!editing} required>
+                  <InputLabel>Specialty *</InputLabel>
+                  <Select
+                    name="specialty"
+                    value={formData.specialty}
+                    onChange={handleChange}
+                    label="Specialty *"
+                    startAdornment={<Work sx={{ mr: 1, color: 'text.secondary' }} />}
                   >
-                    Update Password
-                  </Button>
-                </Box>
+                    {dentalSpecialties.map((specialty) => (
+                      <MenuItem key={specialty} value={specialty}>
+                        {specialty}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              </Grid>
+              <Grid item xs={12} md={6}>
+                <FormControl fullWidth disabled={!editing}>
+                  <InputLabel>Gender</InputLabel>
+                  <Select
+                    name="gender"
+                    value={formData.gender}
+                    onChange={handleChange}
+                    label="Gender"
+                  >
+                    {genderOptions.map((option) => (
+                      <MenuItem key={option.value} value={option.value}>
+                        {option.label}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
               </Grid>
             </Grid>
           </Paper>
 
-          {/* Application Preferences - Enhanced */}
-          <Paper sx={{ 
-            p: isMobile ? 2 : 4 
-          }}>
-            <Typography 
-              variant={isMobile ? "h6" : "h5"} 
-              gutterBottom 
-              sx={{ mb: 3 }}
-            >
-              Application Preferences
+          {/* Preferences */}
+          <Paper sx={{ p: isMobile ? 2 : 4, mb: isMobile ? 2 : 4 }}>
+            <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center' }}>
+              <Palette sx={{ mr: 1 }} />
+              Preferences
             </Typography>
-            <Divider sx={{ mb: 3 }} />
-
-            <Grid container spacing={isMobile ? 2 : 3}>
-              <Grid item xs={12} md={4}>
-                <Box sx={{ 
-                  p: isMobile ? 2 : 3,
-                  border: '1px solid',
-                  borderColor: 'divider',
-                  borderRadius: 2,
-                  height: '100%'
-                }}>
-                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                    <Notifications sx={{ mr: 1, color: 'primary.main' }} />
-                    <Typography variant="h6" sx={{ fontSize: isMobile ? '1rem' : '1.25rem' }}>
-                      Notifications
-                    </Typography>
-                  </Box>
+            
+            <Grid container spacing={3}>
+              <Grid item xs={12} md={6}>
+                <FormControl fullWidth>
+                  <InputLabel>Language</InputLabel>
+                  <Select
+                    name="language"
+                    value={formData.language}
+                    onChange={handleChange}
+                    label="Language"
+                    startAdornment={<Language sx={{ mr: 1, color: 'text.secondary' }} />}
+                  >
+                    {languageOptions.map((option) => (
+                      <MenuItem key={option.value} value={option.value}>
+                        {option.label}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              </Grid>
+              <Grid item xs={12} md={6}>
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                  <FormControlLabel
+                    control={
+                      <Switch
+                        checked={formData.darkMode}
+                        onChange={handleChange}
+                        name="darkMode"
+                      />
+                    }
+                    label="Dark Mode"
+                  />
                   <FormControlLabel
                     control={
                       <Switch
                         checked={formData.notifications}
                         onChange={handleChange}
                         name="notifications"
-                        color="primary"
                       />
                     }
-                    label={
-                      <Box>
-                        <Typography variant="body1">Email Notifications</Typography>
-                        <Typography variant="body2" color="text.secondary">
-                          Receive updates via email
-                        </Typography>
-                      </Box>
-                    }
+                    label="Email Notifications"
                   />
                   <FormControlLabel
                     control={
@@ -998,330 +887,192 @@ const Settings = () => {
                         checked={formData.autoSave}
                         onChange={handleChange}
                         name="autoSave"
-                        color="primary"
                       />
                     }
-                    label={
-                      <Box>
-                        <Typography variant="body1">Auto-save</Typography>
-                        <Typography variant="body2" color="text.secondary">
-                          Automatically save your work
-                        </Typography>
-                      </Box>
-                    }
-                    sx={{ mt: 2 }}
+                    label="Auto-save"
                   />
-                </Box>
-              </Grid>
-              
-              <Grid item xs={12} md={4}>
-                <Box sx={{ 
-                  p: isMobile ? 2 : 3,
-                  border: '1px solid',
-                  borderColor: 'divider',
-                  borderRadius: 2,
-                  height: '100%'
-                }}>
-                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                    <Palette sx={{ mr: 1, color: 'primary.main' }} />
-                    <Typography variant="h6" sx={{ fontSize: isMobile ? '1rem' : '1.25rem' }}>
-                      Appearance
-                    </Typography>
-                  </Box>
-                  <FormControlLabel
-                    control={
-                      <Switch
-                        checked={formData.darkMode}
-                        onChange={handleChange}
-                        name="darkMode"
-                        color="primary"
-                      />
-                    }
-                    label={
-                      <Box>
-                        <Typography variant="body1">Dark Mode</Typography>
-                        <Typography variant="body2" color="text.secondary">
-                          {formData.darkMode ? 'Dark theme active' : 'Light theme active'}
-                        </Typography>
-                      </Box>
-                    }
-                  />
-                  <Typography variant="body2" color="text.secondary" sx={{ mt: 1, fontSize: '0.75rem' }}>
-                    Theme preference is automatically applied when you log in
-                  </Typography>
-                </Box>
-              </Grid>
-              
-              <Grid item xs={12} md={4}>
-                <Box sx={{ 
-                  p: isMobile ? 2 : 3,
-                  border: '1px solid',
-                  borderColor: 'divider',
-                  borderRadius: 2,
-                  height: '100%'
-                }}>
-                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                    <Language sx={{ mr: 1, color: 'primary.main' }} />
-                    <Typography variant="h6" sx={{ fontSize: isMobile ? '1rem' : '1.25rem' }}>
-                      Language
-                    </Typography>
-                  </Box>
-                  <FormControl 
-                    fullWidth 
-                    size={isMobile ? "small" : "medium"}
-                    sx={{
-                      '& .MuiInputLabel-root': {
-                        fontSize: isMobile ? '0.9rem' : '1rem',
-                        fontWeight: 500
-                      },
-                      '& .MuiSelect-select': {
-                        fontSize: isMobile ? '0.9rem' : '1rem',
-                        fontWeight: 500,
-                        color: 'text.primary',
-                        padding: isMobile ? '10px 12px' : '14px 12px'
-                      },
-                      '& .MuiOutlinedInput-root': {
-                        '& fieldset': {
-                          borderWidth: '2px'
-                        },
-                        '&:hover fieldset': {
-                          borderColor: 'primary.main'
-                        },
-                        '&.Mui-focused fieldset': {
-                          borderColor: 'primary.main'
-                        }
-                      }
-                    }}
-                  >
-                    <InputLabel sx={{ 
-                      fontSize: isMobile ? '0.9rem' : '1rem',
-                      fontWeight: 500 
-                    }}>
-                      Language Preference
-                    </InputLabel>
-                    <Select
-                      name="language"
-                      value={formData.language}
-                      onChange={handleChange}
-                      label="Language Preference"
-                      MenuProps={{
-                        PaperProps: {
-                          sx: {
-                            maxHeight: 250,
-                            '& .MuiMenuItem-root': {
-                              fontSize: isMobile ? '0.85rem' : '0.95rem',
-                              fontWeight: 500,
-                              padding: isMobile ? '8px 12px' : '10px 16px',
-                              '&:hover': {
-                                backgroundColor: 'primary.light',
-                                color: 'primary.contrastText'
-                              },
-                              '&.Mui-selected': {
-                                backgroundColor: 'primary.main',
-                                color: 'primary.contrastText',
-                                fontWeight: 600,
-                                '&:hover': {
-                                  backgroundColor: 'primary.dark'
-                                }
-                              }
-                            }
-                          }
-                        }
-                      }}
-                    >
-                      {languageOptions.map((lang) => (
-                        <MenuItem 
-                          key={lang.value} 
-                          value={lang.value}
-                          sx={{
-                            fontSize: isMobile ? '0.85rem' : '0.95rem',
-                            fontWeight: 500,
-                            whiteSpace: 'normal',
-                            wordWrap: 'break-word'
-                          }}
-                        >
-                          {lang.label}
-                        </MenuItem>
-                      ))}
-                    </Select>
-                  </FormControl>
-                  <Typography variant="body2" color="text.secondary" sx={{ mt: 1, fontSize: '0.75rem' }}>
-                    Language preference is saved and applied on login
-                  </Typography>
                 </Box>
               </Grid>
             </Grid>
           </Paper>
 
-          {/* Add Clinic Dialog */}
-          <Dialog 
-            open={clinicDialogOpen} 
-            onClose={() => setClinicDialogOpen(false)} 
-            maxWidth={isMobile ? "xs" : "sm"} 
-            fullWidth
-            PaperProps={{
-              sx: {
-                m: isMobile ? 1 : 3,
-                width: isMobile ? 'calc(100% - 16px)' : 'auto',
-                maxHeight: isMobile ? '90vh' : 'auto'
-              }
-            }}
-          >
-            <DialogTitle sx={{ 
-              pb: 1,
-              px: isMobile ? 2 : 3,
-              pt: isMobile ? 2 : 3
-            }}>
-              <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                <Business sx={{ mr: 1, color: 'primary.main' }} />
-                <Typography variant={isMobile ? "h6" : "h5"}>
-                  Add New Clinic
-                </Typography>
-              </Box>
-            </DialogTitle>
-            <DialogContent sx={{ 
-              pt: 2,
-              px: isMobile ? 2 : 3,
-              pb: isMobile ? 1 : 2
-            }}>
-              <TextField
-                autoFocus
-                margin="dense"
-                label="Clinic Name"
-                fullWidth
+          {/* Clinics */}
+          <Paper sx={{ p: isMobile ? 2 : 4, mb: isMobile ? 2 : 4 }}>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+              <Typography variant="h6" sx={{ display: 'flex', alignItems: 'center' }}>
+                <Business sx={{ mr: 1 }} />
+                Clinics
+              </Typography>
+              <Button
                 variant="outlined"
-                value={newClinic}
-                onChange={(e) => setNewClinic(e.target.value)}
-                onKeyPress={(e) => {
-                  if (e.key === 'Enter') {
-                    handleAddClinic();
-                  }
-                }}
-                placeholder="Enter the name of your clinic or hospital"
-                helperText="This will be added to your clinic list for case management"
-                size={isMobile ? "small" : "medium"}
-                sx={{
-                  '& .MuiInputBase-root': {
-                    fontSize: isMobile ? '0.9rem' : '1rem'
-                  },
-                  '& .MuiFormHelperText-root': {
-                    fontSize: isMobile ? '0.75rem' : '0.875rem'
-                  }
-                }}
-              />
-            </DialogContent>
-            <DialogActions sx={{ 
-              p: isMobile ? 2 : 3, 
-              pt: isMobile ? 1 : 1,
-              flexDirection: isMobile ? 'column' : 'row',
-              gap: isMobile ? 1 : 0
-            }}>
-              <Button 
-                onClick={() => setClinicDialogOpen(false)} 
-                color="inherit"
-                fullWidth={isMobile}
-                size={isMobile ? "medium" : "large"}
-              >
-                Cancel
-              </Button>
-              <Button 
-                onClick={handleAddClinic} 
-                variant="contained" 
-                disabled={!newClinic.trim()}
                 startIcon={<Add />}
-                fullWidth={isMobile}
-                size={isMobile ? "medium" : "large"}
+                onClick={() => setClinicDialogOpen(true)}
+                size="small"
               >
                 Add Clinic
               </Button>
-            </DialogActions>
-          </Dialog>
+            </Box>
+            
+            {clinics.length > 0 ? (
+              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 2 }}>
+                {clinics.map((clinic, index) => (
+                  <Chip
+                    key={index}
+                    label={clinic}
+                    onDelete={() => handleRemoveClinic(clinic)}
+                    deleteIcon={<DeleteOutline />}
+                    variant="outlined"
+                  />
+                ))}
+              </Box>
+            ) : (
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                No clinics added yet
+              </Typography>
+            )}
+            
+            {clinics.length > 0 && (
+              <Button
+                variant="contained"
+                onClick={handleSaveClinics}
+                disabled={loading}
+                size="small"
+              >
+                Save Clinics
+              </Button>
+            )}
+          </Paper>
 
-          {/* Delete Confirmation Dialog */}
-          <Dialog
-            open={deleteConfirmOpen}
-            onClose={cancelDeleteClinic}
-            maxWidth={isMobile ? "xs" : "sm"}
-            fullWidth
-            PaperProps={{
-              sx: {
-                m: isMobile ? 1 : 3,
-                width: isMobile ? 'calc(100% - 16px)' : 'auto',
-                maxHeight: isMobile ? '90vh' : 'auto'
-              }
-            }}
-          >
-            <DialogTitle sx={{ 
-              pb: 1,
-              px: isMobile ? 2 : 3,
-              pt: isMobile ? 2 : 3
-            }}>
-              <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                <DeleteOutline sx={{ mr: 1, color: 'error.main' }} />
-                <Typography variant={isMobile ? "h6" : "h5"} color="error.main">
-                  Delete Clinic
-                </Typography>
-              </Box>
-            </DialogTitle>
-            <DialogContent sx={{ 
-              pt: 2,
-              px: isMobile ? 2 : 3,
-              pb: isMobile ? 1 : 2
-            }}>
-              <Typography variant="body1" sx={{ mb: 2 }}>
-                Are you sure you want to delete this clinic?
-              </Typography>
-              <Box sx={{ 
-                p: 2, 
-                bgcolor: theme => theme.palette.mode === 'dark' ? 'grey.800' : 'grey.100',
-                borderRadius: 1,
-                border: '1px solid',
-                borderColor: theme => theme.palette.mode === 'dark' ? 'grey.600' : 'grey.300'
-              }}>
-                <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                  <Business sx={{ mr: 1, color: 'text.secondary' }} />
-                  <Typography variant="body1" sx={{ 
-                    fontWeight: 500,
-                    color: theme => theme.palette.mode === 'dark' ? 'grey.100' : 'text.primary'
-                  }}>
-                    {clinicToDelete}
-                  </Typography>
-                </Box>
-              </Box>
-              <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
-                This action cannot be undone. The clinic will be permanently removed from your list.
-              </Typography>
-            </DialogContent>
-            <DialogActions sx={{ 
-              p: isMobile ? 2 : 3, 
-              pt: isMobile ? 1 : 1,
-              flexDirection: isMobile ? 'column' : 'row',
-              gap: isMobile ? 1 : 0
-            }}>
-              <Button 
-                onClick={cancelDeleteClinic} 
-                color="inherit"
-                fullWidth={isMobile}
-                size={isMobile ? "medium" : "large"}
+          {/* Change Password */}
+          <Paper sx={{ p: isMobile ? 2 : 4 }}>
+            <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center' }}>
+              <Lock sx={{ mr: 1 }} />
+              Change Password
+            </Typography>
+            
+            <Grid container spacing={3}>
+              <Grid item xs={12} md={4}>
+                <TextField
+                  required
+                  fullWidth
+                  label="Current Password *"
+                  name="currentPassword"
+                  type={showPasswords.current ? 'text' : 'password'}
+                  value={passwordData.currentPassword}
+                  onChange={handlePasswordChange}
+                  InputProps={{
+                    endAdornment: (
+                      <IconButton
+                        onClick={() => togglePasswordVisibility('current')}
+                        edge="end"
+                      >
+                        {showPasswords.current ? <VisibilityOff /> : <Visibility />}
+                      </IconButton>
+                    )
+                  }}
+                />
+              </Grid>
+              <Grid item xs={12} md={4}>
+                <TextField
+                  required
+                  fullWidth
+                  label="New Password *"
+                  name="newPassword"
+                  type={showPasswords.new ? 'text' : 'password'}
+                  value={passwordData.newPassword}
+                  onChange={handlePasswordChange}
+                  InputProps={{
+                    endAdornment: (
+                      <IconButton
+                        onClick={() => togglePasswordVisibility('new')}
+                        edge="end"
+                      >
+                        {showPasswords.new ? <VisibilityOff /> : <Visibility />}
+                      </IconButton>
+                    )
+                  }}
+                />
+              </Grid>
+              <Grid item xs={12} md={4}>
+                <TextField
+                  required
+                  fullWidth
+                  label="Confirm New Password *"
+                  name="confirmPassword"
+                  type={showPasswords.confirm ? 'text' : 'password'}
+                  value={passwordData.confirmPassword}
+                  onChange={handlePasswordChange}
+                  InputProps={{
+                    endAdornment: (
+                      <IconButton
+                        onClick={() => togglePasswordVisibility('confirm')}
+                        edge="end"
+                      >
+                        {showPasswords.confirm ? <VisibilityOff /> : <Visibility />}
+                      </IconButton>
+                    )
+                  }}
+                />
+              </Grid>
+            </Grid>
+            
+            <Box sx={{ mt: 3 }}>
+              <Button
+                variant="contained"
+                onClick={handleChangePassword}
+                disabled={loading || !passwordData.currentPassword || !passwordData.newPassword || !passwordData.confirmPassword}
               >
-                Cancel
+                Change Password
               </Button>
-              <Button 
-                onClick={confirmDeleteClinic} 
-                variant="contained" 
-                color="error"
-                startIcon={<DeleteOutline />}
-                fullWidth={isMobile}
-                size={isMobile ? "medium" : "large"}
-              >
-                Delete Clinic
-              </Button>
-            </DialogActions>
-          </Dialog>
+            </Box>
+          </Paper>
         </Box>
       </Container>
+
+      {/* Add Clinic Dialog */}
+      <Dialog open={clinicDialogOpen} onClose={() => setClinicDialogOpen(false)}>
+        <DialogTitle>Add New Clinic</DialogTitle>
+        <DialogContent>
+          <TextField
+            required
+            autoFocus
+            margin="dense"
+            label="Clinic Name *"
+            fullWidth
+            variant="outlined"
+            value={newClinic}
+            onChange={(e) => setNewClinic(e.target.value)}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setClinicDialogOpen(false)}>Cancel</Button>
+          <Button 
+            onClick={handleAddClinic} 
+            variant="contained"
+            disabled={!newClinic.trim() || clinics.includes(newClinic.trim())}
+          >
+            Add
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Delete Clinic Confirmation */}
+      <Dialog open={deleteConfirmOpen} onClose={cancelDeleteClinic}>
+        <DialogTitle>Remove Clinic</DialogTitle>
+        <DialogContent>
+          <Typography>
+            Are you sure you want to remove "{clinicToDelete}" from your clinics list?
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={cancelDeleteClinic}>Cancel</Button>
+          <Button onClick={confirmDeleteClinic} color="error" variant="contained">
+            Remove
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 };
 
-export default Settings; 
+export default Settings;

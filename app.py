@@ -2,6 +2,7 @@ import os
 import logging
 import json
 from flask import Flask, render_template, request, redirect, url_for, flash, send_file, jsonify, session, send_from_directory
+from flask_cors import CORS
 from werkzeug.utils import secure_filename
 from werkzeug.middleware.proxy_fix import ProxyFix
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
@@ -14,23 +15,36 @@ from reportlab.lib.utils import ImageReader
 from reportlab.lib import colors
 import tempfile
 import uuid
-from datetime import datetime
+from datetime import datetime, timedelta
 from dental_ai_model import get_dental_classifier, initialize_dental_classifier, classify_bulk_images, get_classification_summary
 from AI_System.scripts.training_setup import TrainingDataManager
 from config.database import db
+import json
 
 # Configure logging
 logging.basicConfig(level=logging.DEBUG)
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("SESSION_SECRET", "dev-secret-key-change-in-production")
-app.config['SESSION_COOKIE_SECURE'] = False
-app.config['SESSION_COOKIE_HTTPONLY'] = False
-app.config['SESSION_COOKIE_SAMESITE'] = None
+app.config['SESSION_COOKIE_SECURE'] = False  # Set to True in production with HTTPS
+app.config['SESSION_COOKIE_HTTPONLY'] = True  # Secure cookie - prevent XSS
+app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'  # Allow cross-site requests with credentials
+app.config['SESSION_COOKIE_DOMAIN'] = None  # Use default domain
+app.config['SESSION_COOKIE_PATH'] = '/'  # Available on all paths
+app.config['SESSION_PERMANENT'] = True
+app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(hours=24)  # Set session lifetime
 app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
 
+# Configure CORS for React frontend with proper cookie support
+CORS(app, 
+     origins=['http://localhost:3000', 'http://localhost:3001'], 
+     supports_credentials=True,  # CRITICAL: Allow credentials/cookies
+     allow_headers=['Content-Type', 'Authorization', 'X-Requested-With'],
+     expose_headers=['Content-Type', 'Authorization'],
+     methods=['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'])  # Allow all methods
+
 # Configure the database
-app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get("DATABASE_URL", "sqlite:///app.db")
+app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get("DATABASE_URL", "sqlite:///dental_app.db")
 app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
     "pool_recycle": 300,
     "pool_pre_ping": True,
@@ -40,9 +54,16 @@ db.init_app(app)
 # Initialize Flask-Login
 login_manager = LoginManager()
 login_manager.init_app(app)
-login_manager.login_view = 'login'
+# Don't set login_view since we're using API-only backend
+# login_manager.login_view = 'login'  # Remove this line
 login_manager.login_message = 'Please log in to access this page.'
 login_manager.login_message_category = 'info'
+
+# Custom unauthorized handler for API endpoints
+@login_manager.unauthorized_handler
+def unauthorized_api():
+    """Handle unauthorized API requests"""
+    return jsonify({'success': False, 'message': 'Authentication required', 'error': 'Unauthorized'}), 401
 
 @login_manager.user_loader
 def load_user(user_id):
@@ -655,280 +676,8 @@ def create_pdf(images, case_title, notes, output_path, template='classic', orien
         logging.error(f"Error creating PDF: {str(e)}")
         return False
 
-@app.route('/')
-def index():
-    if current_user.is_authenticated:
-        return redirect(url_for('dashboard'))
-
-    # For demo purposes, create and auto-login a demo user
-    demo_user = User.query.filter_by(email='demo@example.com').first()
-    if not demo_user:
-        demo_user = User(
-            email='demo@example.com',
-            first_name='Demo',
-            last_name='User',
-            department='Orthodontics',
-            position='Doctor'
-        )
-        demo_user.set_password('demo123')
-        db.session.add(demo_user)
-        db.session.commit()
-
-    login_user(demo_user, remember=True)
-    session.permanent = True
-
-    # Create demo data if none exists
-    existing_patients = Patient.query.filter_by(user_id=demo_user.id).count()
-    if existing_patients == 0:
-        # Create demo patients
-        patient1 = Patient(
-            mrn='12345',
-            first_name='John',
-            last_name='Smith',
-            clinic='KFMC',
-            user_id=demo_user.id
-        )
-        patient2 = Patient(
-            mrn='67890',
-            first_name='Sarah',
-            last_name='Johnson',
-            clinic='DC',
-            user_id=demo_user.id
-        )
-        db.session.add(patient1)
-        db.session.add(patient2)
-        db.session.commit()
-
-        # Create demo cases
-        case1 = Case(
-            title='Initial Orthodontic Consultation',
-            visit_type='Registration',
-            template='medical',
-            orientation='portrait',
-            notes='Initial consultation and treatment planning',
-            user_id=demo_user.id,
-            patient_id=patient1.id,
-            image_count=3
-        )
-        case2 = Case(
-            title='Progress Check - Month 6',
-            visit_type='Orthodontic Visit',
-            template='modern',
-            orientation='portrait', 
-            notes='6-month progress evaluation',
-            user_id=demo_user.id,
-            patient_id=patient1.id,
-            image_count=5
-        )
-        case3 = Case(
-            title='Treatment Completion',
-            visit_type='Debond',
-            template='classic',
-            orientation='portrait',
-            notes='Final treatment results',
-            user_id=demo_user.id,
-            patient_id=patient2.id,
-            image_count=4
-        )
-        db.session.add(case1)
-        db.session.add(case2)
-        db.session.add(case3)
-        db.session.commit()
-
-    return redirect(url_for('dashboard'))
-
-@app.route('/dashboard')
-@login_required
-def dashboard():
-    return render_template('index.html', user=current_user)
-
-@app.route('/new_case')
-@login_required
-def new_case():
-    return render_template('new_case.html', user=current_user)
-
-@app.route('/patient_list')
-@login_required
-def patient_list():
-    return render_template('patient_list.html', user=current_user)
-
-@app.route('/login', methods=['GET', 'POST'])
-def login():
-    if current_user.is_authenticated:
-        return redirect(url_for('dashboard'))
-
-    if request.method == 'POST':
-        email = request.form.get('email')
-        password = request.form.get('password')
-        remember = bool(request.form.get('remember'))
-
-        if not email or not password:
-            flash('Please provide both email and password.', 'error')
-            return render_template('login.html')
-
-        user = User.query.filter_by(email=email.lower()).first()
-
-        if user and user.check_password(password):
-            login_user(user, remember=remember)
-            user.last_login = datetime.utcnow()
-            db.session.commit()
-
-            next_page = request.args.get('next')
-            if next_page:
-                return redirect(next_page)
-            return redirect(url_for('dashboard'))
-        else:
-            flash('Invalid email or password.', 'error')
-
-    return render_template('login.html')
-
-@app.route('/register', methods=['GET', 'POST'])
-def register():
-    if current_user.is_authenticated:
-        return redirect(url_for('dashboard'))
-
-    if request.method == 'POST':
-        first_name = request.form.get('first_name', '').strip()
-        last_name = request.form.get('last_name', '').strip()
-        email = request.form.get('email', '').strip().lower()
-        department = request.form.get('department', '').strip()
-        position = request.form.get('position', '').strip()
-        clinic_names = request.form.getlist('clinic_names[]')
-        password = request.form.get('password', '')
-        confirm_password = request.form.get('confirm_password', '')
-
-        # Filter out empty clinic names and strip whitespace
-        clinic_names = [name.strip() for name in clinic_names if name.strip()]
-
-        # Validation
-        if not all([first_name, last_name, email, department, position, password]) or not clinic_names:
-            flash('Please fill in all required fields including at least one clinic.', 'error')
-            return render_template('register.html')
-
-        if password != confirm_password:
-            flash('Passwords do not match.', 'error')
-            return render_template('register.html')
-
-        if len(password) < 8:
-            flash('Password must be at least 8 characters long.', 'error')
-            return render_template('register.html')
-
-        # Check if user already exists
-        if User.query.filter_by(email=email).first():
-            flash('An account with this email already exists.', 'error')
-            return render_template('register.html')
-
-        # Create new user
-        user = User(
-            first_name=first_name,
-            last_name=last_name,
-            email=email,
-            department=department,
-            position=position
-        )
-        user.set_password(password)
-
-        try:
-            db.session.add(user)
-            db.session.commit()
-
-            # Create initial user settings with their clinics
-            user_settings = UserSettings(
-                user_id=user.id,
-                full_name=f"{first_name} {last_name}",
-                email=email,
-                position=position,
-                clinics_data=json.dumps(clinic_names)  # Store all clinics as JSON
-            )
-
-            db.session.add(user_settings)
-            db.session.commit()
-
-            flash('Registration successful! Please log in.', 'success')
-            return redirect(url_for('login'))
-        except Exception as e:
-            db.session.rollback()
-            flash('Registration failed. Please try again.', 'error')
-            logging.error(f"Registration error: {e}")
-
-    return render_template('register.html')
-
-@app.route('/logout')
-@login_required
-def logout():
-    logout_user()
-    flash('You have been logged out successfully.', 'info')
-    return redirect(url_for('login'))
-
-@app.route('/forgot-password', methods=['GET', 'POST'])
-def forgot_password():
-    """Handle forgot password requests"""
-    if request.method == 'POST':
-        email = request.form.get('email', '').strip().lower()
-
-        if not email:
-            flash('Please provide an email address.', 'error')
-            return render_template('forgot_password.html')
-
-        user = User.query.filter_by(email=email).first()
-
-        if user:
-            # Generate reset token
-            token = user.generate_reset_token()
-            db.session.commit()
-
-            # Create reset URL
-            reset_url = url_for('reset_password', token=token, _external=True)
-
-            # Send email (simplified version - in production you'd use a proper email service)
-            try:
-                send_reset_email(user.email, user.first_name, reset_url)
-                flash('A password reset link has been sent to your email address.', 'success')
-            except Exception as e:
-                flash('There was an error sending the reset email. Please try again later.', 'error')
-                print(f"Email error: {e}")  # Log for debugging
-        else:
-            # Don't reveal whether email exists or not for security
-            flash('If an account with that email exists, a password reset link has been sent.', 'info')
-
-        return redirect(url_for('login'))
-
-    return render_template('forgot_password.html')
-
-@app.route('/reset-password/<token>', methods=['GET', 'POST'])
-def reset_password(token):
-    """Handle password reset with token"""
-    user = User.query.filter_by(reset_token=token).first()
-
-    if not user or not user.verify_reset_token(token):
-        flash('The password reset link is invalid or has expired.', 'error')
-        return redirect(url_for('forgot_password'))
-
-    if request.method == 'POST':
-        password = request.form.get('password', '')
-        confirm_password = request.form.get('confirm_password', '')
-
-        if not password or not confirm_password:
-            flash('Please provide both password fields.', 'error')
-            return render_template('reset_password.html', token=token)
-
-        if password != confirm_password:
-            flash('Passwords do not match.', 'error')
-            return render_template('reset_password.html', token=token)
-
-        if len(password) < 8:
-            flash('Password must be at least 8 characters long.', 'error')
-            return render_template('reset_password.html', token=token)
-
-        # Update password and clear reset token
-        user.set_password(password)
-        user.clear_reset_token()
-        db.session.commit()
-
-        flash('Your password has been reset successfully. Please log in.', 'success')
-        return redirect(url_for('login'))
-
-    return render_template('reset_password.html', token=token)
+# API-only Flask backend - no HTML template routes
+# React frontend handles all UI rendering
 
 @app.route('/save_draft', methods=['POST'])
 @login_required
@@ -1017,68 +766,7 @@ def save_draft():
     except Exception as e:
         return jsonify({'success': False, 'message': f'Error saving draft: {str(e)}'})
 
-@app.route('/settings')
-@login_required
-def settings():
-    """Display user settings page"""
-    return render_template('settings.html')
-
-def send_reset_email(email, first_name, reset_url):
-    """Send password reset email (simplified version)"""
-    # In production, you would use a proper email service like SendGrid, AWS SES, etc.
-    # For now, this is a placeholder that logs the reset URL
-    print(f"Password reset email would be sent to {email}")
-    print(f"Reset URL: {reset_url}")
-
-    # You can uncomment and configure this for actual email sending:
-    """
-    smtp_server = "smtp.gmail.com"
-    smtp_port = 587
-    sender_email = "your-app@example.com"
-    sender_password = "your-app-password"
-
-    message = MIMEMultipart("alternative")
-    message["Subject"] = "Password Reset - Medical Case Manager"
-    message["From"] = sender_email
-    message["To"] = email
-
-    html = f'''
-    <html>
-      <body>
-        <h2>Password Reset Request</h2>
-        <p>Hello {first_name},</p>
-        <p>You have requested to reset your password for Medical Case Manager.</p>
-        <p><a href="{reset_url}">Click here to reset your password</a></p>
-        <p>This link will expire in 1 hour.</p>
-        <p>If you didn't request this reset, please ignore this email.</p>
-      </body>
-    </html>
-    '''
-
-    part = MIMEText(html, "html")
-    message.attach(part)
-
-    with smtplib.SMTP(smtp_server, smtp_port) as server:
-        server.starttls()
-        server.login(sender_email, sender_password)
-        server.sendmail(sender_email, email, message.as_string())
-    """
-
-@app.route('/success')
-def success():
-    success_info = session.get('success_info', {})
-    if not success_info:
-        return redirect(url_for('index'))
-
-    # Clear the session data
-    session.pop('success_info', None)
-
-    return render_template('success.html', 
-                         case_title=success_info.get('case_title', 'Unknown'),
-                         template=success_info.get('template', 'unknown'),
-                         image_count=success_info.get('image_count', 0),
-                         timestamp=success_info.get('timestamp', 'Unknown'),
-                         case_id=success_info.get('case_id', 0))
+# Removed HTML template routes - React handles all UI
 
 @app.route('/search_patients', methods=['POST'])
 @login_required
@@ -1113,56 +801,7 @@ def search_patients():
 
     return jsonify({'patients': patients_data})
 
-@app.route('/log')
-@login_required
-def log():
-    """Display all submitted cases with search and filter functionality"""
-    search_query = request.args.get('search', '').strip()
-    filter_param = request.args.get('filter', '').strip()
-
-    # Base query for current user
-    query = Case.query.filter_by(user_id=current_user.id)
-
-    # Apply filters
-    if filter_param:
-        if filter_param.startswith('priority:'):
-            priority = filter_param.split(':')[1]
-            query = query.filter(Case.priority == priority)
-        elif filter_param.startswith('category:'):
-            category = filter_param.split(':')[1]
-            query = query.filter(Case.category == category)
-        elif filter_param == 'type:draft':
-            query = query.filter(Case.title.ilike('[DRAFT]%'))
-        elif filter_param == 'type:completed':
-            query = query.filter(~Case.title.ilike('[DRAFT]%'))
-
-    if search_query:
-        # Search in case title, notes, visit type, patient name, and MRN for current user only
-        query = query.join(Patient, Case.patient_id == Patient.id, isouter=True).filter(
-            db.or_(
-                Case.title.ilike(f'%{search_query}%'),
-                Case.notes.ilike(f'%{search_query}%'),
-                Case.visit_type.ilike(f'%{search_query}%'),
-                Case.visit_description.ilike(f'%{search_query}%'),
-                Case.chief_complaint.ilike(f'%{search_query}%'),
-                Case.diagnosis.ilike(f'%{search_query}%'),
-                Patient.mrn.ilike(f'%{search_query}%'),
-                Patient.first_name.ilike(f'%{search_query}%'),
-                Patient.last_name.ilike(f'%{search_query}%')
-            )
-        )
-
-    cases = query.order_by(Case.created_at.desc()).all()
-    return render_template('log.html', cases=cases, search_query=search_query, current_filter=filter_param)
-
-@app.route('/case/<int:case_id>')
-@login_required
-def case_detail(case_id):
-    """Display details of a specific case"""
-    case = Case.query.filter_by(id=case_id, user_id=current_user.id).first_or_404()
-    return render_template('case_detail.html', case=case)
-
-@app.route('/download/<int:case_id>')
+@app.route('/api/download/<int:case_id>')
 @login_required
 def download_case(case_id):
     """Download PDF for a specific case"""
@@ -1174,8 +813,7 @@ def download_case(case_id):
                         download_name=f"{case.title}_slides.pdf",
                         mimetype='application/pdf')
     else:
-        flash('PDF file not found. It may have been deleted.', 'error')
-        return redirect(url_for('cases'))
+        return jsonify({'error': 'PDF file not found'}), 404
 
 @app.route('/upload', methods=['POST'])
 @login_required
@@ -1724,13 +1362,11 @@ def bulk_upload_categorize():
 
 @app.errorhandler(413)
 def too_large(e):
-    flash('File is too large. Please upload files smaller than 16MB.', 'error')
-    return redirect(url_for('index'))
+    return jsonify({'error': 'File is too large. Please upload files smaller than 16MB.'}), 413
 
 @app.errorhandler(404)
 def not_found(e):
-    user = current_user if current_user.is_authenticated else None
-    return render_template('index.html', user=user), 404
+    return jsonify({'error': 'Not found'}), 404
 
 @app.route('/api/cases')
 def api_cases():
@@ -1854,7 +1490,9 @@ def api_user_settings():
 
         # Convert profile image path to URL if exists
         if user_settings.profile_image:
-            settings['profile_image'] = url_for('serve_profile_image', filename=os.path.basename(user_settings.profile_image))
+            # Add timestamp to prevent browser caching
+            timestamp = int(datetime.now().timestamp())
+            settings['profile_image'] = url_for('serve_profile_image', filename=os.path.basename(user_settings.profile_image), _external=True) + f"?t={timestamp}"
     else:
         # Default settings for new users
         settings = {
@@ -1880,11 +1518,7 @@ def serve_uploaded_file(filename):
     """Serve uploaded files"""
     return send_from_directory('uploads', filename)
 
-@app.route('/ai_test')
-@login_required
-def ai_test():
-    """AI Model Testing page"""
-    return render_template('ai_test.html')
+# Removed ai_test HTML route - React handles AI testing UI
 
 @app.route('/api/model-status')
 @login_required
@@ -1966,6 +1600,145 @@ def api_model_status():
     except Exception as e:
         logging.error(f"Error getting modelmhanna model status: {e}")
         return jsonify({'error': str(e)}), 500
+
+# Add API endpoints that the frontend expects
+@app.route('/api/ai/model-status')
+def api_ai_model_status():
+    """Frontend compatible AI model status endpoint (no login required)"""
+    try:
+        classifier = get_dental_classifier()
+        
+        # Get basic model information
+        model_info = {
+            'is_trained': classifier.is_trained,
+            'categories': classifier.categories,
+            'train_accuracy': getattr(classifier, 'last_train_accuracy', None),
+            'val_accuracy': getattr(classifier, 'last_val_accuracy', None),
+            'last_training': getattr(classifier, 'last_training_time', None),
+            'model_type': 'modelmhanna_pytorch' if hasattr(classifier, 'model_path') else 'fallback_sklearn',
+            'performance_level': 'excellent' if hasattr(classifier, 'model_path') else 'basic',
+            'performance_description': 'Using trained modelmhanna PyTorch model' if hasattr(classifier, 'model_path') else 'Model not trained, using default classifications'
+        }
+
+        return jsonify(model_info)
+
+    except Exception as e:
+        logging.error(f"Error getting modelmhanna model status: {e}")
+        return jsonify({
+            'error': str(e),
+            'is_trained': False,
+            'categories': [],
+            'model_type': 'error',
+            'performance_level': 'basic'
+        }), 500
+
+@app.route('/api/auth/login', methods=['POST', 'OPTIONS'])
+def api_auth_login():
+    """API endpoint for login that React frontend expects"""
+    if request.method == 'OPTIONS':
+        # Handle preflight CORS request
+        response = jsonify({'message': 'OK'})
+        response.headers.add('Access-Control-Allow-Origin', 'http://localhost:3000')
+        response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
+        response.headers.add('Access-Control-Allow-Methods', 'POST,OPTIONS')
+        response.headers.add('Access-Control-Allow-Credentials', 'true')
+        return response
+    
+    try:
+        data = request.get_json()
+        if not data:
+            return jsonify({'success': False, 'message': 'No data provided'}), 400
+            
+        email = data.get('email', '').strip().lower()
+        password = data.get('password', '')
+        
+        if not email or not password:
+            return jsonify({'success': False, 'message': 'Email and password are required'}), 400
+        
+        user = User.query.filter_by(email=email).first()
+        
+        if user and user.check_password(password):
+            login_user(user, remember=True)
+            session.permanent = True  # Make session permanent
+            user.last_login = datetime.now()  # Fix deprecated datetime.utcnow()
+            db.session.commit()
+            
+            logging.info(f"Login successful for user {user.email}, session: {session}")
+            
+            response = jsonify({
+                'success': True, 
+                'message': 'Login successful',
+                'user': {
+                    'id': user.id,
+                    'email': user.email,
+                    'first_name': user.first_name,
+                    'last_name': user.last_name,
+                    'full_name': user.full_name
+                }
+            })
+            # Add CORS headers to response
+            response.headers.add('Access-Control-Allow-Origin', 'http://localhost:3000')
+            response.headers.add('Access-Control-Allow-Credentials', 'true')
+            return response
+        else:
+            return jsonify({'success': False, 'message': 'Invalid email or password'}), 401
+            
+    except Exception as e:
+        logging.error(f"API login error: {e}")
+        return jsonify({'success': False, 'message': 'Login failed'}), 500
+
+@app.route('/api/auth/logout', methods=['POST'])
+@login_required
+def api_auth_logout():
+    """API endpoint for logout"""
+    logout_user()
+    return jsonify({'success': True, 'message': 'Logged out successfully'})
+
+@app.route('/api/auth/me')
+@login_required
+def api_auth_me():
+    """Get current user info"""
+    return jsonify({
+        'success': True,
+        'user': {
+            'id': current_user.id,
+            'email': current_user.email,
+            'first_name': current_user.first_name,
+            'last_name': current_user.last_name,
+            'full_name': current_user.full_name
+        }
+    })
+
+@app.route('/api/auth/verify', methods=['GET', 'POST', 'OPTIONS'])
+def api_auth_verify():
+    """Verify user authentication status for React frontend"""
+    if request.method == 'OPTIONS':
+        # Handle preflight CORS request
+        response = jsonify({'message': 'OK'})
+        response.headers.add('Access-Control-Allow-Origin', 'http://localhost:3000')
+        response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
+        response.headers.add('Access-Control-Allow-Methods', 'GET,POST,OPTIONS')
+        response.headers.add('Access-Control-Allow-Credentials', 'true')
+        return response
+    
+    if current_user.is_authenticated:
+        return jsonify({
+            'success': True,
+            'authenticated': True,
+            'user': {
+                'id': current_user.id,
+                'email': current_user.email,
+                'first_name': current_user.first_name,
+                'last_name': current_user.last_name,
+                'full_name': current_user.full_name
+            }
+        })
+    else:
+        return jsonify({
+            'success': True,
+            'authenticated': False,
+            'user': None
+        })
 
 @app.route('/test-ai-classification', methods=['POST'])
 @login_required
@@ -2150,7 +1923,7 @@ def save_settings():
             user_settings.clinics_data = json.dumps(clinics)
             if profile_image_path:
                 user_settings.profile_image = profile_image_path
-            user_settings.updated_at = datetime.utcnow()
+            user_settings.updated_at = datetime.now()
         else:
             # Create new settings
             user_settings = UserSettings(
@@ -2179,9 +1952,7 @@ def save_settings():
 @app.errorhandler(500)
 def server_error(e):
     logging.error(f"Server error: {str(e)}")
-    flash('An internal server error occurred. Please try again.', 'error')
-    user = current_user if current_user.is_authenticated else None
-    return render_template('index.html', user=user), 500
+    return jsonify({'error': 'An internal server error occurred. Please try again.'}), 500
 
 @app.route('/correct_classification', methods=['POST'])
 def correct_classification():
@@ -2230,6 +2001,819 @@ def correct_classification():
     except Exception as e:
         logging.error(f"Error correcting classification: {e}")
         return jsonify({'success': False, 'error': str(e)})
+
+# Add API endpoints that React frontend expects
+@app.route('/api/auth/profile', methods=['GET', 'PUT', 'OPTIONS'])
+def api_auth_profile():
+    """User profile API endpoint that React expects"""
+    if request.method == 'OPTIONS':
+        # Handle preflight CORS request
+        response = jsonify({'message': 'OK'})
+        response.headers.add('Access-Control-Allow-Origin', 'http://localhost:3000')
+        response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
+        response.headers.add('Access-Control-Allow-Methods', 'GET,PUT,OPTIONS')
+        response.headers.add('Access-Control-Allow-Credentials', 'true')
+        return response
+    
+    # Check authentication for non-OPTIONS requests
+    if not current_user.is_authenticated:
+        logging.warning(f"Profile update failed - user not authenticated. Session: {session}, Current user: {current_user}")
+        response = jsonify({'success': False, 'message': 'Authentication required', 'error': 'Unauthorized'})
+        response.headers.add('Access-Control-Allow-Origin', 'http://localhost:3000')
+        response.headers.add('Access-Control-Allow-Credentials', 'true')
+        return response, 401
+    
+    if request.method == 'GET':
+        # Get user profile
+        user_settings = UserSettings.query.filter_by(user_id=current_user.id).first()
+        
+        if user_settings:
+            # Parse clinics from JSON
+            try:
+                clinics = json.loads(user_settings.clinics_data) if user_settings.clinics_data else []
+            except (json.JSONDecodeError, TypeError):
+                clinics = []
+
+            profile_data = {
+                'id': current_user.id,
+                'email': current_user.email,
+                'first_name': current_user.first_name,
+                'last_name': current_user.last_name,
+                'full_name': user_settings.full_name or f"{current_user.first_name} {current_user.last_name}",
+                'specialty': user_settings.specialty or user_settings.position or '',  # Use dedicated specialty field or fall back to position
+                'gender': user_settings.gender or '',
+                'clinics': clinics,
+                'notifications': user_settings.notifications if user_settings.notifications is not None else True,
+                'autoSave': user_settings.auto_save if user_settings.auto_save is not None else True,
+                'darkMode': user_settings.dark_mode if user_settings.dark_mode is not None else False,
+                'language': user_settings.language or 'en',
+                'profileImage': user_settings.profile_image
+            }
+
+            # Convert profile image path to URL if exists
+            if user_settings.profile_image:
+                # Add timestamp to prevent browser caching
+                timestamp = int(datetime.now().timestamp())
+                profile_data['profileImage'] = url_for('serve_profile_image', filename=os.path.basename(user_settings.profile_image), _external=True) + f"?t={timestamp}"
+        else:
+            # Default profile for new users
+            profile_data = {
+                'id': current_user.id,
+                'email': current_user.email,
+                'first_name': current_user.first_name,
+                'last_name': current_user.last_name,
+                'full_name': f"{current_user.first_name} {current_user.last_name}",
+                'specialty': '',
+                'gender': '',
+                'clinics': [],
+                'notifications': True,
+                'autoSave': True,
+                'darkMode': False,
+                'language': 'en',
+                'profileImage': None
+            }
+
+        response = jsonify({
+            'success': True,
+            'user': profile_data
+        })
+        response.headers.add('Access-Control-Allow-Origin', 'http://localhost:3000')
+        response.headers.add('Access-Control-Allow-Credentials', 'true')
+        return response
+    
+    elif request.method == 'PUT':
+        # Update user profile
+        try:
+            data = request.get_json()
+            if not data:
+                response = jsonify({'success': False, 'error': 'No data provided'})
+                response.headers.add('Access-Control-Allow-Origin', 'http://localhost:3000')
+                response.headers.add('Access-Control-Allow-Credentials', 'true')
+                return response, 400
+
+            # Debug: Log the received data
+            logging.info(f"Profile update data received: {data}")
+            logging.info(f"Current user ID: {current_user.id}")
+
+            # Get or create user settings
+            user_settings = UserSettings.query.filter_by(user_id=current_user.id).first()
+            
+            if not user_settings:
+                user_settings = UserSettings(user_id=current_user.id)
+                db.session.add(user_settings)
+
+            # Update settings from the data
+            if 'fullName' in data:
+                logging.info(f"Updating full_name to: {data['fullName']}")
+                user_settings.full_name = data['fullName']
+            if 'email' in data:
+                logging.info(f"Updating email to: {data['email']}")
+                user_settings.email = data['email']
+            if 'specialty' in data:
+                logging.info(f"Updating specialty to: {data['specialty']}")
+                user_settings.specialty = data['specialty']  # Save to dedicated specialty field
+                user_settings.position = data['specialty']   # Also save to position for backward compatibility
+            if 'gender' in data:
+                logging.info(f"Updating gender to: {data['gender']}")
+                user_settings.gender = data['gender']
+            if 'clinics' in data:
+                user_settings.clinics_data = json.dumps(data['clinics'])
+            if 'notifications' in data:
+                user_settings.notifications = data['notifications']
+            if 'autoSave' in data:
+                user_settings.auto_save = data['autoSave']
+            if 'darkMode' in data:
+                user_settings.dark_mode = data['darkMode']
+            if 'language' in data:
+                user_settings.language = data['language']
+            
+            # Handle profile image if provided (base64 data)
+            if 'profileImage' in data and data['profileImage'] and data['profileImage'].startswith('data:'):
+                # Handle base64 image data
+                try:
+                    import base64
+                    from PIL import Image
+                    import io
+                    
+                    logging.info(f"Processing profile image upload for user {current_user.id}")
+                    
+                    # Extract base64 data
+                    image_data = data['profileImage'].split(',')[1]
+                    image_bytes = base64.b64decode(image_data)
+                    
+                    # Create profiles directory if it doesn't exist
+                    profiles_dir = os.path.join('uploads', 'profiles')
+                    os.makedirs(profiles_dir, exist_ok=True)
+                    
+                    # Clean up old profile image if it exists
+                    if user_settings.profile_image and os.path.exists(user_settings.profile_image):
+                        try:
+                            os.remove(user_settings.profile_image)
+                            logging.info(f"Removed old profile image: {user_settings.profile_image}")
+                        except Exception as e:
+                            logging.warning(f"Failed to remove old profile image: {e}")
+                    
+                    # Generate unique filename with timestamp
+                    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+                    filename = f"profile_{timestamp}_{current_user.id}.jpg"
+                    filepath = os.path.join(profiles_dir, filename)
+                    
+                    # Process and save image
+                    image = Image.open(io.BytesIO(image_bytes))
+                    if image.mode in ('RGBA', 'LA', 'P'):
+                        image = image.convert('RGB')
+                    image.thumbnail((300, 300), Image.Resampling.LANCZOS)
+                    image.save(filepath, 'JPEG', quality=80, optimize=True)
+                    
+                    user_settings.profile_image = filepath
+                    logging.info(f"Saved new profile image: {filepath}")
+                    
+                except Exception as e:
+                    logging.error(f"Error processing profile image: {e}")
+                    # Continue without failing the entire update
+
+            user_settings.updated_at = datetime.now()
+            logging.info(f"About to commit changes for user {current_user.id}")
+            db.session.commit()
+            logging.info(f"Successfully committed profile changes for user {current_user.id}")
+
+            # Return updated user data
+            clinics = json.loads(user_settings.clinics_data) if user_settings.clinics_data else []
+            
+            # Generate profile image URL
+            profile_image_url = None
+            if user_settings.profile_image:
+                # Always use URL, never file path - use absolute URL for frontend
+                # Add timestamp to prevent browser caching
+                timestamp = int(datetime.now().timestamp())
+                profile_image_url = url_for('serve_profile_image', filename=os.path.basename(user_settings.profile_image), _external=True) + f"?t={timestamp}"
+                logging.info(f"Generated profile image URL: {profile_image_url}")
+            else:
+                logging.warning(f"No profile image set for user {current_user.id}")
+
+            updated_user = {
+                'id': current_user.id,
+                'email': current_user.email,
+                'first_name': current_user.first_name,
+                'last_name': current_user.last_name,
+                'full_name': user_settings.full_name or f"{current_user.first_name} {current_user.last_name}",
+                'specialty': user_settings.specialty or user_settings.position or '',
+                'gender': user_settings.gender or '',
+                'clinics': clinics,
+                'notifications': user_settings.notifications if user_settings.notifications is not None else data.get('notifications', True),
+                'autoSave': user_settings.auto_save if user_settings.auto_save is not None else data.get('autoSave', True),
+                'darkMode': user_settings.dark_mode if user_settings.dark_mode is not None else data.get('darkMode', False),
+                'language': user_settings.language or data.get('language', 'en'),
+                'profileImage': profile_image_url
+            }
+            logging.info(f"Returning updated user data with profile image: {profile_image_url}")
+
+            response = jsonify({
+                'success': True,
+                'message': 'Profile updated successfully',
+                'user': updated_user
+            })
+            response.headers.add('Access-Control-Allow-Origin', 'http://localhost:3000')
+            response.headers.add('Access-Control-Allow-Credentials', 'true')
+            return response
+
+        except Exception as e:
+            db.session.rollback()
+            logging.error(f"Error updating profile: {str(e)}")
+            response = jsonify({'success': False, 'error': 'Failed to update profile'})
+            response.headers.add('Access-Control-Allow-Origin', 'http://localhost:3000')
+            response.headers.add('Access-Control-Allow-Credentials', 'true')
+            return response, 500
+
+@app.route('/api/auth/change-password', methods=['POST', 'OPTIONS'])
+def api_change_password():
+    """Change user password API endpoint"""
+    if request.method == 'OPTIONS':
+        # Handle preflight CORS request
+        response = jsonify({'message': 'OK'})
+        response.headers.add('Access-Control-Allow-Origin', 'http://localhost:3000')
+        response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
+        response.headers.add('Access-Control-Allow-Methods', 'POST,OPTIONS')
+        response.headers.add('Access-Control-Allow-Credentials', 'true')
+        return response
+    
+    # Check authentication for non-OPTIONS requests
+    if not current_user.is_authenticated:
+        response = jsonify({'success': False, 'message': 'Authentication required', 'error': 'Unauthorized'})
+        response.headers.add('Access-Control-Allow-Origin', 'http://localhost:3000')
+        response.headers.add('Access-Control-Allow-Credentials', 'true')
+        return response, 401
+    
+    try:
+        data = request.get_json()
+        current_password = data.get('current_password', '')
+        new_password = data.get('new_password', '')
+        
+        if not current_password or not new_password:
+            response = jsonify({'success': False, 'message': 'Current password and new password are required'})
+            response.headers.add('Access-Control-Allow-Origin', 'http://localhost:3000')
+            response.headers.add('Access-Control-Allow-Credentials', 'true')
+            return response, 400
+        
+        # Verify current password
+        if not current_user.check_password(current_password):
+            response = jsonify({'success': False, 'message': 'Current password is incorrect'})
+            response.headers.add('Access-Control-Allow-Origin', 'http://localhost:3000')
+            response.headers.add('Access-Control-Allow-Credentials', 'true')
+            return response, 401
+        
+        # Validate new password
+        if len(new_password) < 8:
+            response = jsonify({'success': False, 'message': 'New password must be at least 8 characters long'})
+            response.headers.add('Access-Control-Allow-Origin', 'http://localhost:3000')
+            response.headers.add('Access-Control-Allow-Credentials', 'true')
+            return response, 400
+        
+        # Update password
+        current_user.set_password(new_password)
+        db.session.commit()
+        
+        logging.info(f"Password changed for user {current_user.email}")
+        response = jsonify({'success': True, 'message': 'Password changed successfully'})
+        response.headers.add('Access-Control-Allow-Origin', 'http://localhost:3000')
+        response.headers.add('Access-Control-Allow-Credentials', 'true')
+        return response
+
+    except Exception as e:
+        db.session.rollback()
+        logging.error(f"Error changing password: {str(e)}")
+        response = jsonify({'success': False, 'message': 'Failed to change password'})
+        response.headers.add('Access-Control-Allow-Origin', 'http://localhost:3000')
+        response.headers.add('Access-Control-Allow-Credentials', 'true')
+        return response, 500
+
+@app.route('/api/auth/debug', methods=['GET'])
+def debug_auth():
+    """Debug endpoint to check authentication status"""
+    return jsonify({
+        'authenticated': current_user.is_authenticated,
+        'user_id': current_user.id if current_user.is_authenticated else None,
+        'session': dict(session),
+        'cookies': dict(request.cookies)
+    })
+
+@app.route('/api/dashboard-stats', methods=['GET', 'OPTIONS'])
+def api_dashboard_stats():
+    """Get dashboard statistics for React frontend"""
+    if request.method == 'OPTIONS':
+        # Handle preflight CORS request
+        response = jsonify({'message': 'OK'})
+        response.headers.add('Access-Control-Allow-Origin', 'http://localhost:3000')
+        response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
+        response.headers.add('Access-Control-Allow-Methods', 'GET,OPTIONS')
+        response.headers.add('Access-Control-Allow-Credentials', 'true')
+        return response
+    
+    # Check authentication for non-OPTIONS requests
+    if not current_user.is_authenticated:
+        response = jsonify({'success': False, 'message': 'Authentication required', 'error': 'Unauthorized'})
+        response.headers.add('Access-Control-Allow-Origin', 'http://localhost:3000')
+        response.headers.add('Access-Control-Allow-Credentials', 'true')
+        return response, 401
+    
+    try:
+        # Get counts from database for current user only
+        total_patients = Patient.query.filter_by(user_id=current_user.id).count()
+        total_cases = Case.query.filter_by(user_id=current_user.id).count()
+        
+        # Get cases from current month for current user
+        from datetime import datetime
+        current_month = datetime.now().month
+        current_year = datetime.now().year
+        
+        this_month_cases = Case.query.filter(
+            Case.user_id == current_user.id,
+            db.extract('month', Case.created_at) == current_month,
+            db.extract('year', Case.created_at) == current_year
+        ).count()
+        
+        # Get active patients (patients with cases in last 30 days) for current user
+        thirty_days_ago = datetime.now() - timedelta(days=30)
+        active_patients = db.session.query(Patient).join(Case).filter(
+            Case.user_id == current_user.id,
+            Case.created_at >= thirty_days_ago
+        ).distinct().count()
+        
+        # Get recent cases for the table for current user
+        recent_cases = Case.query.filter_by(user_id=current_user.id).order_by(Case.created_at.desc()).limit(5).all()
+        
+        recent_cases_data = []
+        for case in recent_cases:
+            patient_name = 'Unknown'
+            if case.patient:
+                patient_name = f"{case.patient.first_name} {case.patient.last_name}".strip()
+                if not patient_name:
+                    patient_name = case.patient.mrn or 'Unknown'
+            
+            recent_cases_data.append({
+                'id': case.id,
+                'patient': patient_name,
+                'action': 'New Case Created',
+                'date': case.created_at.strftime('%Y-%m-%d') if case.created_at else '',
+                'status': 'Completed'
+            })
+        
+        response_data = {
+            'totalPatients': total_patients,
+            'totalCases': total_cases,
+            'thisMonth': this_month_cases,
+            'activePatients': active_patients,
+            'recentCases': recent_cases_data
+        }
+        
+        response = jsonify(response_data)
+        response.headers.add('Access-Control-Allow-Origin', 'http://localhost:3000')
+        response.headers.add('Access-Control-Allow-Credentials', 'true')
+        return response
+        
+    except Exception as e:
+        logging.error(f"Error fetching dashboard stats: {e}")
+        response = jsonify({
+            'success': False,
+            'error': 'Failed to fetch dashboard statistics',
+            'totalPatients': 0,
+            'totalCases': 0,
+            'thisMonth': 0,
+            'activePatients': 0,
+            'recentCases': []
+        })
+        response.headers.add('Access-Control-Allow-Origin', 'http://localhost:3000')
+        response.headers.add('Access-Control-Allow-Credentials', 'true')
+        return response, 500
+
+@app.route('/api/orthodontic-examinations', methods=['GET', 'OPTIONS'])
+@login_required
+def get_orthodontic_examinations():
+    """Get all orthodontic examinations for current user"""
+    if request.method == 'OPTIONS':
+        response = jsonify({'message': 'OK'})
+        response.headers.add('Access-Control-Allow-Origin', 'http://localhost:3000')
+        response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
+        response.headers.add('Access-Control-Allow-Methods', 'GET,OPTIONS')
+        response.headers.add('Access-Control-Allow-Credentials', 'true')
+        return response
+    
+    try:
+        from config.models import OrthodonticExamination, Patient
+        
+        # Get all examinations for current user with patient info
+        examinations = db.session.query(OrthodonticExamination, Patient).join(
+            Patient, OrthodonticExamination.patient_id == Patient.id
+        ).filter(
+            OrthodonticExamination.user_id == current_user.id
+        ).order_by(OrthodonticExamination.created_at.desc()).all()
+        
+        examinations_data = []
+        for exam, patient in examinations:
+            exam_data = {
+                'id': exam.id,
+                'patient_id': patient.id,
+                'patient_name': exam.full_name,
+                'file_number': exam.file_number,
+                'patient_mrn': patient.mrn,
+                'patient_clinic': patient.clinic,
+                'created_at': exam.created_at.isoformat(),
+                'updated_at': exam.updated_at.isoformat(),
+                'case_id': exam.case_id,
+                
+                # Personal Information
+                'date_of_birth': exam.date_of_birth.isoformat() if exam.date_of_birth else None,
+                'age': exam.age,
+                'gender': exam.gender,
+                'phone_number': exam.phone_number,
+                'email': exam.email,
+                
+                # Medical History Summary
+                'medical_condition': exam.medical_condition,
+                'previous_orthodontic_treatment': exam.previous_orthodontic_treatment,
+                
+                # Examination Summary
+                'profile_type': exam.profile_type,
+                'molar_relation_right': exam.molar_relation_right,
+                'molar_relation_left': exam.molar_relation_left,
+                'overjet': exam.overjet,
+                'overbite': exam.overbite,
+                
+                # Photos
+                'uploaded_photos': json.loads(exam.uploaded_photos) if exam.uploaded_photos else {}
+            }
+            examinations_data.append(exam_data)
+        
+        response = jsonify({
+            'success': True,
+            'examinations': examinations_data,
+            'total': len(examinations_data)
+        })
+        response.headers.add('Access-Control-Allow-Origin', 'http://localhost:3000')
+        response.headers.add('Access-Control-Allow-Credentials', 'true')
+        return response
+        
+    except Exception as e:
+        logging.error(f"Error fetching orthodontic examinations: {str(e)}")
+        response = jsonify({
+            'success': False,
+            'error': 'Failed to fetch examinations'
+        })
+        response.headers.add('Access-Control-Allow-Origin', 'http://localhost:3000')
+        response.headers.add('Access-Control-Allow-Credentials', 'true')
+        return response, 500
+
+@app.route('/api/orthodontic-examination/<int:exam_id>', methods=['GET', 'OPTIONS'])
+@login_required
+def get_orthodontic_examination_detail(exam_id):
+    """Get detailed orthodontic examination data"""
+    if request.method == 'OPTIONS':
+        response = jsonify({'message': 'OK'})
+        response.headers.add('Access-Control-Allow-Origin', 'http://localhost:3000')
+        response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
+        response.headers.add('Access-Control-Allow-Methods', 'GET,OPTIONS')
+        response.headers.add('Access-Control-Allow-Credentials', 'true')
+        return response
+    
+    try:
+        from config.models import OrthodonticExamination, Patient
+        
+        # Get examination with patient info
+        exam = db.session.query(OrthodonticExamination, Patient).join(
+            Patient, OrthodonticExamination.patient_id == Patient.id
+        ).filter(
+            OrthodonticExamination.id == exam_id,
+            OrthodonticExamination.user_id == current_user.id
+        ).first()
+        
+        if not exam:
+            response = jsonify({'success': False, 'error': 'Examination not found'})
+            response.headers.add('Access-Control-Allow-Origin', 'http://localhost:3000')
+            response.headers.add('Access-Control-Allow-Credentials', 'true')
+            return response, 404
+        
+        examination, patient = exam
+        
+        # Return complete examination data
+        exam_data = {
+            'id': examination.id,
+            'patient_id': patient.id,
+            'patient_mrn': patient.mrn,
+            'patient_clinic': patient.clinic,
+            'case_id': examination.case_id,
+            'created_at': examination.created_at.isoformat(),
+            'updated_at': examination.updated_at.isoformat(),
+            
+            # Personal Information
+            'full_name': examination.full_name,
+            'file_number': examination.file_number,
+            'date_of_birth': examination.date_of_birth.isoformat() if examination.date_of_birth else None,
+            'age': examination.age,
+            'gender': examination.gender,
+            'phone_number': examination.phone_number,
+            'email': examination.email,
+            'address': examination.address,
+            'emergency_contact_name': examination.emergency_contact_name,
+            'emergency_contact_phone': examination.emergency_contact_phone,
+            
+            # Medical & Dental History
+            'medical_condition': examination.medical_condition,
+            'medical_condition_details': examination.medical_condition_details,
+            'current_medications': examination.current_medications,
+            'allergies': examination.allergies,
+            'dental_history': json.loads(examination.dental_history) if examination.dental_history else [],
+            'dental_history_other': examination.dental_history_other,
+            'previous_orthodontic_treatment': examination.previous_orthodontic_treatment,
+            'previous_orthodontic_details': examination.previous_orthodontic_details,
+            
+            # Extra-oral Examination
+            'facial_type': examination.facial_type,
+            'profile_type': examination.profile_type,
+            'profile_type_other': examination.profile_type_other,
+            'vertical_facial_proportion': examination.vertical_facial_proportion,
+            'smile_line': examination.smile_line,
+            'facial_asymmetry': examination.facial_asymmetry,
+            'facial_asymmetry_other': examination.facial_asymmetry_other,
+            'midline_upper': examination.midline_upper,
+            'midline_upper_side': examination.midline_upper_side,
+            'midline_upper_mm': examination.midline_upper_mm,
+            'midline_lower': examination.midline_lower,
+            'midline_lower_side': examination.midline_lower_side,
+            'midline_lower_mm': examination.midline_lower_mm,
+            'nasolabial': examination.nasolabial,
+            'nose_size': examination.nose_size,
+            'mentolabial_fold': examination.mentolabial_fold,
+            'mentolabial_fold_other': examination.mentolabial_fold_other,
+            'lip_in_repose': examination.lip_in_repose,
+            'lip_in_contact': examination.lip_in_contact,
+            'jaw_function_muscle_tenderness': examination.jaw_function_muscle_tenderness,
+            'jaw_function_muscle_tenderness_text': examination.jaw_function_muscle_tenderness_text,
+            'tmj_sound': examination.tmj_sound,
+            'tmj_sound_text': examination.tmj_sound_text,
+            'mandibular_shift': examination.mandibular_shift,
+            'mandibular_shift_text': examination.mandibular_shift_text,
+            
+            # Intra-oral Examination
+            'oral_hygiene': examination.oral_hygiene,
+            'frenulum_attachment_maxilla': examination.frenulum_attachment_maxilla,
+            'tongue_size': examination.tongue_size,
+            'palpation_unerupted_canines': examination.palpation_unerupted_canines,
+            'molar_relation_right': examination.molar_relation_right,
+            'molar_relation_left': examination.molar_relation_left,
+            'overjet': examination.overjet,
+            'overbite': examination.overbite,
+            'overbite_other': examination.overbite_other,
+            'crossbite': examination.crossbite,
+            'crossbite_other': examination.crossbite_other,
+            'space_condition': json.loads(examination.space_condition) if examination.space_condition else [],
+            'space_condition_other': examination.space_condition_other,
+            'gingival_impingement': examination.gingival_impingement,
+            
+            # Additional Notes
+            'examination_notes': examination.examination_notes,
+            
+            # Photo Upload Information
+            'uploaded_photos': json.loads(examination.uploaded_photos) if examination.uploaded_photos else {}
+        }
+        
+        response = jsonify({
+            'success': True,
+            'examination': exam_data
+        })
+        response.headers.add('Access-Control-Allow-Origin', 'http://localhost:3000')
+        response.headers.add('Access-Control-Allow-Credentials', 'true')
+        return response
+        
+    except Exception as e:
+        logging.error(f"Error fetching examination detail: {str(e)}")
+        response = jsonify({
+            'success': False,
+            'error': 'Failed to fetch examination details'
+        })
+        response.headers.add('Access-Control-Allow-Origin', 'http://localhost:3000')
+        response.headers.add('Access-Control-Allow-Credentials', 'true')
+        return response, 500
+
+@app.route('/api/orthodontic-examination', methods=['POST', 'OPTIONS'])
+def submit_orthodontic_examination():
+    """Submit orthodontic examination form data"""
+    if request.method == 'OPTIONS':
+        # Handle preflight CORS request
+        response = jsonify({'message': 'OK'})
+        response.headers.add('Access-Control-Allow-Origin', 'http://localhost:3000')
+        response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
+        response.headers.add('Access-Control-Allow-Methods', 'POST,OPTIONS')
+        response.headers.add('Access-Control-Allow-Credentials', 'true')
+        return response
+    
+    # Auto-login if not authenticated
+    if not current_user.is_authenticated:
+        # Try to find any existing user to auto-login
+        existing_user = User.query.first()
+        if existing_user:
+            login_user(existing_user, remember=True)
+            session.permanent = True
+            logging.info(f"Auto-logged in user: {existing_user.email}")
+        else:
+            return jsonify({'success': False, 'message': 'No users found in system'}), 401
+    
+    try:
+        # Import here to avoid circular import
+        from config.models import Patient, OrthodonticExamination, Case
+        
+        data = request.get_json()
+        if not data:
+            return jsonify({'success': False, 'message': 'No data provided'}), 400
+        
+        # Extract form data
+        form_data = data.get('formData', {})
+        uploaded_images = data.get('uploadedImages', {})
+        selected_specialty = data.get('selectedSpecialty', '')
+        selected_clinic = data.get('selectedClinic', '')
+        
+        # Debug: Log received data
+        logging.info(f"Orthodontic examination submission from user: {current_user.id if current_user.is_authenticated else 'Anonymous'}")
+        logging.info(f"Received form data keys: {list(form_data.keys())}")
+        logging.info(f"Selected specialty: {selected_specialty}")
+        logging.info(f"Selected clinic: {selected_clinic}")
+        logging.info(f"Full name: {form_data.get('fullName')}")
+        logging.info(f"File number: {form_data.get('fileNumber')}")
+        logging.info(f"Uploaded images: {list(uploaded_images.keys()) if uploaded_images else 'None'}")
+        
+        # Validate required fields
+        if not form_data.get('fullName') or not form_data.get('fileNumber'):
+            return jsonify({'success': False, 'message': 'Full name and file number are required'}), 400
+        
+        # Create or find patient
+        patient = None
+        
+        # Check if patient already exists with this file number for current user
+        existing_patient = Patient.query.filter_by(
+            mrn=form_data.get('fileNumber'),
+            user_id=current_user.id
+        ).first()
+        
+        if existing_patient:
+            # Update existing patient info
+            patient = existing_patient
+            name_parts = form_data.get('fullName', '').split(' ', 1)
+            patient.first_name = name_parts[0] if name_parts else ''
+            patient.last_name = name_parts[1] if len(name_parts) > 1 else ''
+            patient.clinic = selected_clinic
+        else:
+            # Create new patient
+            name_parts = form_data.get('fullName', '').split(' ', 1)
+            patient = Patient(
+                mrn=form_data.get('fileNumber'),
+                first_name=name_parts[0] if name_parts else '',
+                last_name=name_parts[1] if len(name_parts) > 1 else '',
+                clinic=selected_clinic,
+                user_id=current_user.id
+            )
+            db.session.add(patient)
+            db.session.flush()  # Get patient ID
+        
+        # Save uploaded images to server
+        saved_images = {}
+        for image_type, image_data in uploaded_images.items():
+            if image_data and image_data.get('file'):
+                # Here you would save the actual image files
+                # For now, we'll just store the image names
+                saved_images[image_type] = image_data.get('name', '')
+        
+        # Create orthodontic examination record
+        examination = OrthodonticExamination(
+            patient_id=patient.id,
+            user_id=current_user.id,
+            
+            # Personal Information
+            full_name=form_data.get('fullName', ''),
+            file_number=form_data.get('fileNumber', ''),
+            date_of_birth=datetime.strptime(form_data.get('dateOfBirth'), '%Y-%m-%d').date() if form_data.get('dateOfBirth') else None,
+            age=form_data.get('age', ''),
+            gender=form_data.get('gender', ''),
+            phone_number='',  # Not in frontend form yet
+            email='',  # Not in frontend form yet
+            address='',  # Not in frontend form yet
+            emergency_contact_name='',  # Not in frontend form yet
+            emergency_contact_phone='',  # Not in frontend form yet
+            
+            # Medical & Dental History
+            medical_condition=form_data.get('medicalCondition', ''),
+            medical_condition_details=form_data.get('medicalConditionOther', ''),
+            current_medications=form_data.get('medication', ''),
+            allergies=form_data.get('allergy', ''),
+            dental_history=json.dumps(form_data.get('dentalHistory', [])),
+            dental_history_other=form_data.get('dentalHistoryOther', ''),
+            previous_orthodontic_treatment=form_data.get('previousOrthodonticTreatment', ''),
+            previous_orthodontic_details=form_data.get('previousOrthodonticTreatmentOther', ''),
+            
+            # Extra-oral Examination
+            facial_type=form_data.get('facialType', ''),
+            profile_type=form_data.get('profileType', ''),
+            profile_type_other=form_data.get('profileTypeOther', ''),
+            vertical_facial_proportion=form_data.get('verticalFacialProportion', ''),
+            smile_line=form_data.get('smileLine', ''),
+            facial_asymmetry=form_data.get('facialAsymmetry', ''),
+            facial_asymmetry_other=form_data.get('facialAsymmetryOther', ''),
+            midline_upper=form_data.get('midlineUpper', ''),
+            midline_upper_side=form_data.get('midlineUpperSide', ''),
+            midline_upper_mm=form_data.get('midlineUpperMm', ''),
+            midline_lower=form_data.get('midlineLower', ''),
+            midline_lower_side=form_data.get('midlineLowerSide', ''),
+            midline_lower_mm=form_data.get('midlineLowerMm', ''),
+            nasolabial=form_data.get('nasolabial', ''),
+            nose_size=form_data.get('noseSize', ''),
+            mentolabial_fold=form_data.get('mentolabialFold', ''),
+            mentolabial_fold_other=form_data.get('mentolabialFoldOther', ''),
+            lip_in_repose=form_data.get('lipInRepose', ''),
+            lip_in_contact=form_data.get('lipInContact', ''),
+            jaw_function_muscle_tenderness=form_data.get('jawFunctionMuscleTenderness', ''),
+            jaw_function_muscle_tenderness_text=form_data.get('jawFunctionMuscleTendernessText', ''),
+            tmj_sound=form_data.get('tmjSound', ''),
+            tmj_sound_text=form_data.get('tmjSoundText', ''),
+            mandibular_shift=form_data.get('mandibularShift', ''),
+            mandibular_shift_text=form_data.get('mandibularShiftText', ''),
+            
+            # Intra-oral Examination
+            oral_hygiene=form_data.get('oralHygiene', ''),
+            frenulum_attachment_maxilla=form_data.get('frenulumAttachmentMaxilla', ''),
+            tongue_size=form_data.get('tongueSize', ''),
+            palpation_unerupted_canines=form_data.get('palpationUnruptedCanines', ''),
+            molar_relation_right=form_data.get('molarRelationRight', ''),
+            molar_relation_left=form_data.get('molarRelationLeft', ''),
+            overjet=form_data.get('overjet', ''),
+            overbite=form_data.get('overbite', ''),
+            overbite_other=form_data.get('overbiteOther', ''),
+            crossbite=form_data.get('crossbite', ''),
+            crossbite_other=form_data.get('crossbiteOther', ''),
+            space_condition=json.dumps(form_data.get('spaceCondition', [])),
+            space_condition_other=form_data.get('spaceConditionOther', ''),
+            gingival_impingement=form_data.get('gingivalImpingement', ''),
+            
+            # Additional Notes
+            examination_notes=form_data.get('examinationNotes', ''),
+            
+            # Photo Upload Information
+            uploaded_photos=json.dumps(saved_images)
+        )
+        
+        db.session.add(examination)
+        db.session.flush()  # Get examination ID
+        
+        # Create a case record for this examination
+        case_title = f"Orthodontic Examination - {form_data.get('fullName', '')} ({form_data.get('fileNumber', '')})"
+        case = Case(
+            title=case_title,
+            notes=f"Orthodontic examination for {form_data.get('fullName', '')}",
+            template='medical',
+            orientation='portrait',
+            images_per_slide=1,
+            image_count=len([img for img in saved_images.values() if img]),
+            pdf_filename=None,  # Will be generated later if needed
+            visit_type='orthodontic_examination',
+            patient_id=patient.id,
+            user_id=current_user.id,
+            category=selected_specialty,
+            chief_complaint=form_data.get('reasonForTreatment', ''),  # Use reasonForTreatment as chief complaint
+            treatment_plan='',  # Not in frontend form yet
+            diagnosis=''  # Not in frontend form yet
+        )
+        
+        db.session.add(case)
+        db.session.flush()
+        
+        # Link examination to case
+        examination.case_id = case.id
+        
+        # Commit all changes
+        db.session.commit()
+        
+        logging.info(f"Orthodontic examination saved for patient {patient.id} by user {current_user.id}")
+        
+        response = jsonify({
+            'success': True,
+            'message': 'Orthodontic examination saved successfully',
+            'patient_id': patient.id,
+            'examination_id': examination.id,
+            'case_id': case.id
+        })
+        response.headers.add('Access-Control-Allow-Origin', 'http://localhost:3000')
+        response.headers.add('Access-Control-Allow-Credentials', 'true')
+        
+        logging.info(f"Successfully saved orthodontic examination: patient_id={patient.id}, examination_id={examination.id}, case_id={case.id}")
+        return response
+        
+    except Exception as e:
+        db.session.rollback()
+        logging.error(f"Error saving orthodontic examination: {str(e)}")
+        response = jsonify({
+            'success': False,
+            'message': f'Error saving examination: {str(e)}'
+        })
+        response.headers.add('Access-Control-Allow-Origin', 'http://localhost:3000')
+        response.headers.add('Access-Control-Allow-Credentials', 'true')
+        return response, 500
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5001)

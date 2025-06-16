@@ -22,15 +22,35 @@ export const AuthProvider = ({ children }) => {
 
   const checkAuthStatus = async () => {
     try {
-      const token = localStorage.getItem('auth_token');
-      if (token) {
-        const userData = await authService.verifyToken(token);
-        setUser(userData);
-        setIsAuthenticated(true);
+      // First verify authentication
+      const authResponse = await authService.verifyAuth();
+      if (authResponse.authenticated) {
+        // If authenticated, get full profile data including profile image
+        try {
+          const profileResponse = await authService.getProfile();
+          if (profileResponse.success) {
+            console.log('AuthContext: Full profile data loaded:', profileResponse.user);
+            setUser(profileResponse.user);
+            setIsAuthenticated(true);
+          } else {
+            // Fallback to basic user data if profile fetch fails
+            console.log('AuthContext: Using basic user data as fallback');
+            setUser(authResponse.user);
+            setIsAuthenticated(true);
+          }
+        } catch (profileError) {
+          console.error('AuthContext: Profile fetch failed, using basic user data:', profileError);
+          setUser(authResponse.user);
+          setIsAuthenticated(true);
+        }
+      } else {
+        setUser(null);
+        setIsAuthenticated(false);
       }
     } catch (error) {
       console.error('Auth verification failed:', error);
-      localStorage.removeItem('auth_token');
+      setUser(null);
+      setIsAuthenticated(false);
     } finally {
       setLoading(false);
     }
@@ -39,14 +59,32 @@ export const AuthProvider = ({ children }) => {
   const login = async (email, password) => {
     try {
       const response = await authService.login(email, password);
-      localStorage.setItem('auth_token', response.token);
-      setUser(response.user);
-      setIsAuthenticated(true);
-      return { success: true };
+      if (response.success) {
+        // After successful login, get full profile data
+        try {
+          const profileResponse = await authService.getProfile();
+          if (profileResponse.success) {
+            console.log('AuthContext: Full profile data loaded after login:', profileResponse.user);
+            setUser(profileResponse.user);
+            setIsAuthenticated(true);
+          } else {
+            // Fallback to login response user data
+            setUser(response.user);
+            setIsAuthenticated(true);
+          }
+        } catch (profileError) {
+          console.error('AuthContext: Profile fetch failed after login, using login user data:', profileError);
+          setUser(response.user);
+          setIsAuthenticated(true);
+        }
+        return { success: true };
+      } else {
+        return { success: false, error: response.message };
+      }
     } catch (error) {
       return { 
         success: false, 
-        error: error.response?.data?.error || 'Login failed' 
+        error: error.response?.data?.message || 'Login failed' 
       };
     }
   };
@@ -54,20 +92,27 @@ export const AuthProvider = ({ children }) => {
   const register = async (userData) => {
     try {
       const response = await authService.register(userData);
-      localStorage.setItem('auth_token', response.token);
-      setUser(response.user);
-      setIsAuthenticated(true);
-      return { success: true };
+      if (response.success) {
+        setUser(response.user);
+        setIsAuthenticated(true);
+        return { success: true };
+      } else {
+        return { success: false, error: response.message };
+      }
     } catch (error) {
       return { 
         success: false, 
-        error: error.response?.data?.error || 'Registration failed' 
+        error: error.response?.data?.message || 'Registration failed' 
       };
     }
   };
 
-  const logout = () => {
-    localStorage.removeItem('auth_token');
+  const logout = async () => {
+    try {
+      await authService.logout();
+    } catch (error) {
+      console.error('Logout error:', error);
+    }
     setUser(null);
     setIsAuthenticated(false);
   };
@@ -79,7 +124,7 @@ export const AuthProvider = ({ children }) => {
     } catch (error) {
       return { 
         success: false, 
-        error: error.response?.data?.error || 'Failed to send reset email' 
+        error: error.response?.data?.message || 'Failed to send reset email' 
       };
     }
   };
@@ -91,20 +136,46 @@ export const AuthProvider = ({ children }) => {
     } catch (error) {
       return { 
         success: false, 
-        error: error.response?.data?.error || 'Password reset failed' 
+        error: error.response?.data?.message || 'Password reset failed' 
       };
     }
   };
 
   const updateProfile = async (profileData) => {
     try {
+      console.log('AuthContext updateProfile called with:', profileData);
       const response = await authService.updateProfile(profileData);
-      setUser(response.user);
-      return { success: true };
+      console.log('AuthContext updateProfile response:', response);
+      if (response.success) {
+        console.log('Updating user state with new profile data:', response.user);
+        console.log('Previous user state:', user);
+        
+        // Force a complete state update by creating a new user object
+        const updatedUser = {
+          ...response.user,
+          // Add a timestamp to force re-render of components that depend on profile image
+          _profileUpdateTimestamp: Date.now()
+        };
+        
+        setUser(updatedUser);
+        console.log('User state updated with timestamp:', updatedUser);
+        
+        // Also force a fresh auth check to ensure consistency
+        setTimeout(() => {
+          console.log('AuthContext: Performing post-update auth check');
+          checkAuthStatus();
+        }, 500);
+        
+        return { success: true, user: updatedUser };
+      } else {
+        console.error('Profile update failed:', response.message);
+        return { success: false, error: response.message };
+      }
     } catch (error) {
+      console.error('AuthContext updateProfile error:', error);
       return { 
         success: false, 
-        error: error.response?.data?.error || 'Profile update failed' 
+        error: error.response?.data?.message || 'Profile update failed' 
       };
     }
   };

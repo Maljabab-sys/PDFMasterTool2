@@ -110,6 +110,57 @@ const translations = {
     mainClinic: 'العيادة الرئيسية',
     branchA: 'الفرع أ',
     branchB: 'الفرع ب'
+  },
+  fr: {
+    // Navigation
+    dashboard: 'Tableau de bord',
+    newCase: 'Nouveau cas',
+    patients: 'Patients',
+    aiTest: 'Test IA',
+    settings: 'Paramètres',
+    profile: 'Profil',
+    logout: 'Déconnexion',
+    
+    // Basic translations
+    welcomeBack: 'Bon retour',
+    totalPatients: 'Total des patients',
+    totalCases: 'Total des cas',
+    thisMonth: 'Ce mois-ci',
+    activePatients: 'Patients actifs'
+  },
+  es: {
+    // Navigation
+    dashboard: 'Panel de control',
+    newCase: 'Nuevo caso',
+    patients: 'Pacientes',
+    aiTest: 'Prueba IA',
+    settings: 'Configuración',
+    profile: 'Perfil',
+    logout: 'Cerrar sesión',
+    
+    // Basic translations
+    welcomeBack: 'Bienvenido de vuelta',
+    totalPatients: 'Total de pacientes',
+    totalCases: 'Total de casos',
+    thisMonth: 'Este mes',
+    activePatients: 'Pacientes activos'
+  },
+  de: {
+    // Navigation
+    dashboard: 'Dashboard',
+    newCase: 'Neuer Fall',
+    patients: 'Patienten',
+    aiTest: 'KI-Test',
+    settings: 'Einstellungen',
+    profile: 'Profil',
+    logout: 'Abmelden',
+    
+    // Basic translations
+    welcomeBack: 'Willkommen zurück',
+    totalPatients: 'Gesamte Patienten',
+    totalCases: 'Gesamte Fälle',
+    thisMonth: 'Diesen Monat',
+    activePatients: 'Aktive Patienten'
   }
 };
 
@@ -122,15 +173,24 @@ export const LanguageProvider = ({ children }) => {
 
   useEffect(() => {
     localStorage.setItem('language', language);
-    setIsRTL(language === 'ar');
+    // RTL languages (Arabic, Hebrew, Persian, etc.)
+    const rtlLanguages = ['ar', 'he', 'fa', 'ur'];
+    const isRightToLeft = rtlLanguages.includes(language);
+    setIsRTL(isRightToLeft);
     
     // Update document direction
-    document.documentElement.dir = language === 'ar' ? 'rtl' : 'ltr';
+    document.documentElement.dir = isRightToLeft ? 'rtl' : 'ltr';
     document.documentElement.lang = language;
   }, [language]);
 
   const toggleLanguage = () => {
     setLanguage(prev => prev === 'en' ? 'ar' : 'en');
+  };
+
+  const changeLanguage = (newLanguage) => {
+    if (translations[newLanguage]) {
+      setLanguage(newLanguage);
+    }
   };
 
   const t = (key) => {
@@ -141,6 +201,8 @@ export const LanguageProvider = ({ children }) => {
     language,
     isRTL,
     toggleLanguage,
+    changeLanguage,
+    setLanguage: changeLanguage, // Alias for consistency
     t
   };
 

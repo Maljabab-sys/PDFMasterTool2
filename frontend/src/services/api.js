@@ -1,21 +1,19 @@
 import axios from 'axios';
 
-// Create axios instance
+// Create axios instance with session-based authentication
 const api = axios.create({
   baseURL: process.env.REACT_APP_API_URL || 'http://localhost:5001',
   timeout: 30000,
+  withCredentials: true,  // CRITICAL: Send cookies with requests
   headers: {
     'Content-Type': 'application/json',
   },
 });
 
-// Request interceptor to add auth token
+// Request interceptor - no longer need to add auth tokens
 api.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('auth_token');
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
+    // Remove token-based auth - we're using session cookies now
     return config;
   },
   (error) => {
@@ -30,8 +28,7 @@ api.interceptors.response.use(
   },
   (error) => {
     if (error.response?.status === 401) {
-      // Token expired or invalid
-      localStorage.removeItem('auth_token');
+      // Session expired or invalid - redirect to login
       window.location.href = '/login';
     }
     return Promise.reject(error);
@@ -42,18 +39,16 @@ api.interceptors.response.use(
 export const apiMultipart = axios.create({
   baseURL: process.env.REACT_APP_API_URL || 'http://localhost:5001',
   timeout: 60000,
+  withCredentials: true,  // CRITICAL: Send cookies with requests
   headers: {
     'Content-Type': 'multipart/form-data',
   },
 });
 
-// Request interceptor for multipart requests
+// Request interceptor for multipart requests - no tokens needed
 apiMultipart.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('auth_token');
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
+    // Remove token-based auth - we're using session cookies now
     return config;
   },
   (error) => {
@@ -61,14 +56,13 @@ apiMultipart.interceptors.request.use(
   }
 );
 
-// Response interceptor for multipart requests
+// Response interceptor for multipart requests  
 apiMultipart.interceptors.response.use(
   (response) => {
     return response.data;
   },
   (error) => {
     if (error.response?.status === 401) {
-      localStorage.removeItem('auth_token');
       window.location.href = '/login';
     }
     return Promise.reject(error);

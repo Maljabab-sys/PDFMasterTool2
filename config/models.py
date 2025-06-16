@@ -13,19 +13,12 @@ class User(UserMixin, db.Model):
     department = db.Column(db.String(100), nullable=False)
     position = db.Column(db.String(100), nullable=False)
     active = db.Column(db.Boolean, default=True)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=datetime.now)
     last_login = db.Column(db.DateTime)
     
     # Password reset fields
     reset_token = db.Column(db.String(255), nullable=True)
     reset_token_expires = db.Column(db.DateTime, nullable=True)
-    
-    # Profile fields
-    profile_image = db.Column(db.Text, nullable=True)  # Base64 encoded image or file path
-    clinics = db.Column(db.Text, nullable=True)  # JSON string of clinic names
-    notifications_enabled = db.Column(db.Boolean, default=True)
-    specialty = db.Column(db.String(100), nullable=True)  # Dental specialty
-    gender = db.Column(db.String(20), nullable=True)  # Gender
     
     def set_password(self, password):
         """Set password hash"""
@@ -48,7 +41,7 @@ class User(UserMixin, db.Model):
     def generate_reset_token(self):
         """Generate a secure password reset token"""
         self.reset_token = secrets.token_urlsafe(32)
-        self.reset_token_expires = datetime.utcnow() + timedelta(hours=1)  # Token expires in 1 hour
+        self.reset_token_expires = datetime.now() + timedelta(hours=1)  # Token expires in 1 hour
         return self.reset_token
     
     def verify_reset_token(self, token):
@@ -57,7 +50,7 @@ class User(UserMixin, db.Model):
             return False
         if self.reset_token != token:
             return False
-        if datetime.utcnow() > self.reset_token_expires:
+        if datetime.now() > self.reset_token_expires:
             return False
         return True
     
@@ -79,7 +72,7 @@ class Patient(db.Model):
     first_name = db.Column(db.String(100), nullable=False)
     last_name = db.Column(db.String(100), nullable=False)
     clinic = db.Column(db.String(20), nullable=False)  # KFMC or DC
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=datetime.now)
     
     # User relationship - each patient belongs to a specific user
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
@@ -102,7 +95,7 @@ class Case(db.Model):
     images_per_slide = db.Column(db.Integer, default=1)
     image_count = db.Column(db.Integer, default=0)
     pdf_filename = db.Column(db.String(255))
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=datetime.now)
     
     # User relationship - each case belongs to a specific user
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
@@ -123,17 +116,117 @@ class Case(db.Model):
     def __repr__(self):
         return f'<Case {self.title} - {self.visit_type}>'
 
+class OrthodonticExamination(db.Model):
+    """Comprehensive orthodontic examination data for each patient"""
+    id = db.Column(db.Integer, primary_key=True)
+    
+    # Patient and User relationships
+    patient_id = db.Column(db.Integer, db.ForeignKey('patient.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    case_id = db.Column(db.Integer, db.ForeignKey('case.id'), nullable=True)  # Link to case if created
+    
+    # Personal Information
+    full_name = db.Column(db.String(200), nullable=False)
+    file_number = db.Column(db.String(100), nullable=False)
+    date_of_birth = db.Column(db.Date)
+    age = db.Column(db.String(10))
+    gender = db.Column(db.String(20))
+    phone_number = db.Column(db.String(20))
+    email = db.Column(db.String(120))
+    address = db.Column(db.Text)
+    emergency_contact_name = db.Column(db.String(200))
+    emergency_contact_phone = db.Column(db.String(20))
+    
+    # Medical & Dental History
+    medical_condition = db.Column(db.String(50))  # yes/no/unknown
+    medical_condition_details = db.Column(db.Text)
+    current_medications = db.Column(db.Text)
+    allergies = db.Column(db.Text)
+    dental_history = db.Column(db.Text)  # JSON array of selected options
+    dental_history_other = db.Column(db.Text)
+    previous_orthodontic_treatment = db.Column(db.String(50))
+    previous_orthodontic_details = db.Column(db.Text)
+    
+    # Extra-oral Examination
+    facial_type = db.Column(db.String(50))
+    profile_type = db.Column(db.String(50))
+    profile_type_other = db.Column(db.Text)
+    vertical_facial_proportion = db.Column(db.String(50))
+    smile_line = db.Column(db.String(50))
+    facial_asymmetry = db.Column(db.String(50))
+    facial_asymmetry_other = db.Column(db.Text)
+    midline_upper = db.Column(db.String(10))  # on/off
+    midline_upper_side = db.Column(db.String(10))  # left/right
+    midline_upper_mm = db.Column(db.String(10))
+    midline_lower = db.Column(db.String(10))  # on/off
+    midline_lower_side = db.Column(db.String(10))  # left/right
+    midline_lower_mm = db.Column(db.String(10))
+    nasolabial = db.Column(db.String(20))
+    nose_size = db.Column(db.String(20))
+    mentolabial_fold = db.Column(db.String(50))
+    mentolabial_fold_other = db.Column(db.Text)
+    lip_in_repose = db.Column(db.String(50))
+    lip_in_contact = db.Column(db.String(50))
+    jaw_function_muscle_tenderness = db.Column(db.String(10))  # yes/no
+    jaw_function_muscle_tenderness_text = db.Column(db.Text)
+    tmj_sound = db.Column(db.String(10))  # yes/no
+    tmj_sound_text = db.Column(db.Text)
+    mandibular_shift = db.Column(db.String(10))  # yes/no
+    mandibular_shift_text = db.Column(db.Text)
+    
+    # Intra-oral Examination
+    oral_hygiene = db.Column(db.String(50))
+    frenulum_attachment_maxilla = db.Column(db.String(50))
+    tongue_size = db.Column(db.String(50))
+    palpation_unerupted_canines = db.Column(db.String(100))
+    molar_relation_right = db.Column(db.String(50))
+    molar_relation_left = db.Column(db.String(50))
+    overjet = db.Column(db.String(10))  # in mm
+    overbite = db.Column(db.String(50))
+    overbite_other = db.Column(db.Text)
+    crossbite = db.Column(db.String(50))
+    crossbite_other = db.Column(db.Text)
+    space_condition = db.Column(db.Text)  # JSON array of selected conditions
+    space_condition_other = db.Column(db.Text)
+    gingival_impingement = db.Column(db.String(10))  # yes/no
+    
+    # Additional Notes
+    examination_notes = db.Column(db.Text)
+    
+    # Photo Upload Information
+    uploaded_photos = db.Column(db.Text)  # JSON object with photo file paths
+    
+    # Metadata
+    created_at = db.Column(db.DateTime, default=datetime.now)
+    updated_at = db.Column(db.DateTime, default=datetime.now, onupdate=datetime.now)
+    
+    # Relationships
+    patient = db.relationship('Patient', backref='orthodontic_examinations')
+    user = db.relationship('User', backref='orthodontic_examinations')
+    case = db.relationship('Case', backref='orthodontic_examination', uselist=False)
+    
+    def __repr__(self):
+        return f'<OrthodonticExamination {self.full_name} - {self.file_number}>'
+
 class UserSettings(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False, unique=True)
     full_name = db.Column(db.String(100))
     email = db.Column(db.String(120))
-    position = db.Column(db.String(100))
-    gender = db.Column(db.String(10))  # 'male' or 'female'
+    position = db.Column(db.String(100))  # Used for specialty field in React
+    gender = db.Column(db.String(10))  # 'male', 'female', 'other', 'prefer-not-to-say'
     profile_image = db.Column(db.String(255))  # Path to uploaded profile image
     clinics_data = db.Column(db.Text)  # JSON string of clinic names
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    # Additional fields for React frontend
+    specialty = db.Column(db.String(100))  # Dental specialty (separate from position)
+    notifications = db.Column(db.Boolean, default=True)  # Notification preferences
+    auto_save = db.Column(db.Boolean, default=True)  # Auto-save preference
+    dark_mode = db.Column(db.Boolean, default=False)  # Dark mode preference
+    language = db.Column(db.String(10), default='en')  # Language preference ('en', 'ar', etc.)
+    
+    created_at = db.Column(db.DateTime, default=datetime.now)
+    updated_at = db.Column(db.DateTime, default=datetime.now, onupdate=datetime.now)
     
     def __repr__(self):
         return f'<UserSettings {self.full_name} - {self.email}>'

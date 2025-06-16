@@ -16,13 +16,9 @@ export const authService = {
     return response;
   },
 
-  // Verify token
-  verifyToken: async (token) => {
-    const response = await api.get('/api/auth/verify', {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
+  // Verify authentication status (session-based)
+  verifyAuth: async () => {
+    const response = await api.get('/api/auth/verify');
     return response;
   },
 
@@ -45,18 +41,19 @@ export const authService = {
 
   // Logout
   logout: async () => {
-    try {
-      await api.post('/api/auth/logout');
-    } catch (error) {
-      // Even if logout fails on server, clear local storage
-      console.error('Logout error:', error);
-    }
-    localStorage.removeItem('auth_token');
+    const response = await api.post('/api/auth/logout');
+    return response;
   },
 
   // Get current user
   getCurrentUser: async () => {
     const response = await api.get('/api/auth/me');
+    return response;
+  },
+
+  // Get user profile (full profile data)
+  getProfile: async () => {
+    const response = await api.get('/api/auth/profile');
     return response;
   },
 

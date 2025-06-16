@@ -40,7 +40,7 @@ const RegisterContainer = styled(Container)(({ theme }) => ({
   position: 'relative',
   background: theme.palette.mode === 'dark'
     ? 'linear-gradient(135deg, #0c0c0c 0%, #1a1a1a 25%, #2d2d2d 50%, #1a1a1a 75%, #0c0c0c 100%)'
-    : 'linear-gradient(135deg, #f093fb 0%, #f5576c 25%, #667eea 50%, #764ba2 75%, #4facfe 100%)',
+    : 'linear-gradient(135deg, #26d0ce 0%, #4dd0ce 25%, #667eea 50%, #00acc1 75%, #4facfe 100%)',
   backgroundSize: '400% 400%',
   animation: 'gradientShift 15s ease infinite',
   overflow: 'hidden',
@@ -52,7 +52,7 @@ const RegisterContainer = styled(Container)(({ theme }) => ({
     right: 0,
     bottom: 0,
     background: theme.palette.mode === 'dark'
-      ? 'radial-gradient(circle at 80% 20%, rgba(240, 147, 251, 0.1) 0%, transparent 50%), radial-gradient(circle at 20% 80%, rgba(102, 126, 234, 0.1) 0%, transparent 50%)'
+      ? 'radial-gradient(circle at 80% 20%, rgba(38, 208, 206, 0.1) 0%, transparent 50%), radial-gradient(circle at 20% 80%, rgba(102, 126, 234, 0.1) 0%, transparent 50%)'
       : 'radial-gradient(circle at 80% 20%, rgba(255, 255, 255, 0.2) 0%, transparent 50%), radial-gradient(circle at 20% 80%, rgba(255, 255, 255, 0.1) 0%, transparent 50%)',
     animation: 'float 20s ease-in-out infinite',
   },
@@ -73,7 +73,7 @@ const GlassCard = styled(Paper)(({ theme }) => ({
   borderRadius: 24,
   background: theme.palette.mode === 'dark'
     ? 'rgba(30, 30, 30, 0.8)'
-    : 'rgba(255, 255, 255, 0.9)',
+    : 'rgba(250, 251, 252, 0.9)',
   backdropFilter: 'blur(20px)',
   border: `1px solid ${theme.palette.mode === 'dark' 
     ? 'rgba(255, 255, 255, 0.1)' 
@@ -91,7 +91,7 @@ const GlassCard = styled(Paper)(({ theme }) => ({
     left: 0,
     right: 0,
     height: 2,
-    background: 'linear-gradient(135deg, #f093fb 0%, #f5576c 50%, #667eea 100%)',
+    background: 'linear-gradient(135deg, #26d0ce 0%, #4dd0ce 50%, #667eea 100%)',
     animation: 'shimmer 3s ease-in-out infinite',
   },
   '&:hover': {
@@ -117,15 +117,15 @@ const StyledTextField = styled(TextField)(({ theme }) => ({
     transition: 'all 0.3s cubic-bezier(0.4, 0.0, 0.2, 1)',
     background: theme.palette.mode === 'dark'
       ? 'rgba(255, 255, 255, 0.05)'
-      : 'rgba(255, 255, 255, 0.8)',
+      : 'rgba(248, 249, 251, 0.8)',
     backdropFilter: 'blur(10px)',
     '&:hover': {
       transform: 'translateY(-2px)',
-      boxShadow: '0 4px 12px rgba(240, 147, 251, 0.2)',
+      boxShadow: '0 4px 12px rgba(38, 208, 206, 0.2)',
     },
     '&.Mui-focused': {
       transform: 'translateY(-2px)',
-      boxShadow: '0 6px 16px rgba(240, 147, 251, 0.3)',
+      boxShadow: '0 6px 16px rgba(38, 208, 206, 0.3)',
       '& fieldset': {
         borderColor: theme.palette.secondary.main,
         borderWidth: 2,
@@ -149,8 +149,8 @@ const StyledTextField = styled(TextField)(({ theme }) => ({
 
 const GradientButton = styled(Button)(({ theme, variant = 'primary' }) => {
   const gradients = {
-    primary: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
-    secondary: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+    primary: 'linear-gradient(135deg, #26d0ce 0%, #4dd0ce 100%)',
+    secondary: 'linear-gradient(135deg, #667eea 0%, #00acc1 100%)',
   };
   
   return {
@@ -164,7 +164,7 @@ const GradientButton = styled(Button)(({ theme, variant = 'primary' }) => {
     background: gradients[variant],
     color: 'white',
     border: 'none',
-    boxShadow: `0 4px 15px ${variant === 'primary' ? 'rgba(240, 147, 251, 0.4)' : 'rgba(102, 126, 234, 0.4)'}`,
+    boxShadow: `0 4px 15px ${variant === 'primary' ? 'rgba(38, 208, 206, 0.4)' : 'rgba(102, 126, 234, 0.4)'}`,
     transition: 'all 0.3s cubic-bezier(0.4, 0.0, 0.2, 1)',
     '&::before': {
       content: '""',
@@ -178,7 +178,7 @@ const GradientButton = styled(Button)(({ theme, variant = 'primary' }) => {
     },
     '&:hover': {
       transform: 'translateY(-2px) scale(1.02)',
-      boxShadow: `0 8px 25px ${variant === 'primary' ? 'rgba(240, 147, 251, 0.6)' : 'rgba(102, 126, 234, 0.6)'}`,
+      boxShadow: `0 8px 25px ${variant === 'primary' ? 'rgba(38, 208, 206, 0.6)' : 'rgba(102, 126, 234, 0.6)'}`,
       '&::before': {
         left: '100%',
       },
@@ -202,18 +202,18 @@ const AnimatedIcon = styled(Box)(({ theme }) => ({
   width: 80,
   height: 80,
   borderRadius: '50%',
-  background: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
+  background: 'linear-gradient(135deg, #26d0ce 0%, #4dd0ce 100%)',
   margin: '0 auto 24px',
-  boxShadow: '0 8px 25px rgba(240, 147, 251, 0.4)',
+  boxShadow: '0 8px 25px rgba(38, 208, 206, 0.4)',
   animation: 'pulse 2s ease-in-out infinite',
   '& svg': {
     fontSize: 40,
     color: 'white',
   },
   '@keyframes pulse': {
-    '0%': { transform: 'scale(1)', boxShadow: '0 8px 25px rgba(240, 147, 251, 0.4)' },
-    '50%': { transform: 'scale(1.05)', boxShadow: '0 12px 35px rgba(240, 147, 251, 0.6)' },
-    '100%': { transform: 'scale(1)', boxShadow: '0 8px 25px rgba(240, 147, 251, 0.4)' },
+    '0%': { transform: 'scale(1)', boxShadow: '0 8px 25px rgba(38, 208, 206, 0.4)' },
+    '50%': { transform: 'scale(1.05)', boxShadow: '0 12px 35px rgba(38, 208, 206, 0.6)' },
+    '100%': { transform: 'scale(1)', boxShadow: '0 8px 25px rgba(38, 208, 206, 0.4)' },
   },
 }));
 
@@ -223,7 +223,7 @@ const FloatingElement = styled(Box)(({ theme, delay = 0, size = 60 }) => ({
   height: size,
   borderRadius: '50%',
   background: theme.palette.mode === 'dark'
-    ? 'linear-gradient(135deg, rgba(240, 147, 251, 0.1) 0%, rgba(245, 87, 108, 0.1) 100%)'
+    ? 'linear-gradient(135deg, rgba(38, 208, 206, 0.1) 0%, rgba(77, 208, 206, 0.1) 100%)'
     : 'linear-gradient(135deg, rgba(255, 255, 255, 0.2) 0%, rgba(255, 255, 255, 0.1) 100%)',
   backdropFilter: 'blur(10px)',
   animation: `float 6s ease-in-out infinite ${delay}s`,
