@@ -36,8 +36,15 @@ app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(hours=24)  # Set session li
 app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
 
 # Configure CORS for React frontend with proper cookie support
+cors_origins = [
+    'http://localhost:3000', 
+    'http://localhost:3001',
+    'https://dental-ai-frontend.onrender.com',  # Your Render frontend URL
+    'https://*.onrender.com'  # Allow all Render subdomains
+]
+
 CORS(app, 
-     origins=['http://localhost:3000', 'http://localhost:3001'], 
+     origins=cors_origins, 
      supports_credentials=True,  # CRITICAL: Allow credentials/cookies
      allow_headers=['Content-Type', 'Authorization', 'X-Requested-With'],
      expose_headers=['Content-Type', 'Authorization'],
@@ -2816,4 +2823,7 @@ def submit_orthodontic_examination():
         return response, 500
 
 if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0', port=5001)
+    # Production configuration
+    port = int(os.environ.get('PORT', 5000))
+    debug = os.environ.get('FLASK_ENV') != 'production'
+    app.run(debug=debug, host='0.0.0.0', port=port)
