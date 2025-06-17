@@ -1377,6 +1377,36 @@ def bulk_upload_categorize():
 def too_large(e):
     return jsonify({'error': 'File is too large. Please upload files smaller than 16MB.'}), 413
 
+@app.route('/')
+def index():
+    return '''
+    <html>
+    <head><title>Dental AI App</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+        body { font-family: Arial; text-align: center; padding: 50px; background: #f0f8ff; }
+        .container { max-width: 600px; margin: 0 auto; }
+        h1 { color: #2c3e50; }
+        .btn { background: #3498db; color: white; padding: 15px 30px; 
+               text-decoration: none; border-radius: 5px; margin: 10px; display: inline-block; }
+        .status { background: #2ecc71; color: white; padding: 10px; border-radius: 5px; margin: 20px 0; }
+    </style>
+    </head>
+    <body>
+        <div class="container">
+            <h1>🦷 Dental AI App</h1>
+            <div class="status">✅ Backend is Running!</div>
+            <p>Welcome to your Dental AI Application</p>
+            <a href="/api/auth/verify" class="btn">Test API</a>
+            <a href="/api/dashboard-stats" class="btn">Dashboard Stats</a>
+            <h3>📱 Next Steps:</h3>
+            <p>This is your Flask backend. For the full app, deploy both backend and frontend.</p>
+            <p><strong>Backend URL:</strong> http://192.168.100.4:5000</p>
+        </div>
+    </body>
+    </html>
+    '''
+
 @app.errorhandler(404)
 def not_found(e):
     return jsonify({'error': 'Not found'}), 404
