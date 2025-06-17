@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Dental AI</string>
+    <string name="title_activity_main">Dental AI</string>
+    <string name="package_name">com.dentalai.app</string>
+    <string name="custom_url_scheme">com.dentalai.app</string>
+</resources>
