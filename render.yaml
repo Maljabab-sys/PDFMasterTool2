@@ -14,13 +14,13 @@ services:
           property: connectionString
       - key: SESSION_SECRET
         generateValue: true
-    autoDeploy: false
 
-  # Frontend Service  
-  - type: static_site
+  # Frontend Service as Web Service
+  - type: web
     name: dental-ai-frontend
+    env: node
     buildCommand: cd frontend && npm install && npm run build
-    staticPublishPath: ./frontend/build
+    startCommand: cd frontend && npx serve -s build -p $PORT
     envVars:
       - key: REACT_APP_API_URL
         value: https://dental-ai-backend.onrender.com
