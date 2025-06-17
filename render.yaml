@@ -17,7 +17,7 @@ services:
     autoDeploy: false
 
   # Frontend Service  
-  - type: static
+  - type: static_site
     name: dental-ai-frontend
     buildCommand: cd frontend && npm install && npm run build
     staticPublishPath: ./frontend/build
